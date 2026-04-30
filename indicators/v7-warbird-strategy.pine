@@ -545,8 +545,11 @@ if anchorSnapshotChanged
     anchorLowTime  := zzLowTime
     lastBreakBar  := na
 
-int anchorHighBar = not na(anchorHighTime) ? ta.valuewhen(time == anchorHighTime, bar_index, 0) : na
-int anchorLowBar = not na(anchorLowTime) ? ta.valuewhen(time == anchorLowTime, bar_index, 0) : na
+// CW10004 fix: extract ta.valuewhen calls from ternary so they evaluate every bar.
+int _anchorHighBarRaw = ta.valuewhen(time == anchorHighTime, bar_index, 0)
+int _anchorLowBarRaw = ta.valuewhen(time == anchorLowTime, bar_index, 0)
+int anchorHighBar = not na(anchorHighTime) ? _anchorHighBarRaw : na
+int anchorLowBar = not na(anchorLowTime) ? _anchorLowBarRaw : na
 
 // Pre-compute rolling high/low at each confluence period at global scope.
 // ta.highest/ta.lowest require a compile-time-constant length — they cannot

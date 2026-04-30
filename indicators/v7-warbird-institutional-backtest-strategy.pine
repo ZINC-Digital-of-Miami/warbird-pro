@@ -459,6 +459,7 @@ fibHtfSnapshot(float deviationPct, int lookbackBars, int rightRoomBars, float th
     float recentLow = ta.lowest(shiftedLow, legLookbackBars)
     int recentHighOffset = ta.highestbars(shiftedHigh, legLookbackBars)
     int recentLowOffset = ta.lowestbars(shiftedLow, legLookbackBars)
+    float candidateAtrSeries = ta.atr(FIB_SCANNER_ATR_LEN)        // CW10003 fix: extracted to function top-level (every-bar consistency)
     var float legHigh = na
     var float legLow = na
     var int legHighTime = na
@@ -474,7 +475,7 @@ fibHtfSnapshot(float deviationPct, int lookbackBars, int rightRoomBars, float th
         float refPrice = math.max(math.abs(recentLow), syminfo.mintick)
         float movePct = candidateRange / refPrice * 100.0
         float candidateClose = close[legRightBars]
-        float candidateAtr = ta.atr(FIB_SCANNER_ATR_LEN)[legRightBars]
+        float candidateAtr = candidateAtrSeries[legRightBars]
         float dynThreshold = not na(candidateAtr) and candidateClose != 0 ? math.max(candidateAtr / candidateClose * 100.0 * deviationPct, thresholdFloorPct) : thresholdFloorPct
         if movePct >= dynThreshold
             int candidateDir = candidateHighTime > candidateLowTime ? 1 : candidateLowTime > candidateHighTime ? -1 : 0

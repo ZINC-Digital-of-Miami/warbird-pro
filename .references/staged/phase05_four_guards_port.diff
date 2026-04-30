@@ -1,0 +1,52 @@
+--- /tmp/paste_strategy.pine	2026-04-30 00:48:40.218008382 +0000
++++ /tmp/staged.pine	2026-04-30 11:58:53.543027557 +0000
+@@ -813,8 +813,8 @@
+ bool fpDeltaConfirmShort = fpAvailable and not na(fpDelta) and fpDelta < 0
+ 
+ // Wick rejection at fib zone: price pierces zone then closes back outside
+-bool wickRejectBull = not na(zoneLower) and low < zoneLower and close > zoneLower and bullishCandle
+-bool wickRejectBear = not na(zoneUpper) and high > zoneUpper and close < zoneUpper and bearishCandle
++bool wickRejectBull = not na(zoneLower) and low < zoneLower and close > zoneLower and close[1] >= zoneLower and bullishCandle
++bool wickRejectBear = not na(zoneUpper) and high > zoneUpper and close < zoneUpper and close[1] <= zoneUpper and bearishCandle
+ 
+ // Combined confirmation: footprint delta + (proven pattern OR wick rejection OR sweep)
+ bool longConfirmed = (fpDeltaConfirmLong or not fpAvailable) and (
+@@ -1217,6 +1217,16 @@
+         highestTargetHit := 0
+         tradeState := TRADE_ACTIVE
+         entryBar := bar_index
++        // Defensive: cancel opposite-direction pending entry (port from main).
++        if dir == 1
++            strategy.cancel("Short")
++        else
++            strategy.cancel("Long")
++
++    // Reconcile theoretical entry price to actual broker fill on the bar after setup→active transition.
++    // Position_avg_price is na on the entry bar (order placed, not yet filled); reliable from entryBar+1 onward.
++    if tradeState == TRADE_ACTIVE and not na(entryBar) and bar_index == entryBar + 1 and strategy.position_size != 0 and not na(strategy.position_avg_price)
++        entryPrice := strategy.position_avg_price
+ 
+     bool tradeInFlight = tradeState == TRADE_ACTIVE or tradeState == TRADE_HIT_TP1 or tradeState == TRADE_HIT_TP2 or tradeState == TRADE_HIT_TP3 or tradeState == TRADE_HIT_TP4
+ 
+@@ -1269,6 +1279,9 @@
+     if tradeState == TRADE_SETUP and not na(setupBar) and bar_index - setupBar > setupExpiryBars
+         lastExitOutcome := 4  // EXPIRED — setup timed out, no fill
+         tradeState := TRADE_EXPIRED
++        // Defensive: cancel pending entries on expiry (port from main).
++        strategy.cancel("Long")
++        strategy.cancel("Short")
+ 
+     bool selectedTargetResolved = highestTargetHit >= backtestExitTargetIndex and highestTargetHit > 0
+     bool tradeResolved = tradeState == TRADE_STOPPED or tradeState == TRADE_EXPIRED or selectedTargetResolved
+@@ -1288,6 +1301,11 @@
+         setupBar := na
+         entryBar := na
+         highestTargetHit := 0
++        // Defensive: cancel any lingering entry/exit orders (port from main).
++        strategy.cancel("Long")
++        strategy.cancel("Short")
++        strategy.cancel("Long TP")
++        strategy.cancel("Short TP")
+ 
+ bool tradeSetupEndedNow = tradeSetupWasActive and tradeState != TRADE_SETUP
+ bool tradeInFlightNow = tradeState == TRADE_ACTIVE or tradeState == TRADE_HIT_TP1 or tradeState == TRADE_HIT_TP2 or tradeState == TRADE_HIT_TP3 or tradeState == TRADE_HIT_TP4

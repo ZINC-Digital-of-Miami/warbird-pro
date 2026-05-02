@@ -44,24 +44,25 @@ Databento feature stacking is admitted into the active modeling dataset.
 
 ### Active Pine Surfaces
 
-- `indicators/warbird-pro-indicator.pine` — only active main chart indicator;
+- `indicators/warbird-pro-rebuild-fib-ml.pine` — only active main chart indicator;
   trigger family `LIVE_ANCHOR_FOOTPRINT`
-- `indicators/warbird-nexus-machine-learning-rsi.pine` — retained Nexus support lane
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
   retained Nexus footprint research/tuning lane; trigger family
   `NEXUS_FOOTPRINT_DELTA`
 
 Retired/removed Pine variants:
 
+- `indicators/warbird-pro-indicator.pine`
+- `indicators/Warbird_Pro_v7.pine`
 - `indicators/v7-warbird-institutional.pine`
 - `indicators/v7-warbird-strategy.pine`
 - `indicators/v7-warbird-institutional-backtest-strategy.pine`
 - `indicators/fibs-only.pine`
 
-Budget verification from 2026-04-30:
+Budget verification from 2026-05-02:
 
-- Warbird Pro: 53 plot calls + 3 alertcondition calls = 56/64 output calls,
-  4 `request.security()` + 1 `request.footprint()`
+- Warbird Pro rebuild: 28 output calls (plot family), 0 alertcondition calls,
+  3 `request.security()`, and no `request.footprint()` in the main indicator
 
 Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 
@@ -82,9 +83,10 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 
 ### Current Blocker
 
-Re-baseline `indicators/warbird-pro-indicator.pine` as the single active main
-indicator, keep Nexus intact, and produce manifest-backed evidence for any
-settings recommendation. Do not start training/modeling unless the user
+Execute controlled 5m/15m tuning on
+`indicators/warbird-pro-rebuild-fib-ml.pine` with manifest-backed evidence, and
+keep Nexus footprint work isolated to the retained
+`NEXUS_FOOTPRINT_DELTA` lane. Do not start training/modeling unless the user
 explicitly approves it.
 
 ## Locked Rules
@@ -94,7 +96,7 @@ explicitly approves it.
 - No mock data.
 - No daily-ingestion training dependency.
 - No Pine edits without explicit approval in the current session.
-- In `indicators/warbird-pro-indicator.pine`, fib anchor ownership and ladder
+- In `indicators/warbird-pro-rebuild-fib-ml.pine`, fib anchor ownership and ladder
   math are protected scope and must not be changed without explicit approval
   plus before/after evidence.
 - Repo-wide fib scanner ban: never reintroduce the pivot-window
@@ -102,6 +104,11 @@ explicitly approves it.
   `pivotHighInWindow` / `pivotLowInWindow`; this pattern is known to cause
   wide-fib regressions.
 - No TradingView Pine Editor push without explicit approval.
+- Never force-launch, force-restart, or process-kill TradingView from automation.
+- Banned methods: `tv_launch`, `launch_tv_debug_mac.sh`,
+  `pkill -f TradingView`, `killall TradingView`.
+- Live TV operations are one explicit command at a time, no retry loops.
+- On first CDP/bridge failure: stop and report; do not run recovery automation.
 - Use 15m behavior as the baseline reference when evaluating 5m tuning changes.
 - If a strategy/backtest harness is explicitly reopened, commission floor for
   MES evidence is $1.00/side and slippage floor is 1 tick.
@@ -120,8 +127,9 @@ Before committing any `.pine` edit:
 2. `./scripts/guards/pine-lint.sh <file>`
 3. `./scripts/guards/check-fib-scanner-guardrails.sh`
 4. `./scripts/guards/check-contamination.sh`
-5. `npm run build`
-6. `./scripts/guards/check-indicator-strategy-parity.sh` only if a strategy
+5. `./scripts/guards/check-no-tv-force.sh`
+6. `npm run build`
+7. `./scripts/guards/check-indicator-strategy-parity.sh` only if a strategy
    harness is explicitly reopened and coupled to Warbird Pro
 
 For docs-only work, run `npm run lint` and `npm run build` before pushing when

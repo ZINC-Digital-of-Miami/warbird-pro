@@ -94,6 +94,7 @@ When the task touches Pine indicators, strategies, harnesses, or TradingView mec
    - `./scripts/guards/pine-lint.sh`
    - `./scripts/guards/check-fib-scanner-guardrails.sh`
    - `./scripts/guards/check-contamination.sh`
+   - `./scripts/guards/check-no-tv-force.sh`
    - `./scripts/guards/check-indicator-strategy-parity.sh` only if a strategy harness is explicitly reopened and coupled to Warbird Pro
 2. Treat `pinescript-server`, TradingView CLI, or chart-capable MCP flows as optional only after confirming they are actually configured in the active Codex profile.
 3. Do not treat tool presence, slash-command names, or plan references as proof that a Pine / TradingView tool is really installed.
@@ -111,6 +112,11 @@ These rules are fail-closed:
 6. No silent schema/API contract changes.
 7. No destructive git commands.
 8. No "done" claim when any required verification is missing.
+9. No forced TradingView launch/restart/process-kill automation.
+10. Banned methods include `tv_launch`, `launch_tv_debug_mac.sh`,
+    `pkill -f TradingView`, and `killall TradingView`.
+11. Live TradingView operations are one explicit command at a time; no retry loops.
+12. On first CDP/bridge failure, stop immediately and report.
 
 ## 6. Verification Matrix
 
@@ -123,7 +129,8 @@ If any touched file ends in `.pine`:
 1. `./scripts/guards/pine-lint.sh <each touched .pine file>`
 2. `./scripts/guards/check-fib-scanner-guardrails.sh`
 3. `./scripts/guards/check-contamination.sh`
-4. `npm run build`
+4. `./scripts/guards/check-no-tv-force.sh`
+5. `npm run build`
 
 `./scripts/guards/check-indicator-strategy-parity.sh` is inactive while no
 strategy harness exists. Run it only if Kirk explicitly reopens a strategy
@@ -189,6 +196,7 @@ Stop and report blockers if any are true:
 6. The assistant cannot prove that verification commands actually passed.
 7. The task proposes changing Warbird Pro fib anchor ownership or ladder math
    without explicit approval and before/after evidence.
+8. Any task path attempts forced TradingView launch/restart automation or retry-loop recovery.
 
 When blocked, report:
 
@@ -216,4 +224,4 @@ The current local Claude Code implementation in this workspace is:
 2. `.claude/rules/warbird-opus-execution-contract.md` (gitignored local rule)
    - keeps the completion schema and Pine command routing in active context
 3. `scripts/claude/verify-warbird-stop.sh`
-   - deterministic stop gate for completion schema, file existence, Pine guards, parity, and build checks
+   - deterministic stop gate for completion schema, file existence, Pine guards, no-force-TV guard, parity, and build checks

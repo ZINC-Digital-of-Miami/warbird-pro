@@ -1,14 +1,14 @@
 # Warbird Pro 5m Tuning Runbook
 
-**Date:** 2026-04-30
+**Date:** 2026-05-02
 **Status:** Active — Warbird Pro main-indicator tuning lane
 
 ## Purpose
 
-Tune `indicators/warbird-pro-indicator.pine` on MES using only
+Tune `indicators/warbird-pro-rebuild-fib-ml.pine` on MES using only
 TradingView/Pine evidence and produce defensible Pine settings or build
 recommendations. Nexus remains a separate retained lane and is tuned only from
-TradingView/Pine `request.footprint()` evidence.
+TradingView/Pine `request.footprint()` evidence for `NEXUS_FOOTPRINT_DELTA`.
 
 No FRED, macro, cross-asset, Databento-ingestion, Supabase, local legacy
 warehouse rows (`ag_training`), or synthetic OHLCV reconstruction is admitted
@@ -16,13 +16,14 @@ into the active modeling dataset.
 
 ## Active Pine Surfaces
 
-- Main chart indicator: `indicators/warbird-pro-indicator.pine`
-- Nexus support lane: `indicators/warbird-nexus-machine-learning-rsi.pine`
+- Main chart indicator: `indicators/warbird-pro-rebuild-fib-ml.pine`
 - Nexus footprint tuning lane:
   `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 
 Retired strategy/backtest/fib-only Pine variants are not active tuning sources:
 
+- `indicators/warbird-pro-indicator.pine`
+- `indicators/Warbird_Pro_v7.pine`
 - `indicators/v7-warbird-institutional.pine`
 - `indicators/v7-warbird-strategy.pine`
 - `indicators/v7-warbird-institutional-backtest-strategy.pine`
@@ -32,7 +33,7 @@ Retired strategy/backtest/fib-only Pine variants are not active tuning sources:
 
 Every run must declare exactly one active trigger family:
 
-- `LIVE_ANCHOR_FOOTPRINT` for `warbird-pro-indicator.pine`
+- `LIVE_ANCHOR_FOOTPRINT` for `warbird-pro-rebuild-fib-ml.pine`
 - `NEXUS_FOOTPRINT_DELTA` for the Nexus footprint lane
 
 `STRATEGY_ACCEPT_SCALP` and `BACKTEST_DIRECT_ANCHOR` are historical only unless
@@ -52,27 +53,28 @@ iterates. Do not modify:
 Allowed tuning scope after explicit approval:
 
 - non-fib risk gates
-- trend/MA/VWAP/liquidity-sweep toggles
-- momentum oscillator windows and weights
-- footprint/exhaustion thresholds
+- pattern/structure/liquidity-sweep toggles
+- EMA/MA crossover gate parameters
+- ML RSI / KNN / filter parameters
+- exhaustion thresholds
 - execution anchor, ATR stop multiplier, and max-risk constraints
 
 ## Phase Framework
 
-The 5m campaign remains phase-scoped. Use explicit space files and do not run a
-generic single-pass sweep as the authoritative campaign.
+The campaign is phase-scoped and timeframe-scoped.
 
-| Phase | Profile | Space file | Scope |
-|---|---|---|---|
-| 1 | `mes5m_phase1_trend_vwap_ma_liqsweep` | `scripts/ag/strategy_tuning_space.phase1.json` | trend / VWAP / MA / liquidity sweep |
-| 2 | `mes5m_phase2_momentum` | `scripts/ag/strategy_tuning_space.phase2.json` | VF Window / VF Candle Weight / VF Volume Weight / NFE Length / RSI KNN Window |
-| 3 | `mes5m_phase3_footprint_exhaustion` | `scripts/ag/strategy_tuning_space.phase3.json` | Ticks / VA / Imbalance% / Extension ATR Tol / Zero-Print / Swing Lookback / Cooldown / Imbalance Rows |
-| 4 | `mes5m_phase4_entry_risk` | `scripts/ag/strategy_tuning_space.phase4.json` | Execution Anchor / ATR Stop Multiplier / Max Setup Stop ATR / Acceptance Retest Window |
+- Run each phase on **5m** and **15m** as separate surfaces.
+- Promotion floor remains **1,000 authoritative trials per surface per phase**
+  unless Kirk explicitly overrides it.
+- Any helper script used for trials must be verified against the active rebuild
+  file and trigger family; do not use scripts that require retired Pine files.
 
-The promotion floor for a phase remains **1,000 authoritative trials** unless
-Kirk explicitly overrides it. Any helper script used for trials must first be
-verified against the active Warbird Pro file and trigger family; do not use a
-script path that still requires a retired Pine strategy file.
+| Phase | Scope |
+|---|---|
+| A | Structure + execution anchor (`requireAcceptRetest`, `retestBars`, `optEntryLevelInput`, `signalCooldownBars`, fib hysteresis/range controls) |
+| B | EMA/MA crossover gate (`useMaGate`, `lengthMA`, `lengthEMA`, short-gate controls) |
+| C | Pattern and exhaustion strictness (`usePatternConfirm`, `useLiquiditySweepConfirm`, sweep lookback, `useExhaustion`, exhaustion tolerance) |
+| D | ML filter surface (`useMlFilter`, RSI/KNN/filter parameters, thresholds, smoothing) |
 
 ## Evidence Requirements
 

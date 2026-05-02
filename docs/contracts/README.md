@@ -38,7 +38,7 @@ of left ambiguous.
 Current lock checkpoint (2026-04-30): Warbird Pro is the only active main chart
 indicator. Nexus is retained. The removed v7 strategy/backtest/fib-only Pine
 variants are historical only unless explicitly reopened. Fib anchor ownership
-and ladder math in `indicators/warbird-pro-indicator.pine` are protected while
+and ladder math in `indicators/warbird-pro-rebuild-fib-ml.pine` are protected while
 5m tuning iterates.
 
 ## Working Rule

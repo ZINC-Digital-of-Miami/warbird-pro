@@ -49,13 +49,14 @@ The initialization record is
 ## Active Architecture
 
 - Training/modeling source: Pine/TradingView outputs only.
-- Main chart indicator: `indicators/warbird-pro-indicator.pine`.
+- Main chart indicator: `indicators/warbird-pro-rebuild-fib-ml.pine`.
 - Retained Nexus lane:
-  - `indicators/warbird-nexus-machine-learning-rsi.pine`
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 - Trigger family must be explicit for every run:
   `LIVE_ANCHOR_FOOTPRINT` or `NEXUS_FOOTPRINT_DELTA`.
 - Retired Pine variants:
+  - `indicators/warbird-pro-indicator.pine`
+  - `indicators/Warbird_Pro_v7.pine`
   - `indicators/v7-warbird-institutional.pine`
   - `indicators/v7-warbird-strategy.pine`
   - `indicators/v7-warbird-institutional-backtest-strategy.pine`

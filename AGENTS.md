@@ -67,7 +67,7 @@ The goal is pure PineScript trading-indicator modeling:
 - improve the indicator build and state machine
 - use Optuna only as the offline analysis tool over Pine outputs
 - promote settings/build changes back into Pine after approval
-- keep `indicators/warbird-pro-indicator.pine` as the only active main chart
+- keep `indicators/warbird-pro-rebuild-fib-ml.pine` as the only active main chart
   indicator
 - keep the Nexus Pine files as the only active support/research indicator lane
 - retire and remove all other Pine indicator/strategy variants from the active
@@ -97,10 +97,9 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 ## Repo Map
 
 - `indicators/`: active Pine sources:
-  - `indicators/warbird-pro-indicator.pine` — only main chart indicator
-  - `indicators/warbird-nexus-machine-learning-rsi.pine` — Nexus support lane
+  - `indicators/warbird-pro-rebuild-fib-ml.pine` — only main chart indicator
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
-    Nexus Optuna/footprint evidence lane
+    Nexus Optuna/footprint evidence lane (retained support/research lane)
 - `scripts/optuna/`: active local optimization workspaces and runner.
 - `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`: TradingView
   settings-trial helpers retained for Pine-derived modeling.
@@ -114,10 +113,11 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 
 - Pine/TradingView output is the active training truth.
 - Modeling inputs come only from TradingView/Pine outputs emitted by
-  `indicators/warbird-pro-indicator.pine` or the retained Nexus Pine files:
+  `indicators/warbird-pro-rebuild-fib-ml.pine` and, for Nexus-only work,
+  `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`:
   TradingView indicator CSV exports, hidden `ml_*` / `nexus_fp_*` plots,
-  embedded `request.footprint()` evidence, and deterministic fields derived
-  from those same Pine outputs.
+  TradingView/Pine `request.footprint()` evidence for Nexus, and deterministic
+  fields derived from those same Pine outputs.
 - The active modeling object is the indicator behavior, not a server-side model.
 - The active output is a Pine settings/build recommendation, not a live scoring packet.
 - Every modeling run must declare one trigger family:
@@ -151,31 +151,42 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 
 ### Pine
 
-- Never edit `indicators/warbird-pro-indicator.pine` without explicit approval
+- Never edit `indicators/warbird-pro-rebuild-fib-ml.pine` without explicit approval
   in the current session.
 - Never edit Nexus Pine files without explicit approval in the current session.
 - Never push Pine changes to TradingView Pine Editor without explicit approval.
 - `indicators/v8-warbird-live.pine`, `indicators/v8-warbird-prescreen.pine`,
+  `indicators/warbird-pro-indicator.pine`, `indicators/Warbird_Pro_v7.pine`,
   `indicators/v7-warbird-institutional.pine`, `indicators/v7-warbird-strategy.pine`,
   `indicators/v7-warbird-institutional-backtest-strategy.pine`, and
   `indicators/fibs-only.pine` are retired and removed from the active repo
   surface. Historical references may remain in archived plan docs only.
 - The canonical Warbird Pro fib engine in
-  `indicators/warbird-pro-indicator.pine` is protected. Do not modify fib anchor
+  `indicators/warbird-pro-rebuild-fib-ml.pine` is protected. Do not modify fib anchor
   ownership, ladder math, or trade-state label semantics without explicit
   approval and before/after TradingView evidence.
 - Repo-wide fib scanner guardrail (locked 2026-04-28): never reintroduce the
   pivot-window `fibHtfSnapshot` variant that uses `ta.barssince(...)` and
   `pivotHighInWindow` / `pivotLowInWindow`. That pattern is banned due to
   repeated wide-fib regressions.
-- Pine budget baseline verified 2026-04-30:
-  - `warbird-pro-indicator.pine`: 53 plot calls + 3 alertcondition calls =
-    56/64 output calls; 4 `request.security()` calls + 1 `request.footprint()`
-    path
+- Pine budget baseline verified 2026-05-02:
+  - `warbird-pro-rebuild-fib-ml.pine`: 28 output calls (plot family), 0
+    alertcondition calls, 3 `request.security()` calls, and no
+    `request.footprint()` path in the main indicator
   - Nexus files are retained; price their request/output budget before any
     Nexus edit.
 - Price every new output or request path before writing Pine code.
-- `request.footprint()` is budget-sensitive and must be cached per bar.
+- Nexus `request.footprint()` is budget-sensitive and must be cached per bar.
+
+### TradingView Live Safety Lock
+
+- Never force-launch, force-restart, or process-kill TradingView from automation.
+- Banned methods include `tv_launch`, `launch_tv_debug_mac.sh`,
+  `pkill -f TradingView`, and `killall TradingView`.
+- Live TV operations are one explicit command at a time, no retry loops.
+- On the first CDP/bridge failure, stop immediately and report the failure.
+- If CDP is unavailable, do not attempt recovery automation; stay read-only
+  until the user explicitly requests a manual next step.
 
 ### Pine Verification
 
@@ -185,8 +196,9 @@ If any `.pine` file is touched, run:
 2. `./scripts/guards/pine-lint.sh <file>`
 3. `./scripts/guards/check-fib-scanner-guardrails.sh`
 4. `./scripts/guards/check-contamination.sh`
-5. `npm run build`
-6. Do not run indicator/strategy parity unless a new strategy harness is
+5. `./scripts/guards/check-no-tv-force.sh`
+6. `npm run build`
+7. Do not run indicator/strategy parity unless a new strategy harness is
    explicitly approved; no active strategy Pine file exists in `indicators/`.
 
 ### Backtesting And Modeling

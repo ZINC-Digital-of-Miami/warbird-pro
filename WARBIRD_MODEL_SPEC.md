@@ -70,14 +70,13 @@ Primary metrics:
 
 ## Active Pine Surfaces
 
-- `indicators/warbird-pro-indicator.pine`
+- `indicators/warbird-pro-rebuild-fib-ml.pine`
   - only active main chart indicator
   - live entry trigger: `entryLongTrigger` / `entryShortTrigger` from the
-    selected fib execution-anchor reclaim plus setup context, footprint
-    confirmation, ladder validity, optional MA/VWAP gates, and the bullish-trend
+    selected fib execution-anchor reclaim plus structure context, winning
+    candlestick confirmation, EMA/MA crossover alignment, optional ML RSI
+    filter, optional liquidity-sweep confirm, cooldown, and the bullish-trend
     short gate
-- `indicators/warbird-nexus-machine-learning-rsi.pine`
-  - retained Nexus lower-pane support surface
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
   - retained Nexus lower-pane footprint-delta research/tuning surface
   - active trigger family: `NEXUS_FOOTPRINT_DELTA`
@@ -87,6 +86,8 @@ Primary metrics:
 
 Retired/removed Pine variants are historical lineage only:
 
+- `indicators/warbird-pro-indicator.pine`
+- `indicators/Warbird_Pro_v7.pine`
 - `indicators/v7-warbird-institutional.pine`
 - `indicators/v7-warbird-strategy.pine`
 - `indicators/v7-warbird-institutional-backtest-strategy.pine`
@@ -108,10 +109,10 @@ Policy from this checkpoint:
   semantics.
 - 5m remains the active tuning lane.
 - The protected fib core now lives in
-  `indicators/warbird-pro-indicator.pine`. No strategy/backtest Pine harness is
+  `indicators/warbird-pro-rebuild-fib-ml.pine`. No strategy/backtest Pine harness is
   active unless Kirk explicitly reopens one.
 
-Protected fib-core scope in `indicators/warbird-pro-indicator.pine`:
+Protected fib-core scope in `indicators/warbird-pro-rebuild-fib-ml.pine`:
 
 - ZigZag/fib anchor ownership transitions (`fibAnchorHigh/Low`, anchor bars,
   `fibZzUpdate()`, `fibBull`)
@@ -120,8 +121,8 @@ Protected fib-core scope in `indicators/warbird-pro-indicator.pine`:
 
 Allowed tuning scope while locked:
 
-- non-fib risk gates, trigger thresholds, reclaim/sweep lookbacks, cooldowns
-- footprint gating strictness and execution safety parameters
+- non-fib risk gates, trigger thresholds, reclaim/sweep lookbacks, and cooldowns
+- candlestick/EMA-MA/ML filter strictness and execution-safety parameters
 - module on/off decisions that do not alter fib math or anchor state ownership
 
 ## Feature Scope

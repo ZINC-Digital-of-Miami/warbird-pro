@@ -1,6 +1,6 @@
 # Warbird Indicator-Only Optuna Plan v6
 
-**Date:** 2026-04-30
+**Date:** 2026-05-02
 **Status:** Active architecture plan
 
 ## Summary
@@ -13,11 +13,10 @@ Optuna and supporting scripts may be used offline, but only to model and rank
 PineScript indicator behavior. They do not create a separate data-stack
 decision engine.
 
-Single-surface update (2026-04-30): the only active main chart indicator is
-`indicators/warbird-pro-indicator.pine`. Nexus remains as the only retained
+Single-surface update (2026-05-02): the only active main chart indicator is
+`indicators/warbird-pro-rebuild-fib-ml.pine`. Nexus remains as the only retained
 support/research Pine lane:
 
-- `indicators/warbird-nexus-machine-learning-rsi.pine`
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 
 All other Pine indicator, strategy, backtest, and fib-only variants are retired
@@ -28,11 +27,11 @@ from the active `indicators/` surface.
 - The canonical modeling object is the `Warbird Pro` Pine indicator behavior on
   TradingView.
 - Training truth comes from Pine/TradingView outputs emitted by
-  `indicators/warbird-pro-indicator.pine` and, for Nexus work only, the retained
-  Nexus Pine files.
+  `indicators/warbird-pro-rebuild-fib-ml.pine` and, for Nexus work only,
+  `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`.
 - Allowed evidence includes TradingView indicator exports, hidden `ml_*` /
-  `nexus_fp_*` plots, embedded `request.footprint()` evidence, and deterministic
-  Pine-derived state columns.
+  `nexus_fp_*` plots, Nexus TradingView/Pine `request.footprint()` evidence for
+  `NEXUS_FOOTPRINT_DELTA`, and deterministic Pine-derived state columns.
 - The optimization target is indicator quality: settings, thresholds, module
   toggles, stop/target policy, signal frequency, profit factor, drawdown,
   stability, direction balance, and operator usability.
@@ -45,9 +44,8 @@ from the active `indicators/` surface.
 ## Active Surfaces
 
 - Main chart indicator:
-  - `indicators/warbird-pro-indicator.pine`
+  - `indicators/warbird-pro-rebuild-fib-ml.pine`
 - Retained Nexus support/research lane:
-  - `indicators/warbird-nexus-machine-learning-rsi.pine`
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 - Optimization and modeling tools:
   - `scripts/optuna/`
@@ -56,6 +54,15 @@ from the active `indicators/` surface.
 - Artifacts:
   - `artifacts/tuning/`
   - `scripts/optuna/workspaces/<indicator_key>/`
+
+## Research Reference Surface
+
+- `docs/research/2026-05-02-optuna-unified-platform.md` is the current
+  long-form Optuna platform research report for ecosystem-level guidance
+  (samplers, pruners, storage, orchestration, walk-forward design patterns).
+- This file is reference-only and does not supersede active contract rules:
+  Pine/TradingView-only modeling rows, explicit trigger-family declaration,
+  and no out-of-scope feature stacking without an architecture reopen.
 
 ## Non-Goals
 
@@ -74,8 +81,9 @@ The following are explicitly retired from the active plan:
 
 Every modeling run must declare exactly one trigger family:
 
-- `LIVE_ANCHOR_FOOTPRINT`: entries from `warbird-pro-indicator.pine`
-  `entryLongTrigger` / `entryShortTrigger`.
+- `LIVE_ANCHOR_FOOTPRINT`: entries from `warbird-pro-rebuild-fib-ml.pine`
+  `entryLongTrigger` / `entryShortTrigger` (legacy trigger-family identifier;
+  rebuild lane does not require footprint inputs).
 - `NEXUS_FOOTPRINT_DELTA`: Nexus lower-pane footprint-delta evidence from the
   retained Nexus Pine files. Rows must come from TradingView/Pine
   `request.footprint()` `nexus_fp_*` evidence.
@@ -125,7 +133,7 @@ Capture training rows from TradingView/Pine only.
 
 Allowed sources:
 
-- TradingView indicator CSV export from `warbird-pro-indicator.pine`
+- TradingView indicator CSV export from `warbird-pro-rebuild-fib-ml.pine`
 - hidden `ml_*` export fields emitted by that indicator
 - retained Nexus `nexus_fp_*` footprint exports for `NEXUS_FOOTPRINT_DELTA`
 - deterministic artifacts produced from those Pine outputs
@@ -188,7 +196,8 @@ Required gates after any `.pine` edit:
 2. `./scripts/guards/pine-lint.sh <file>`
 3. `./scripts/guards/check-fib-scanner-guardrails.sh`
 4. `./scripts/guards/check-contamination.sh`
-5. `npm run build`
+5. `./scripts/guards/check-no-tv-force.sh`
+6. `npm run build`
 
 Indicator/strategy parity is inactive because no active strategy Pine file
 exists in `indicators/`.
@@ -204,11 +213,11 @@ Promotion is manual. A champion means:
 
 ## Pine Budget Baseline
 
-Verified 2026-04-30:
+Verified 2026-05-02:
 
-- `warbird-pro-indicator.pine`: 53 plot calls + 3 alertcondition calls =
-  56/64 output calls; 4 `request.security()` calls + 1 `request.footprint()`
-  path.
+- `warbird-pro-rebuild-fib-ml.pine`: 28 output calls (plot family), 0
+  `alertcondition()` calls, 3 `request.security()` calls, and no
+  `request.footprint()` path in the main indicator.
 
 Any Pine addition must be priced before code is written. Nexus request/output
 budgets must be repriced before any Nexus edit.
@@ -220,7 +229,7 @@ budgets must be repriced before any Nexus edit.
 - No daily-ingestion training dependency.
 - No Pine edits without explicit approval.
 - Canonical fib and trade-state semantics are locked in
-  `indicators/warbird-pro-indicator.pine`: anchor ownership, fib ladder
+  `indicators/warbird-pro-rebuild-fib-ml.pine`: anchor ownership, fib ladder
   construction (`fibPrice` + canonical levels), entry/stop/target state, and
   `ml_last_exit_outcome` semantics are protected scope.
 - Banned regression pattern (repo-wide): do not use the pivot-window
@@ -228,11 +237,14 @@ budgets must be repriced before any Nexus edit.
   `pivotHighInWindow` / `pivotLowInWindow`; it has repeatedly produced wide-fib
   failures.
 - No settings result is trusted without TradingView indicator export evidence.
+- No forced TradingView launch/restart/process-kill automation.
+- Banned methods: `tv_launch`, `launch_tv_debug_mac.sh`,
+  `pkill -f TradingView`, `killall TradingView`.
+- Live TradingView operations are one explicit command at a time; no retry loops.
 - No champion is accepted without IS/OOS or walk-forward-style review.
 
 ## Current Blocker
 
-Re-baseline `indicators/warbird-pro-indicator.pine` as the single active main
-indicator, then run controlled 5m non-fib tuning from manifest-backed
-TradingView indicator exports. Keep Nexus available only for its retained
-footprint/research lane.
+Run controlled 5m/15m tuning from manifest-backed TradingView exports on
+`indicators/warbird-pro-rebuild-fib-ml.pine`, then promote only evidence-backed
+settings. Keep Nexus available only for its retained footprint/research lane.

@@ -4,7 +4,7 @@
     "name": "Warbird Pro",
     "surface_type": "indicator",
     "category": "chart-core",
-    "pine_file": "indicators/warbird-pro-indicator.pine",
+    "pine_file": "indicators/warbird-pro-rebuild-fib-ml.pine",
     "profile_module": "scripts.optuna.warbird_pro_profile",
     "default_study_name": "Warbird Pro 5m Main Indicator Optimization",
     "symbol": "MES1!",
@@ -29,7 +29,7 @@
       "zeroPrintVolRatio",
       "optImbalanceRows"
     ],
-    "notes": "Canonical main chart indicator as of 2026-04-30. Fib anchor ownership and ladder math are protected. Retired v7/strategy/backtest/fib-only Pine variants are not active tuning surfaces."
+    "notes": "Canonical main chart indicator rebuild. Fib anchor ownership and ladder math are protected. Broken legacy Warbird files were removed from active indicator surface."
   },
   {
     "key": "warbird_nexus_ml_rsi",

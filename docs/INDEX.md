@@ -1,6 +1,6 @@
 # Warbird Documentation Index
 
-**Date:** 2026-04-30
+**Date:** 2026-05-02
 **Status:** Active Documentation Authority
 **Active Plan:** Warbird Indicator-Only Optuna Plan v6
 
@@ -16,11 +16,12 @@ documented evidence snapshot. They may change after new TradingView exports and
 Optuna trials. Any accepted change must update this indexed authority set in
 the same commit.
 
-Current checkpoint lock (2026-04-30): `indicators/warbird-pro-indicator.pine`
-is the only active main chart indicator, Nexus is retained, and all other Pine
-variants are historical unless explicitly reopened. 5m tuning must preserve the
-protected Warbird Pro fib anchor ownership and ladder math unless explicitly
-reopened with evidence.
+Current checkpoint lock (2026-05-02): `indicators/warbird-pro-rebuild-fib-ml.pine`
+is the only active main chart indicator, Nexus is retained via
+`indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`, and all
+other Pine variants are historical unless explicitly reopened. 5m/15m tuning
+must preserve the protected Warbird Pro fib anchor ownership and ladder math
+unless explicitly reopened with evidence.
 
 ## Read Order
 
@@ -35,6 +36,7 @@ reopened with evidence.
 9. `CLAUDE.md`
 10. `docs/agent-safety-gates.md`
 11. `Powerdrill/reports/2026-04-06-powerdrill-findings.md`
+12. `docs/research/2026-05-02-optuna-unified-platform.md` - Optuna platform research reference (non-authority)
 
 ## Authority Split
 
@@ -58,8 +60,8 @@ reopened with evidence.
 ## Canonical Split
 
 - **Pine/TradingView outputs** = active training/modeling truth
-- **Active Pine files** = `warbird-pro-indicator.pine` plus the two retained
-  Nexus Pine files
+- **Active Pine files** = `warbird-pro-rebuild-fib-ml.pine` plus retained Nexus
+  `warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 - **Local Optuna workspaces** under `scripts/optuna/workspaces/` = active optimization state
 - **Local `warbird` PG17 warehouse** = legacy/reference unless explicitly reopened
 - **Cloud Supabase** = runtime/support only, not training truth
@@ -69,6 +71,15 @@ reopened with evidence.
 
 - `docs/runbooks/2026-04-29-startup-repo-review-initialization.md`
   - initial startup repo review findings and permanence record
+
+## Research References
+
+- `docs/research/2026-05-02-optuna-unified-platform.md`
+  - comprehensive Optuna ecosystem research report used as a design/reference
+    surface for samplers, pruners, storage, orchestration, and walk-forward
+    patterns
+  - this report is reference material and does not override active contract
+    restrictions in `docs/MASTER_PLAN.md` and `docs/contracts/pine_indicator_ag_contract.md`
 
 ## Historical Material
 

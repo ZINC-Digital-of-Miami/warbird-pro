@@ -1,6 +1,6 @@
 # Claude Rogue-Proof Phase Contract
 
-**Date:** 2026-04-30
+**Date:** 2026-05-02
 **Status:** Active guardrail overlay for Warbird Pro + Nexus tuning
 
 This contract hardens Claude/Codex execution for the current tuning program. It
@@ -10,12 +10,13 @@ is fail-closed: if a requirement is unmet, the task is incomplete.
 
 Execute only this scoped program unless Kirk explicitly reopens scope:
 
-1. Keep `indicators/warbird-pro-indicator.pine` as the only active main chart
+1. Keep `indicators/warbird-pro-rebuild-fib-ml.pine` as the only active main chart
    indicator.
 2. Keep Nexus:
-   - `indicators/warbird-nexus-machine-learning-rsi.pine`
    - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 3. Treat these Pine variants as retired/historical unless explicitly reopened:
+   - `indicators/warbird-pro-indicator.pine`
+   - `indicators/Warbird_Pro_v7.pine`
    - `indicators/v7-warbird-institutional.pine`
    - `indicators/v7-warbird-strategy.pine`
    - `indicators/v7-warbird-institutional-backtest-strategy.pine`
@@ -33,13 +34,12 @@ explicitly reopens a strategy/backtest harness.
 
 ## Locked Phase Definitions
 
-- **Phase 1 (1,000):** trend / VWAP / MA / liquidity sweep
-- **Phase 2 (1,000):** momentum
-  - VF Window, VF Candle Weight, VF Volume Weight, NFE Length, RSI KNN Window
-- **Phase 3 (1,000):** footprint/exhaustion
-  - Ticks, VA, Imbalance%, Extension ATR Tol, Zero-Print, Swing Lookback, Cooldown, Imbalance Rows
-- **Phase 4 (1,000):** entry/risk
-  - Execution Anchor, ATR Stop Multiplier, Max Setup Stop ATR, shared execution-safety knobs
+- **Phase A (1,000 per surface):** structure + execution anchor
+- **Phase B (1,000 per surface):** EMA/MA crossover gate
+- **Phase C (1,000 per surface):** pattern/exhaustion strictness
+- **Phase D (1,000 per surface):** ML RSI + KNN + advanced filtering
+
+Surfaces are 5m and 15m, run independently.
 
 ## Non-Negotiable Guardrails
 

@@ -35,10 +35,13 @@ Every modeling run must declare which Pine trigger family produced its rows.
 Do not mix trigger families inside one run.
 
 - `LIVE_ANCHOR_FOOTPRINT`: live Warbird Pro trigger from
-  `indicators/warbird-pro-indicator.pine`. Entries are
+  `indicators/warbird-pro-rebuild-fib-ml.pine`. Entries are
   `entryLongTrigger` / `entryShortTrigger`, built from the selected fib
-  execution-anchor reclaim, setup context, footprint confirmation, one-shot
-  gating, ladder validity, and the bullish-trend short gate.
+  execution-anchor reclaim, structure context, winning candlestick confirmation,
+  EMA/MA crossover alignment, optional ML RSI filtering, optional
+  liquidity-sweep confirmation, one-shot gating, ladder validity, and the
+  bullish-trend short gate. (The trigger-family name is legacy and retained for
+  continuity.)
 - `NEXUS_FOOTPRINT_DELTA`: Nexus lower-pane footprint-delta trigger from
   `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`. Rows
   must come from TradingView/Pine `request.footprint()` evidence containing
@@ -58,7 +61,7 @@ them with a new active strategy/backtest harness:
 
 ## Locked Fib Baseline (2026-04-30)
 
-Warbird Pro fib core in `indicators/warbird-pro-indicator.pine` is the
+Warbird Pro fib core in `indicators/warbird-pro-rebuild-fib-ml.pine` is the
 protected baseline. It must remain stable while 5m tuning iterates.
 
 Protected scope:
@@ -72,7 +75,7 @@ Allowed tuning scope while lock is active:
 
 - non-fib thresholds and safety gates
 - lookback/cooldown controls outside fib anchor math
-- footprint gating strictness and execution toggles
+- pattern/EMA-MA/ML gating strictness and execution toggles
 
 Any proposed fib-core change requires explicit approval plus before/after
 TradingView evidence with manifest coverage.

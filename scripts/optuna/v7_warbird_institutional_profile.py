@@ -724,7 +724,7 @@ def load_data() -> pd.DataFrame:
     TV CSV export instructions
     --------------------------
     1. Open TradingView Desktop
-    2. Load indicators/warbird-pro-indicator.pine on MES1! 15m chart
+    2. Load indicators/warbird-pro-rebuild-fib-ml.pine on MES1! 15m chart
     3. Pine Editor → Export CSV (or Script → Export Data to CSV)
     4. Save to: scripts/optuna/workspaces/warbird_pro/export.csv
     """
@@ -733,7 +733,7 @@ def load_data() -> pd.DataFrame:
             f"\n\nTV CSV export not found:\n  {CSV_PATH}\n\n"
             "To generate:\n"
             "  1. Open TradingView Desktop\n"
-            "  2. Load indicators/warbird-pro-indicator.pine on MES1! 15m\n"
+            "  2. Load indicators/warbird-pro-rebuild-fib-ml.pine on MES1! 15m\n"
             "  3. Pine Editor → Export → Export CSV\n"
             f"  4. Save to {CSV_PATH}\n"
             "See docs/runbooks/strategy_tuning.md for full instructions.\n"

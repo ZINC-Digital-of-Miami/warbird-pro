@@ -1,6 +1,6 @@
 # Warbird Runbooks
 
-**Date:** 2026-04-30
+**Date:** 2026-05-02
 **Status:** Active Runbook Index
 
 The active runbooks support indicator-only Pine modeling.
@@ -12,10 +12,11 @@ families, settings spaces, export requirements, and pass/fail gates may change
 as Pine tuning and training continue. When a runbook no longer matches accepted
 TradingView/Optuna evidence, update it before launching the next batch.
 
-Current lock state (2026-04-30): use `indicators/warbird-pro-indicator.pine`
-as the only active main chart indicator, keep Nexus retained, and run 5m tuning
-without altering Warbird Pro fib anchor ownership or ladder math unless
-explicitly approved.
+Current lock state (2026-05-02): use `indicators/warbird-pro-rebuild-fib-ml.pine`
+as the only active main chart indicator, keep Nexus retained via
+`indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`, and run
+5m/15m tuning without altering Warbird Pro fib anchor ownership or ladder math
+unless explicitly approved.
 
 ## Active
 
@@ -31,6 +32,9 @@ explicitly approved.
   - current operational truth
 - `docs/agent-safety-gates.md`
   - fail-closed verification gates
+- `docs/research/2026-05-02-optuna-unified-platform.md`
+  - Optuna ecosystem reference for tuning/orchestration patterns; reference-only
+    and subordinate to active contract docs
 
 ## Legacy
 

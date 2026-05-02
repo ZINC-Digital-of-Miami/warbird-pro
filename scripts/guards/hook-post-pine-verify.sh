@@ -37,6 +37,16 @@ if [ $fib_guard_status -ne 0 ]; then
   exit 0
 fi
 
+# TradingView live safety guard (repo-wide): block forced launch/restart paths.
+tv_force_guard_output=$(bash scripts/guards/check-no-tv-force.sh 2>&1)
+tv_force_guard_status=$?
+
+if [ $tv_force_guard_status -ne 0 ]; then
+  jq -cn --arg fp "$fp" --arg out "$tv_force_guard_output" \
+    '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:("TradingView force-launch guard FAILED after editing " + $fp + ". Unsafe TradingView automation paths are forbidden. Fix before continuing:\n\n" + $out)}, decision:"block", reason:"TradingView force-launch guard failed — see additionalContext"}'
+  exit 0
+fi
+
 # v8 prescreen parity check — blocks hand-rolled drift between live and prescreen
 case "$fp" in
   */v8-warbird-live.pine|*/v8-warbird-prescreen.pine)
@@ -54,7 +64,7 @@ esac
 # ADVISORY ONLY — not a block. Only act on this if:
 #   (a) the change is FUNCTIONAL (logic, not a display label or comment), AND
 #   (b) Kirk has explicitly authorized TV use this session (CDP confirmed up via tv_health_check)
-# If CDP is unavailable, DO NOT call tv_launch. Skip TV verification and say so.
+# If CDP is unavailable, skip TV verification and report it. Never force-launch/restart TV from automation.
 if head -25 "$fp" 2>/dev/null | grep -q '^strategy('; then
   jq -cn --arg fp "$fp" \
     '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:("ADVISORY (not a block): " + $fp + " is a strategy() script. pine-facade misses CE10244. IF this was a functional change AND TV CDP is confirmed up: run pine_smart_compile via MCP. If display-only change (shorttitle/comment) or CDP unavailable: pine-facade success is sufficient — skip TV and proceed.")}}'

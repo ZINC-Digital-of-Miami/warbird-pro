@@ -149,4 +149,9 @@ if (( NEED_BUILD )); then
   fi
 fi
 
+if ! ./scripts/guards/check-no-tv-force.sh >/tmp/warbird-stop-tv-force.log 2>&1; then
+  tail -40 /tmp/warbird-stop-tv-force.log >&2 || true
+  block "TradingView force-launch guard failed. Remove unsafe TV launch/restart automation or report STATUS: INCOMPLETE."
+fi
+
 exit 0

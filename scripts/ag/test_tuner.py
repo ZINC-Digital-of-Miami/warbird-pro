@@ -845,7 +845,8 @@ class TestJsonlHistorySesBothModes:
     def test_load_trials_jsonl_csv_full_includes_tv_mcp_strict(self):
         import tempfile
 
-        ledger = Path(tempfile.mktemp(suffix=".jsonl"))
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as tmp:
+            ledger = Path(tmp.name)
         try:
             # Write one CSV_FULL and one TV_MCP_STRICT trial
             tsp.append_trial_jsonl(
@@ -883,7 +884,8 @@ class TestJsonlHistorySesBothModes:
     def test_load_history_jsonl_filters_by_profile(self):
         import tempfile
 
-        ledger = Path(tempfile.mktemp(suffix=".jsonl"))
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as tmp:
+            ledger = Path(tmp.name)
         try:
             tsp.append_trial_jsonl(
                 ledger,

@@ -161,6 +161,16 @@ Pine indicator-only contract is explicitly updated.
 
 If only docs changed, no build gate is required unless the docs describe a newly claimed operational truth that should have been validated.
 
+### GitHub Push / Merge Work
+
+Before claiming a branch is ready to push, merge, or unblock through GitHub:
+
+1. `./scripts/guards/check-github-merge-readiness.sh`
+
+This guard is mandatory for GitHub repository-rule work because it verifies the
+active rulesets, CodeQL/default setup, PR merge state, status checks, and local
+branch drift before an agent retries a protected push or merge.
+
 ## 7. Required Completion Schema
 
 For implementation work, the final response must contain these exact headings:

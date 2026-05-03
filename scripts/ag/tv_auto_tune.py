@@ -52,6 +52,7 @@ import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 import websockets
@@ -95,6 +96,15 @@ INDICATOR_SHORT_TITLE = "WB v7"
 # -- Tab discovery ------------------------------------------------------------
 
 
+def is_tradingview_target_url(target_url: str) -> bool:
+    """Return true only for TradingView-owned CDP target URLs."""
+    try:
+        hostname = urlparse(target_url).hostname or ""
+    except ValueError:
+        return False
+    return hostname == "tradingview.com" or hostname.endswith(".tradingview.com")
+
+
 async def find_tv_chart_tab_for_context(runtime_context: dict) -> str:
     """Find the WebSocket URL for a TradingView chart matching runtime_context.
 
@@ -119,7 +129,8 @@ async def find_tv_chart_tab_for_context(runtime_context: dict) -> str:
     candidates = [
         t
         for t in resp.json()
-        if "tradingview.com" in t.get("url", "") and t.get("webSocketDebuggerUrl")
+        if is_tradingview_target_url(t.get("url", ""))
+        and t.get("webSocketDebuggerUrl")
     ]
 
     if not candidates:

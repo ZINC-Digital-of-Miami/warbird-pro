@@ -243,6 +243,10 @@ If any `.pine` file is touched, run:
 
 - `npm run lint` is the standard lint gate.
 - `npm run build` must pass before every push.
+- Before claiming a branch is ready to push, merge, or unblock through GitHub,
+  run `./scripts/guards/check-github-merge-readiness.sh`. This guard must
+  inspect active repository rulesets, CodeQL/default setup, PR merge state,
+  status checks, and local branch drift.
 - No `--no-verify` on git hooks.
 - Do not use destructive git commands unless explicitly requested.
 

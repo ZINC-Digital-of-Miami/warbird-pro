@@ -117,6 +117,9 @@ These rules are fail-closed:
     `pkill -f TradingView`, and `killall TradingView`.
 11. Live TradingView operations are one explicit command at a time; no retry loops.
 12. On first CDP/bridge failure, stop immediately and report.
+13. Legacy MCP bridge scripts (`scripts/ag/run_phase_batch_via_tv_bridge.py`
+    and `scripts/ag/tv_bridge_worker.mjs`) stay disabled by default; use direct
+    CDP path via `scripts/ag/tv_auto_tune.py`.
 
 ## 6. Verification Matrix
 
@@ -157,6 +160,16 @@ Pine indicator-only contract is explicitly updated.
 ### Docs-Only Work
 
 If only docs changed, no build gate is required unless the docs describe a newly claimed operational truth that should have been validated.
+
+### GitHub Push / Merge Work
+
+Before claiming a branch is ready to push, merge, or unblock through GitHub:
+
+1. `./scripts/guards/check-github-merge-readiness.sh`
+
+This guard is mandatory for GitHub repository-rule work because it verifies the
+active rulesets, CodeQL/default setup, PR merge state, status checks, and local
+branch drift before an agent retries a protected push or merge.
 
 ## 7. Required Completion Schema
 

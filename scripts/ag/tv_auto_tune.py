@@ -52,6 +52,7 @@ import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 import websockets
@@ -95,6 +96,15 @@ INDICATOR_SHORT_TITLE = "WB v7"
 # -- Tab discovery ------------------------------------------------------------
 
 
+def is_tradingview_target_url(target_url: str) -> bool:
+    """Return true only for TradingView-owned CDP target URLs."""
+    try:
+        hostname = urlparse(target_url).hostname or ""
+    except ValueError:
+        return False
+    return hostname == "tradingview.com" or hostname.endswith(".tradingview.com")
+
+
 async def find_tv_chart_tab_for_context(runtime_context: dict) -> str:
     """Find the WebSocket URL for a TradingView chart matching runtime_context.
 
@@ -119,7 +129,8 @@ async def find_tv_chart_tab_for_context(runtime_context: dict) -> str:
     candidates = [
         t
         for t in resp.json()
-        if "tradingview.com" in t.get("url", "") and t.get("webSocketDebuggerUrl")
+        if is_tradingview_target_url(t.get("url", ""))
+        and t.get("webSocketDebuggerUrl")
     ]
 
     if not candidates:
@@ -1224,7 +1235,9 @@ async def command_preflight_async(args: argparse.Namespace) -> int:
 
     print(
         f"Connecting to TradingView (symbol={runtime_context.get('symbol')} "
-        f"tf={runtime_context.get('timeframe')})..."
+        f"tf={runtime_context.get('timeframe')})...",
+        file=sys.stderr,
+        flush=True,
     )
     ws_url = await find_tv_chart_tab_for_context(runtime_context)
     print(f"CDP: {ws_url[:70]}...")
@@ -1443,7 +1456,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
-    return args.func(args)
+    try:
+        return args.func(args)
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

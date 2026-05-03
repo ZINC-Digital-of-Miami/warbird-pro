@@ -109,6 +109,9 @@ explicitly approves it.
   `pkill -f TradingView`, `killall TradingView`.
 - Live TV operations are one explicit command at a time, no retry loops.
 - On first CDP/bridge failure: stop and report; do not run recovery automation.
+- Legacy MCP bridge path (`scripts/ag/run_phase_batch_via_tv_bridge.py` +
+  `scripts/ag/tv_bridge_worker.mjs`) is disabled by default; use direct CDP
+  flow via `scripts/ag/tv_auto_tune.py`.
 - Use 15m behavior as the baseline reference when evaluating 5m tuning changes.
 - If a strategy/backtest harness is explicitly reopened, commission floor for
   MES evidence is $1.00/side and slippage floor is 1 tick.
@@ -134,3 +137,15 @@ Before committing any `.pine` edit:
 
 For docs-only work, run `npm run lint` and `npm run build` before pushing when
 the docs claim repo operational truth.
+
+## GitHub Push / Merge Verification
+
+Before claiming a branch is ready to push, merge, or unblock through GitHub, run:
+
+```bash
+./scripts/guards/check-github-merge-readiness.sh
+```
+
+This guard checks the active repository rulesets, CodeQL/default setup, PR merge
+state, status checks, and local branch drift. If it fails, report the exact
+GitHub blocker instead of retrying the push or merge.

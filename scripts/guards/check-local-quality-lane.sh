@@ -44,12 +44,14 @@ python3 -m pytest scripts/ag/test_tuner.py -k "load_trials_jsonl_csv_full_includ
 
 # Pine guard routing only when Pine sources changed.
 PINE_CHANGED=0
-for file in "${CHANGED_FILES[@]}"; do
-  if [[ "$file" == *.pine ]]; then
-    PINE_CHANGED=1
-    break
-  fi
-done
+if [[ "${#CHANGED_FILES[@]}" -gt 0 ]]; then
+  for file in "${CHANGED_FILES[@]}"; do
+    if [[ "$file" == *.pine ]]; then
+      PINE_CHANGED=1
+      break
+    fi
+  done
+fi
 
 if [[ "$PINE_CHANGED" -eq 1 ]]; then
   echo "CHECK: Pine guards (changed Pine files detected)"

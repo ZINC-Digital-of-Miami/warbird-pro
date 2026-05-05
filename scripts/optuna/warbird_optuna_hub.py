@@ -1001,8 +1001,12 @@ class HubState:
         cards: list[dict[str, Any]] = []
         for spec in self.specs:
             indicator_dir = resolve_indicator_dir(spec)
-            if not indicator_dir.exists():
-                continue
+            # Auto-create the workspace dir for newly-registered cards so the
+            # hub never silently drops a registry entry just because its
+            # workspace tree hasn't been initialized yet (Hybrid+ V9 cards
+            # land via registry + profile only; their study.db materializes
+            # the first time the operator launches an HPO trial).
+            indicator_dir.mkdir(parents=True, exist_ok=True)
             exp_dir = experiments_dir(spec.key)
             db_path = indicator_dir / "study.db"
             topn_path = indicator_dir / spec.topn_filename

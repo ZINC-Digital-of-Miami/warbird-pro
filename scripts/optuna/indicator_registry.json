@@ -131,7 +131,7 @@
   },
   {
     "key": "warbird_pro_v9_exit_cpcv",
-    "name": "Warbird Pro V9 Exit Policy CPCV",
+    "name": "Warbird Pro V9 — Exit Policy (CPCV)",
     "surface_type": "indicator",
     "category": "chart-core-exit-modeling",
     "pine_file": "indicators/warbird-pro-v9.pine",
@@ -152,7 +152,7 @@
   },
   {
     "key": "warbird_pro_v9_entry_filter_cpcv",
-    "name": "Warbird Pro V9 Entry Filter CPCV",
+    "name": "Warbird Pro V9 — Entry Filter (CPCV)",
     "surface_type": "indicator",
     "category": "chart-core-entry-filter",
     "pine_file": "indicators/warbird-pro-v9.pine",
@@ -173,7 +173,7 @@
   },
   {
     "key": "warbird_pro_v9_ag_meta_cpcv",
-    "name": "Warbird Pro V9 AG Meta CPCV",
+    "name": "Warbird Pro V9 — AG Meta-Labeler (CPCV)",
     "surface_type": "indicator",
     "category": "ag-meta-labeler",
     "pine_file": "indicators/warbird-pro-v9.pine",
@@ -194,7 +194,7 @@
   },
   {
     "key": "warbird_pro_v9_joint_challenger",
-    "name": "Warbird Pro V9 Joint Challenger",
+    "name": "Warbird Pro V9 — Joint Challenger (Bounded)",
     "surface_type": "indicator",
     "category": "joint-challenger",
     "pine_file": "indicators/warbird-pro-v9.pine",

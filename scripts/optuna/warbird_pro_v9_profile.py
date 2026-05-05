@@ -80,7 +80,7 @@ BOOL_PARAMS: list[str] = ["allowLongs", "allowShorts"]
 
 NUMERIC_RANGES: dict[str, tuple[float, float]] = {
     "atrPeriod": (7.0, 28.0),
-    "stopAtrMult": (0.75, 1.50),       # target SL = 1.0 ATR
+    "stopAtrMult": (0.75, 2.0),        # target SL = 1.0 ATR, max 2.0
     "targetRiskMultiple": (1.0, 3.0),  # target breakeven range 1–3R
     "maxHoldBars": (12.0, 180.0),
     "breakevenAfterR": (0.75, 2.0),

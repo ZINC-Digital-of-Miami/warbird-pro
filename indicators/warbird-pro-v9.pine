@@ -36,7 +36,7 @@ bool autoTuneZZ = input.bool(false, "Auto-tune ZigZag by Timeframe", group=group
 float fibDeviationManual = input.float(4.0, "ZigZag Deviation (manual)", minval=0.5, maxval=20.0, step=0.5, group=groupFibEngine)
 int fibDepthManual = input.int(20, "ZigZag Depth (manual)", minval=2, maxval=80, group=groupFibEngine)
 float fibConfluenceTolPct = input.float(0.05, "Confluence Tolerance (%)", minval=0.01, maxval=2.00, step=0.01, group=groupFibEngine)
-float fibThresholdFloorPct = input.float(0.50, "ZigZag Threshold Floor (%)", minval=0.0, maxval=5.0, step=0.05, group=groupFibEngine)
+float fibThresholdFloorPct = input.float(0.15, "ZigZag Threshold Floor (%)", minval=0.0, maxval=5.0, step=0.05, group=groupFibEngine)
 float minFibRangeAtr = input.float(0.5, "Min Fib Range (ATR)", minval=0.2, maxval=10.0, step=0.1, group=groupFibEngine)
 float fibHysteresisPct = input.float(2.0, "Midpoint Hysteresis (%)", minval=0.1, maxval=10.0, step=0.1, group=groupFibEngine)
 

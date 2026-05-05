@@ -543,22 +543,28 @@ def _score_trades(trades: list[dict[str, Any]]) -> dict[str, Any]:
     # opposite side (legitimately rare regime) does not get penalised.
     if min(long_trades, short_trades) >= MIN_TRADES:
         side_balance = min(long_trades, short_trades) / max(max(long_trades, short_trades), 1)
-        side_weight = 0.10
+        side_weight = 0.08
     else:
         side_balance = 1.0
         side_weight = 0.0
 
+    # Reward configs where price actually reaches the 1–3R target (Kirk's goal).
+    target_hits = sum(1 for t in trades if t.get("outcome") == "TARGET")
+    target_hit_rate = target_hits / max(len(trades), 1)
+
     pf_score = min(pf / 2.25, 1.0)
     wr_score = min(wr / 0.62, 1.0)
     expectancy_score = float(np.clip((avg_r + 0.25) / 1.25, 0.0, 1.0))
+    target_hit_score = min(target_hit_rate / 0.55, 1.0)
     trade_density_score = min(len(trades) / 150.0, 1.0)
     dd_penalty = min(max_dd_pct, 0.35)
 
     score = (
-        0.32 * pf_score
-        + 0.25 * expectancy_score
+        0.28 * pf_score
+        + 0.22 * expectancy_score
         + 0.18 * wr_score
-        + 0.15 * trade_density_score
+        + 0.14 * target_hit_score
+        + 0.10 * trade_density_score
         + side_weight * side_balance
         - dd_penalty
     )
@@ -574,6 +580,7 @@ def _score_trades(trades: list[dict[str, Any]]) -> dict[str, Any]:
         "max_dd_pct": round(float(max_dd_pct), 6),
         "avg_r": round(avg_r, 6),
         "total_r": round(total_r, 6),
+        "target_hit_rate": round(target_hit_rate, 6),
         "v9_risk_exit_score": round(score, 6),
         "long_trades": long_trades,
         "short_trades": short_trades,

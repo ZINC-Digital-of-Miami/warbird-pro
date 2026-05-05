@@ -1,6 +1,6 @@
 # Pine Indicator Optuna Contract
 
-**Date:** 2026-04-30
+**Date:** 2026-05-05
 **Status:** Active modeling contract
 
 ## Purpose
@@ -23,6 +23,11 @@ the active **Warbird Pro V9** indicator at `indicators/warbird-pro-v9.pine`. It 
 does not authorize Pine edits, and does not mutate the canonical fib anchor,
 fib visual, or EMA/MA setup. It admits manifest-backed ES/MES training rows
 from TradingView exports or Databento market data and ignores NQ/MNQ rows.
+
+Operational preflight contract (2026-05-05): V9 has no active strategy
+harness. Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+for V9 indicator-only chart validation. Reserve regular `preflight` for
+explicitly reopened strategy-harness sessions.
 
 ## Source Of Truth
 

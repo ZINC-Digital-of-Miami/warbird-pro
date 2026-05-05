@@ -1,6 +1,6 @@
 # Warbird Pro 5m Tuning Runbook
 
-**Date:** 2026-05-02
+**Date:** 2026-05-05
 **Status:** Active — Warbird Pro main-indicator tuning lane
 
 ## Purpose
@@ -15,6 +15,29 @@ remains a separate retained lane and is tuned only from TradingView/Pine
 No FRED, macro, cross-asset, Supabase, local legacy warehouse rows
 (`ag_training`), synthetic OHLCV reconstruction, or mislabeled
 Databento/TradingView artifact is admitted into the active modeling dataset.
+
+## TradingView Connection Gate (Read-only)
+
+Before any TradingView MCP or CDP command:
+
+```bash
+python3 scripts/ag/tv_connection_doctor.py --json
+```
+
+Proceed only when the doctor reports `ready: true`.
+
+For `tv_auto_tune.py` preflight:
+
+- use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight` only when
+  a strategy harness is loaded on chart
+- use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+  for indicator-only V9 sessions
+
+- Do not auto-recover when CDP is down.
+- Do not call banned recovery methods (`tv_launch`, `tv_health_check` as
+  recovery probe, kill/restart loops).
+- Treat the doctor output as evidence for whether the environment is
+  connectable in this session.
 
 ## Active Pine Surfaces
 
@@ -101,11 +124,12 @@ bars, and synthetic body/wick delta are invalid for Nexus.
 
 Before committing any `.pine` edit:
 
-1. `./scripts/guards/compile-pine.sh <file>`
+1. pine-facade compile check
 2. `./scripts/guards/pine-lint.sh <file>`
 3. `./scripts/guards/check-fib-scanner-guardrails.sh`
 4. `./scripts/guards/check-contamination.sh`
-5. `npm run build`
+5. `./scripts/guards/check-no-tv-force.sh`
+6. `npm run build`
 
 `./scripts/guards/check-indicator-strategy-parity.sh` is inactive while no
 strategy harness exists.

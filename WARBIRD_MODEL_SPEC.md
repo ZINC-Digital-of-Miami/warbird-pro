@@ -1,6 +1,6 @@
 # Warbird Model Spec — Indicator-Only v6
 
-**Date:** 2026-04-30
+**Date:** 2026-05-05
 **Status:** Active, subordinate to `docs/MASTER_PLAN.md`
 
 ## Contract
@@ -211,6 +211,12 @@ data, raw labels, or full research datasets.
 
 Before any Pine build or settings promotion:
 
+- run `python3 scripts/ag/tv_connection_doctor.py --json` before live
+  TradingView CDP/MCP operations
+- for V9 indicator-only sessions, run
+  `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+- reserve regular `tv_auto_tune.py preflight` for explicitly reopened
+  strategy-harness sessions
 - verify the Pine source compiles through pine-facade
 - run `pine-lint.sh`
 - run contamination guard

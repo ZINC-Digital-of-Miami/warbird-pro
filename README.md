@@ -17,6 +17,17 @@ Markdown authority set before another agent treats them as current.
 **Canonical docs index:** `docs/INDEX.md`
 **Active plan:** `docs/MASTER_PLAN.md`
 
+## TradingView Preflight Modes
+
+Warbird Pro V9 currently has no active strategy harness.
+
+- Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+  for V9 indicator-only chart validation.
+- Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight` only when a
+  strategy harness is explicitly reopened and loaded on chart.
+- Run `python3 scripts/ag/tv_connection_doctor.py --json` before any live
+  TradingView CDP/MCP operation.
+
 ## Source Of Truth
 
 Use these in order:

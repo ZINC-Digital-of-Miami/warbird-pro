@@ -76,7 +76,7 @@ FROZEN_PINE_PARAMS = frozenset(
     }
 )
 
-BOOL_PARAMS: list[str] = ["allowLongs", "allowShorts"]
+BOOL_PARAMS: list[str] = []  # allowLongs/allowShorts removed — both always True; global direction-kill is curve fitting
 
 NUMERIC_RANGES: dict[str, tuple[float, float]] = {
     "atrPeriod": (7.0, 28.0),

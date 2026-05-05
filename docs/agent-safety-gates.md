@@ -91,6 +91,8 @@ When the task touches Pine indicators, strategies, harnesses, or TradingView mec
 1. Prefer the Pine helpers that are confirmed available in the current environment:
    - `pine-patterns` skill
    - `tradingview-indicator-contract-audit` skill when contract/audit work is needed
+   - `python3 scripts/ag/tv_connection_doctor.py --json` before any live TV/CDP call
+   - `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only` for V9 indicator-only chart validation
    - `./scripts/guards/pine-lint.sh`
    - `./scripts/guards/check-fib-scanner-guardrails.sh`
    - `./scripts/guards/check-contamination.sh`

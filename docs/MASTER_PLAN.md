@@ -1,6 +1,6 @@
 # Warbird Indicator-Only Optuna Plan v6
 
-**Date:** 2026-05-02
+**Date:** 2026-05-05
 **Status:** Active architecture plan
 
 ## Summary
@@ -63,6 +63,7 @@ visuals, and EMA/MA setup until a champion is approved for Pine promotion.
   - `scripts/optuna/workspaces/warbird_pro_v9/`
   - `scripts/ag/tv_auto_tune.py`
   - `scripts/ag/tune_strategy_params.py`
+  - `scripts/ag/tv_connection_doctor.py`
 - Artifacts:
   - `artifacts/tuning/`
   - `scripts/optuna/workspaces/<indicator_key>/`
@@ -231,6 +232,13 @@ Required gates after any `.pine` edit:
 
 Indicator/strategy parity is inactive because no active strategy Pine file
 exists in `indicators/`.
+
+TradingView preflight split:
+
+- `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+  for V9 indicator-only sessions
+- `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight` only when a
+  strategy harness is explicitly reopened and loaded on chart
 
 ### Phase 6 - Promotion
 

@@ -1,6 +1,6 @@
 # Warbird Runbooks
 
-**Date:** 2026-05-02
+**Date:** 2026-05-05
 **Status:** Active Runbook Index
 
 The active runbooks support indicator-only Pine modeling.
@@ -19,6 +19,11 @@ Nexus retained via
 5m/15m tuning without altering Warbird Pro fib anchor ownership or ladder math
 unless explicitly approved.
 
+Preflight split (2026-05-05): V9 has no active strategy harness. Use
+`python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+for V9 chart validation and reserve regular `preflight` for explicitly reopened
+strategy-harness sessions.
+
 ## Active
 
 - `docs/runbooks/startup_repo_review.md`
@@ -26,6 +31,9 @@ unless explicitly approved.
 - `docs/runbooks/strategy_tuning.md`
   - TradingView/Pine settings sweep workflow; must be interpreted through the
     2026-04-30 Warbird Pro + Nexus active surface
+- `scripts/ag/tv_connection_doctor.py`
+  - read-only TradingView CDP/MCP readiness check; run before any live TV
+    operation
 - `docs/runbooks/claude_rogue_proof_phase_contract.md`
   - fail-closed phased tuning guardrails for Claude execution, updated for the
     Warbird Pro + Nexus active surface

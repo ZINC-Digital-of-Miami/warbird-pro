@@ -1,6 +1,6 @@
 # Warbird Documentation Index
 
-**Date:** 2026-05-02
+**Date:** 2026-05-05
 **Status:** Active Documentation Authority
 **Active Plan:** Warbird Indicator-Only Optuna Plan v6
 
@@ -30,6 +30,11 @@ from TradingView exports or Databento market data. It ignores NQ/MNQ rows,
 removes `-.236` as a stop candidate, keeps `-.236` only as optional
 context/export data, and does not authorize Pine edits until a champion is
 approved for promotion.
+
+TradingView preflight lock (2026-05-05): V9 has no active strategy harness.
+Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`
+for V9 chart validation and reserve regular `preflight` for explicitly reopened
+strategy-harness sessions.
 
 ## Read Order
 

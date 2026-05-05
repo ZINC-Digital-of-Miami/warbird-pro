@@ -556,6 +556,12 @@ class TestCLIStructure:
         assert "preflight" in choices
         assert "run" in choices
 
+    def test_preflight_supports_indicator_only_mode(self):
+        p = tva.build_parser()
+        preflight_p = _subparser_choices(p)["preflight"]
+        dests = {a.dest for a in preflight_p._actions}
+        assert "indicator_only" in dests
+
     def test_run_has_required_flags(self):
         p = tva.build_parser()
         run_p = _subparser_choices(p)["run"]
@@ -728,6 +734,11 @@ class TestNoHardcodedValues:
             assert "INPUT_NAME_TO_ID: dict" not in stripped, (
                 f"Static INPUT_NAME_TO_ID still present as live code at line {i + 1}"
             )
+
+    def test_name_candidates_include_v9_and_legacy_aliases(self):
+        assert "Warbird Pro Optuna Backtest" in tva.STRATEGY_NAME_CANDIDATES
+        assert "Warbird v7 Strategy" in tva.STRATEGY_NAME_CANDIDATES
+        assert "Warbird Pro V9" in tva.INDICATOR_NAME_CANDIDATES
 
 
 # ===========================================================================

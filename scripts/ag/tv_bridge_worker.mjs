@@ -1,5 +1,8 @@
 #!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
 import readline from "node:readline";
+import { pathToFileURL } from "node:url";
 
 if (process.env.WB_ALLOW_LEGACY_TV_BRIDGE !== "1") {
   console.error(
@@ -9,7 +12,28 @@ if (process.env.WB_ALLOW_LEGACY_TV_BRIDGE !== "1") {
   process.exit(2);
 }
 
-const { evaluate, getTargetInfo } = await import("../../.tradingview-mcp/src/connection.js");
+function resolveTradingviewMcpRoot() {
+  const fromEnv = process.env.WB_TRADINGVIEW_MCP_ROOT;
+  const candidates = [
+    fromEnv,
+    path.resolve(process.cwd(), ".tradingview-mcp"),
+    "/Users/zincdigital/tradingview-mcp",
+  ].filter(Boolean);
+
+  for (const root of candidates) {
+    const connectionPath = path.join(root, "src", "connection.js");
+    if (fs.existsSync(connectionPath)) {
+      return { root, connectionPath };
+    }
+  }
+  throw new Error(
+    "Legacy bridge could not locate tradingview-mcp connection.js. " +
+      "Set WB_TRADINGVIEW_MCP_ROOT or restore a valid tradingview-mcp checkout."
+  );
+}
+
+const { connectionPath } = resolveTradingviewMcpRoot();
+const { evaluate, getTargetInfo } = await import(pathToFileURL(connectionPath).href);
 
 function normalizeResult(result) {
   if (result && typeof result === "object") {

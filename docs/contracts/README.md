@@ -1,6 +1,6 @@
 # Warbird Contracts
 
-**Date:** 2026-04-30
+**Date:** 2026-05-05
 **Status:** Active Interface Authority
 
 This directory is the only interface authority for Warbird payloads,
@@ -40,6 +40,10 @@ main chart indicator. Nexus is retained. The removed v7
 strategy/backtest/fib-only Pine variants are historical only unless explicitly
 reopened. Fib anchor ownership and ladder math in
 `indicators/warbird-pro-v9.pine` are protected while 5m tuning iterates.
+
+Operational preflight lock (2026-05-05): V9 has no active strategy harness.
+Use `tv_auto_tune.py preflight --indicator-only` for V9 chart validation;
+regular `preflight` remains strategy-harness only.
 
 ## Working Rule
 

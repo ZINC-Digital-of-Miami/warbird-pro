@@ -95,6 +95,9 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - Use `rg --files` and `rg -n` to scope touched surfaces.
 - Read the active docs for the touched surface before changing files.
 - Never trust prior summaries, stale docs, or build success as proof of current truth.
+- Before any TradingView CDP/MCP operation, run
+  `python3 scripts/ag/tv_connection_doctor.py --json` (read-only). Treat
+  `ready: true` as the only "safe to proceed" signal.
 
 ## Repo Map
 
@@ -111,6 +114,8 @@ context, or agent-facing notes pointing at an older trigger or training surface.
   - Build script: `workspaces/warbird_pro_v9/build_v9_dataset.py` — params MUST match live TV settings
 - `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`: TradingView
   settings-trial helpers retained for Pine-derived modeling.
+  `tv_auto_tune.py preflight` requires a strategy harness; use
+  `tv_auto_tune.py preflight --indicator-only` for V9 indicator-only sessions.
 - `artifacts/tuning/`: tuning suggestions, exports, and trial artifacts.
 - `app/`, `components/`, `lib/`, `supabase/`: runtime/dashboard/cloud support,
   not active training truth.
@@ -224,16 +229,29 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 
 ### TradingView Live Safety Lock
 
-- Never force-launch, force-restart, or process-kill TradingView from automation.
-- Banned methods include `tv_launch`, `launch_tv_debug_mac.sh`,
-  `pkill -f TradingView`, and `killall TradingView`.
+- **CDP-down protocol — HARD STOP, NO EXCEPTIONS:** If any TradingView MCP
+  call fails because CDP is unresponsive, STOP IMMEDIATELY, report "CDP is
+  not responding. I'm stopped. Waiting for instructions.", and wait for
+  explicit human direction. Do NOT call `tv_health_check` as a recovery
+  probe (no "let me just double-check"). Do NOT call `tv_launch` with any
+  args (including `kill_existing: false` — Electron's single-instance lock
+  kills the running TV regardless of the parameter). Do NOT use
+  `mcp__computer-use__request_access` against TradingView. Do NOT attempt
+  any recovery automation. The only valid next action is human direction.
+  Soft variants of this rule have been rationalized around — this version
+  is intentionally absolute. Authorized by Kirk on 2026-05-05 after the
+  second tv_launch incident in two days.
+- Banned methods, no args make them OK: `tv_launch` (any args),
+  `tv_health_check` as a recovery probe, `launch_tv_debug_mac.sh`,
+  `pkill -f TradingView`, `killall TradingView`,
+  `mcp__computer-use__request_access` for TradingView apps.
 - Live TV operations are one explicit command at a time, no retry loops.
-- On the first CDP/bridge failure, stop immediately and report the failure.
-- If CDP is unavailable, do not attempt recovery automation; stay read-only
-  until the user explicitly requests a manual next step.
 - Legacy MCP bridge path (`scripts/ag/run_phase_batch_via_tv_bridge.py` +
   `scripts/ag/tv_bridge_worker.mjs`) is disabled by default; use direct CDP
   flow via `scripts/ag/tv_auto_tune.py`.
+- Use `/Users/zincdigital/tradingview-mcp/src/server.js` as the expected
+  local TradingView MCP server path for Codex/CLI health checks. The removed
+  nested repo path `.tradingview-mcp/src/server.js` is historical only.
 
 ### Pine Verification
 

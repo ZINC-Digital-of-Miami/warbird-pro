@@ -6,6 +6,8 @@ Read and follow `AGENTS.md` at the repository root.
 - **Active architecture plan:** `/Volumes/Satechi Hub/warbird-pro/docs/MASTER_PLAN.md` — Warbird Indicator-Only Optuna Plan v6, narrowed 2026-04-30 to Warbird Pro + Nexus only
 - **Indicator contract:** `/Volumes/Satechi Hub/warbird-pro/docs/contracts/pine_indicator_ag_contract.md`
 - **Startup review runbook:** `/Volumes/Satechi Hub/warbird-pro/docs/runbooks/startup_repo_review.md`
+- **TradingView readiness doctor (read-only):**
+  `/Volumes/Satechi Hub/warbird-pro/scripts/ag/tv_connection_doctor.py`
 - **Claude phased guardrails:** `/Volumes/Satechi Hub/warbird-pro/docs/runbooks/claude_rogue_proof_phase_contract.md`
 - **Repo:** github.com/zincdigitalofmiami/warbird-pro
 
@@ -80,6 +82,8 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 - `scripts/optuna/` is the active local optimization workspace.
 - `scripts/ag/tv_auto_tune.py` and `scripts/ag/tune_strategy_params.py` remain useful
   for TradingView-driven settings trials.
+  - `tv_auto_tune.py preflight` expects a strategy harness.
+  - For indicator-only V9 charts, use `tv_auto_tune.py preflight --indicator-only`.
 - Nexus ML RSI Optuna must use TradingView/Pine `request.footprint()`
   `nexus_fp_*` evidence. Do not run Nexus tuning from CSV exports, local OHLCV
   parquet, Databento bars, or synthetic body/wick delta.
@@ -125,6 +129,9 @@ live TV settings before building a new dataset.
   `memory/feedback_always_verify_before_completion.md`.
 - Use `superpowers:systematic-debugging` before proposing any fix to a bug or
   unexpected behavior. Don't guess root cause then ship a "fix."
+- Before any TradingView CDP/MCP operation, run
+  `python3 scripts/ag/tv_connection_doctor.py --json`. If `ready` is false,
+  do not proceed with live TV calls.
 - Pine is the modeling source of truth.
 - Optimize indicator settings and build quality, not external feature stacks.
 - Databento is an approved training data supplier when manifests label it as
@@ -141,14 +148,28 @@ live TV settings before building a new dataset.
   `pivotHighInWindow` / `pivotLowInWindow`; this pattern is known to cause
   wide-fib regressions.
 - No TradingView Pine Editor push without explicit approval.
-- Never force-launch, force-restart, or process-kill TradingView from automation.
-- Banned methods: `tv_launch`, `launch_tv_debug_mac.sh`,
-  `pkill -f TradingView`, `killall TradingView`.
+- **CDP-down protocol — HARD STOP, NO EXCEPTIONS:** If any TradingView MCP
+  call fails because CDP is unresponsive, STOP IMMEDIATELY, report
+  "CDP is not responding. I'm stopped. Waiting for instructions.", and wait
+  for explicit human direction. Do NOT call `tv_health_check` as a recovery
+  probe. Do NOT call `tv_launch` (with any args, including
+  `kill_existing: false` — Electron's single-instance lock kills the running
+  TV regardless). Do NOT use `mcp__computer-use__request_access` against
+  TradingView. Do NOT attempt any recovery automation. The only valid next
+  action is human direction. Soft variants of this rule have been
+  rationalized around — this version is intentionally absolute. Authorized
+  by Kirk on 2026-05-05 after the second tv_launch incident in two days.
+- Banned methods, no parameters that make them OK: `tv_launch` (any args),
+  `tv_health_check` as a recovery probe, `launch_tv_debug_mac.sh`,
+  `pkill -f TradingView`, `killall TradingView`,
+  `mcp__computer-use__request_access` for TradingView apps.
 - Live TV operations are one explicit command at a time, no retry loops.
-- On first CDP/bridge failure: stop and report; do not run recovery automation.
 - Legacy MCP bridge path (`scripts/ag/run_phase_batch_via_tv_bridge.py` +
   `scripts/ag/tv_bridge_worker.mjs`) is disabled by default; use direct CDP
   flow via `scripts/ag/tv_auto_tune.py`.
+- Expected local TradingView MCP install path is
+  `/Users/zincdigital/tradingview-mcp/src/server.js`; the old nested
+  `.tradingview-mcp` path is historical only.
 - Use 15m behavior as the baseline reference when evaluating 5m tuning changes.
 - If a strategy/backtest harness is explicitly reopened, commission floor for
   MES evidence is $1.00/side and slippage floor is 1 tick.

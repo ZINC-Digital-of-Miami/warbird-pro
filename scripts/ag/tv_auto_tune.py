@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-tv_auto_tune.py — Hardened CDP automation layer for the Warbird v7 strategy tuner.
+tv_auto_tune.py — Hardened CDP automation layer for Warbird TradingView tuning.
 
 Replaces the manual "set knobs -> export CSV -> record" loop with full automation:
 each trial applies inputs via Chrome DevTools Protocol, waits for recalculation,
@@ -8,13 +8,17 @@ reads reportData().trades() directly, scores, and stores -- no CSV file needed.
 
 Requires:
   - TradingView Desktop running with CDP enabled (--remote-debugging-port=9222)
-  - Warbird v7 Strategy loaded on the active chart (CME_MINI:MES1! 15m)
+  - Active chart loaded for the runtime_context symbol/timeframe in the tuning space
+  - Matching Warbird strategy + indicator studies present on the chart
   - Deep Backtesting configured from 2020-01-01 in Strategy Tester -> Properties
   - pip install requests websockets (psycopg2 already required by tune_strategy_params)
 
 Usage:
   # Run preflight checks only (verify chart, entity discovery, input schema, canary)
   python scripts/ag/tv_auto_tune.py preflight
+
+  # Run indicator-only preflight (no strategy study required)
+  python scripts/ag/tv_auto_tune.py preflight --indicator-only
 
   # Run a full suggestion batch
   python scripts/ag/tv_auto_tune.py run --batch-dir artifacts/tuning/suggestions/<ts>/
@@ -88,10 +92,16 @@ CDP_PORT = 9222
 # and fetch_input_schema(). This prevents silent misalignment after Pine input changes
 # or chart reloads.
 
-STRATEGY_DESCRIPTION = "Warbird v7 Strategy"
-INDICATOR_DESCRIPTION = "Warbird v7 Institutional"
-STRATEGY_SHORT_TITLE = "WB7 Strat"
-INDICATOR_SHORT_TITLE = "WB v7"
+STRATEGY_NAME_CANDIDATES = (
+    "Warbird Pro Optuna Backtest",
+    "Warbird v7 Strategy",
+    "WB7 Strat",
+)
+INDICATOR_NAME_CANDIDATES = (
+    "Warbird Pro V9",
+    "Warbird v7 Institutional",
+    "WB v7",
+)
 
 # -- Tab discovery ------------------------------------------------------------
 
@@ -136,7 +146,7 @@ async def find_tv_chart_tab_for_context(runtime_context: dict) -> str:
     if not candidates:
         raise RuntimeError(
             f"No TradingView tabs found at {CDP_HOST}:{CDP_PORT}. "
-            "Open TradingView Desktop and load the MES1! 15m chart."
+            "Open TradingView Desktop and load the target chart from runtime_context."
         )
 
     state_js = """
@@ -227,17 +237,17 @@ async def cdp_run(ws, expression: str, call_id: int = 1) -> Any:
 async def discover_study_entity(
     ws,
     call_id: int,
-    description_substring: str,
-    short_title: str,
+    name_candidates: tuple[str, ...],
     require_strategy: bool,
 ) -> str:
     """Discover a study entity ID from chartModel().dataSources()."""
 
     strategy_filter = (
-        "meta.isTVScriptStrategy === true || meta.is_strategy === true"
+        "meta.isTVScriptStrategy === true || meta.is_strategy === true || meta.strategy === true"
         if require_strategy
-        else "meta.isTVScriptStrategy !== true && meta.is_strategy !== true"
+        else "meta.isTVScriptStrategy !== true && meta.is_strategy !== true && meta.strategy !== true"
     )
+    candidate_json = json.dumps(list(name_candidates))
     js = f"""
 (() => {{
     try {{
@@ -247,15 +257,15 @@ async def discover_study_entity(
             return JSON.stringify({{err: 'chartModel().dataSources() not available'}});
         }}
         const sources = model.dataSources();
+        const names = {candidate_json}.map((n) => String(n || '').toLowerCase());
         const matchesStudy = (meta, src) => {{
-            const desc = meta.description || '';
-            const shortDesc = meta.shortDescription || '';
+            const desc = String(meta.description || '').toLowerCase();
+            const shortDesc = String(meta.shortDescription || '').toLowerCase();
             let title = '';
-            try {{ title = typeof src.title === 'function' ? src.title() : (src.title || ''); }} catch(e) {{}}
+            try {{ title = String(typeof src.title === 'function' ? src.title() : (src.title || '')).toLowerCase(); }} catch(e) {{}}
+            const haystack = [desc, shortDesc, title].join(' | ');
             return ({strategy_filter}) && (
-                desc.includes({json.dumps(description_substring)}) ||
-                shortDesc.includes({json.dumps(description_substring)}) ||
-                title.includes({json.dumps(short_title)})
+                names.some((needle) => needle.length > 0 && haystack.includes(needle))
             );
         }};
         const study = sources.find(s => {{
@@ -297,7 +307,8 @@ async def discover_study_entity(
         available = result.get("available", [])
         diag = f". Available studies on chart: {available}" if available else ""
         raise RuntimeError(
-            f"Study entity discovery failed for {description_substring}: {result['err']}{diag}"
+            "Study entity discovery failed for "
+            f"{list(name_candidates)}: {result['err']}{diag}"
         )
     return result["entity_id"]
 
@@ -306,8 +317,7 @@ async def discover_strategy_entity(ws, call_id: int) -> str:
     return await discover_study_entity(
         ws,
         call_id,
-        STRATEGY_DESCRIPTION,
-        STRATEGY_SHORT_TITLE,
+        STRATEGY_NAME_CANDIDATES,
         True,
     )
 
@@ -316,8 +326,7 @@ async def discover_indicator_entity(ws, call_id: int) -> str:
     return await discover_study_entity(
         ws,
         call_id,
-        INDICATOR_DESCRIPTION,
-        INDICATOR_SHORT_TITLE,
+        INDICATOR_NAME_CANDIDATES,
         False,
     )
 
@@ -1096,6 +1105,87 @@ async def run_preflight_checks(
     return entity_id, schema, indicator_entity_id, indicator_schema
 
 
+async def run_indicator_only_preflight_checks(
+    ws, space: dict
+) -> tuple[str, dict[str, dict]]:
+    """Run indicator-only preflight checks when no strategy harness is loaded."""
+    cid = 210
+
+    print("Preflight (indicator-only) [1/3]: discovering indicator entity...")
+    indicator_entity_id = await discover_indicator_entity(ws, cid)
+    cid += 1
+    print(f"  indicator_entity_id: {indicator_entity_id}")
+
+    print("Preflight (indicator-only) [2/3]: fetching live input schema...")
+    indicator_schema = await fetch_input_schema(ws, indicator_entity_id, cid)
+    cid += 1
+    print(f"  indicator schema: {len(indicator_schema)} input(s)")
+
+    print("Preflight (indicator-only) [3/3]: cross-checking search_parameters names...")
+    search_params = space.get("search_parameters", {})
+    missing_indicator_search = [n for n in search_params if n not in indicator_schema]
+    if missing_indicator_search:
+        matched = len(search_params) - len(missing_indicator_search)
+        print(
+            "  WARNING: indicator-only mode does not require strategy-surface parity.\n"
+            "  Missing search_parameters in live indicator schema: "
+            f"{missing_indicator_search}\n"
+            f"  Matched {matched}/{len(search_params)} search params."
+        )
+    else:
+        print(f"  All {len(search_params)} search params found. OK.")
+
+    canary_name = "Target Line Lookback Bars"
+    if canary_name in indicator_schema:
+        print("  Running indicator-only canary round-trip...")
+        indicator_canary_id = indicator_schema[canary_name]["id"]
+        read_js = f"""
+(() => {{
+    const chart = window.TradingViewApi.activeChart();
+    const study = chart.getStudyById('{indicator_entity_id}');
+    if (!study) return null;
+    const vals = study.getInputValues();
+    const v = vals.find(x => x.id === '{indicator_canary_id}');
+    return v ? v.value : null;
+}})()
+"""
+        canary_orig = await cdp_run(ws, read_js, cid)
+        cid += 1
+        canary_test = 40 if canary_orig != 40 else 45
+        indicator_canary_inputs = [{"id": indicator_canary_id, "value": canary_test}]
+
+        await apply_inputs(ws, indicator_entity_id, indicator_canary_inputs, cid)
+        cid += 1
+        await asyncio.sleep(0.4)
+        indicator_mismatches = await verify_inputs_applied(
+            ws, indicator_entity_id, indicator_canary_inputs, cid
+        )
+        cid += 1
+
+        await apply_inputs(
+            ws,
+            indicator_entity_id,
+            [{"id": indicator_canary_id, "value": canary_orig}],
+            cid,
+        )
+        cid += 1
+
+        if indicator_mismatches:
+            raise RuntimeError(
+                "Preflight indicator canary FAILED — getInputValues() mismatch: "
+                f"indicator={indicator_mismatches}. "
+                "setInputValues may not be applying correctly on this TV build."
+            )
+        print(f"  Canary: set {canary_test}, verified, restored to {canary_orig}. OK.")
+    else:
+        print(
+            f"  Canary input '{canary_name}' not found in indicator schema — skipping round-trip."
+        )
+
+    print("Preflight (indicator-only): PASSED")
+    return indicator_entity_id, indicator_schema
+
+
 # -- Automation loop ----------------------------------------------------------
 
 
@@ -1243,6 +1333,19 @@ async def command_preflight_async(args: argparse.Namespace) -> int:
     print(f"CDP: {ws_url[:70]}...")
 
     async with websockets.connect(ws_url, max_size=64 * 1024 * 1024) as ws:
+        if args.indicator_only:
+            indicator_entity_id, indicator_schema = (
+                await run_indicator_only_preflight_checks(ws, space)
+            )
+            print(f"\nIndicator Entity ID:  {indicator_entity_id}")
+            print(f"Indicator Schema size:{len(indicator_schema)} inputs")
+            print("\nSearch parameter → indicator input IDs:")
+            for name in sorted(space.get("search_parameters", {})):
+                ind_inp = indicator_schema.get(name)
+                ind_id = ind_inp["id"] if ind_inp else "NOT FOUND"
+                print(f"  indicator={ind_id}  {name}")
+            return 0
+
         (
             entity_id,
             schema,
@@ -1410,6 +1513,14 @@ def build_parser() -> argparse.ArgumentParser:
     preflight_p = sub.add_parser(
         "preflight",
         help="Run preflight checks: tab discovery, entity ID, input schema, canary round-trip.",
+    )
+    preflight_p.add_argument(
+        "--indicator-only",
+        action="store_true",
+        help=(
+            "Run indicator-only checks (no strategy harness required). "
+            "Use for V9 indicator-only sessions."
+        ),
     )
     preflight_p.set_defaults(func=command_preflight)
 

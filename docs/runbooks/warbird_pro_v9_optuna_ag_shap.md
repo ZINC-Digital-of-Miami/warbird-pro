@@ -12,6 +12,61 @@ two-lane Optuna setup (entry filter + exit policy), AutoGluon training, and
 SHAP-driven feature pruning. It is the operator playbook for the
 "best entry, best exit, heads-up exhaustion" goal.
 
+## 0. Hybrid+ Optuna architecture (active)
+
+The legacy two-lane pair (`warbird_pro` and `warbird_pro_v9`) remains
+operational for backward compatibility, but the production-active
+architecture is the **Hybrid+ four-card scaffold**, which adds
+CPCV-aware scoring, an AG meta-labeler card living on `:8090`, and a
+bounded joint challenger.
+
+| # | Hub card key | Profile module | Purpose |
+|---|--------------|----------------|---------|
+| 1 | `warbird_pro_v9_exit_cpcv` | `scripts.optuna.warbird_pro_v9_exit_cpcv_profile` | Exit policy under Combinatorial Purged CV (n_splits=6, n_test=2, embargo=label_horizon+1 bars) |
+| 2 | `warbird_pro_v9_entry_filter_cpcv` | `scripts.optuna.warbird_pro_v9_entry_filter_cpcv_profile` | Entry filter under CPCV; seed Trial #0 with Card 1 champion |
+| 3 | `warbird_pro_v9_ag_meta_cpcv` | `scripts.optuna.warbird_pro_v9_ag_meta_cpcv_profile` | AG meta-labeler INSIDE Optuna with top-K strategy coupling (each trial fits AG on a candidate's labeled trades, returns `ag_gating_lift`) |
+| 4 | `warbird_pro_v9_joint_challenger` | `scripts.optuna.warbird_pro_v9_joint_challenger_profile` | Bounded challenger searching strategy + AG hyperparams jointly. Promotes only if strictly beats Cards 1+2+3 winner on locked OOS. |
+
+Hub URLs (auto-spawned child dashboards on `:8100+`):
+
+- `http://127.0.0.1:8090/studies/warbird_pro_v9_exit_cpcv`
+- `http://127.0.0.1:8090/studies/warbird_pro_v9_entry_filter_cpcv`
+- `http://127.0.0.1:8090/studies/warbird_pro_v9_ag_meta_cpcv`
+- `http://127.0.0.1:8090/studies/warbird_pro_v9_joint_challenger`
+
+Orchestration:
+
+```bash
+python scripts/optuna/orchestrate_v9_run.py \
+  --n-trials-exit 500 --n-trials-filter 1500 --n-trials-ag 1000 \
+  [--include-joint --n-trials-joint 500] [--top-k 5]
+```
+
+That writes `scripts/optuna/workspaces/warbird_pro_v9_ag_meta_cpcv/run.json`
+and `strategy_candidates.json` (the cross-product of Cards 1+2 top-K
+champions, consumed by Card 3 via the `WARBIRD_V9_AG_CANDIDATES` env var).
+
+Champion selection (locked OOS replay):
+
+```bash
+python scripts/optuna/promote_v9_champion.py --run-id <id> [--allow-challenger]
+```
+
+Card-3 user_attrs every dashboard trial logs (so leakage and calibration
+are inspectable per trial):
+
+- `ag_fit_status`, `ag_model_path`, `ag_prob_threshold`, `ag_leakage_flags`
+- `ag_test_auc`, `ag_test_brier`, `ag_base_winrate`, `ag_gated_winrate`,
+  `ag_lift`, `ag_n_train`, `ag_n_val`, `ag_n_test`, `ag_n_gated`
+
+Why Hybrid+ and not flat joint: flat joint searches the full product
+space, which inflates PBO mechanically (Bailey-Borwein-López de Prado-Zhu).
+The four-card scaffold preserves the meta-labeling discipline (López de
+Prado AFML Ch. 3) while still putting AG inside the Optuna dashboard, and
+uses top-K strategy coupling on Card 3 to capture entry/exit/AG
+interactions a strict sequential pipeline misses. Card 4 admits the joint
+search as a bounded challenger with stricter promotion criteria.
+
 ## 1. The two-lane Optuna pair
 
 Both lanes operate on the same MES 5m Databento history and the same export

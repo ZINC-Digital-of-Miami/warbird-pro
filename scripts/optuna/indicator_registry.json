@@ -130,6 +130,90 @@
     "notes": "V9 exit-policy HPO. MES 5m only, Databento historical only. Models ATR/risk exits (bracket, R:R, breakeven, ATR trail) on the same Pine V9 entry triggers. Negative-fib extension stops banned. Pine source frozen until promotion approval."
   },
   {
+    "key": "warbird_pro_v9_exit_cpcv",
+    "name": "Warbird Pro V9 Exit Policy CPCV",
+    "surface_type": "indicator",
+    "category": "chart-core-exit-modeling",
+    "pine_file": "indicators/warbird-pro-v9.pine",
+    "profile_module": "scripts.optuna.warbird_pro_v9_exit_cpcv_profile",
+    "default_study_name": "Warbird Pro V9 Exit Policy CPCV",
+    "symbol": "MES1!",
+    "timeframe": "5",
+    "data_floor": "2020-01-01",
+    "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
+    "objective_metric": "v9_risk_exit_score",
+    "min_trades_floor": 20,
+    "allowed_capture_methods": [
+      "DATABENTO_OHLCV_CSV",
+      "DATABENTO_TRAINING_CSV",
+      "DATABENTO_BARS_CSV"
+    ],
+    "notes": "Hybrid+ Card 1. Wraps the existing exit-policy lane with CPCV (n_splits=6, n_test=2, embargo=label_horizon+1 bars). HPO MUST use --start 2020-01-01 --end 2024-12-31 (V9 OOS lock enforced by runner.py.assert_v9_oos_lock)."
+  },
+  {
+    "key": "warbird_pro_v9_entry_filter_cpcv",
+    "name": "Warbird Pro V9 Entry Filter CPCV",
+    "surface_type": "indicator",
+    "category": "chart-core-entry-filter",
+    "pine_file": "indicators/warbird-pro-v9.pine",
+    "profile_module": "scripts.optuna.warbird_pro_v9_entry_filter_cpcv_profile",
+    "default_study_name": "Warbird Pro V9 Entry Filter CPCV",
+    "symbol": "MES1!",
+    "timeframe": "5",
+    "data_floor": "2020-01-01",
+    "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
+    "objective_metric": "v9_entry_filter_score",
+    "min_trades_floor": 40,
+    "allowed_capture_methods": [
+      "DATABENTO_OHLCV_CSV",
+      "DATABENTO_TRAINING_CSV",
+      "DATABENTO_BARS_CSV"
+    ],
+    "notes": "Hybrid+ Card 2. Wraps the existing entry-filter lane with CPCV. Seed Trial #0 with the Card 1 exit champion via --champion-path scripts/optuna/workspaces/warbird_pro_v9_exit_cpcv/champion.json."
+  },
+  {
+    "key": "warbird_pro_v9_ag_meta_cpcv",
+    "name": "Warbird Pro V9 AG Meta CPCV",
+    "surface_type": "indicator",
+    "category": "ag-meta-labeler",
+    "pine_file": "indicators/warbird-pro-v9.pine",
+    "profile_module": "scripts.optuna.warbird_pro_v9_ag_meta_cpcv_profile",
+    "default_study_name": "Warbird Pro V9 AG Meta CPCV",
+    "symbol": "MES1!",
+    "timeframe": "5",
+    "data_floor": "2020-01-01",
+    "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
+    "objective_metric": "ag_gating_lift",
+    "min_trades_floor": 200,
+    "allowed_capture_methods": [
+      "DATABENTO_OHLCV_CSV",
+      "DATABENTO_TRAINING_CSV",
+      "DATABENTO_BARS_CSV"
+    ],
+    "notes": "Hybrid+ Card 3 — AG meta-labeler inside Optuna. Each trial samples (ag_family, time_limit, prob_threshold, strategy_candidate_id) and fits AG with embargoed chronological split (label_horizon+1 bars). user_attrs include ag_model_path, ag_test_auc, ag_test_brier, ag_lift, ag_leakage_flags. Strategy candidates are produced by orchestrate_v9_run.py from Cards 1+2 top-K cross-product."
+  },
+  {
+    "key": "warbird_pro_v9_joint_challenger",
+    "name": "Warbird Pro V9 Joint Challenger",
+    "surface_type": "indicator",
+    "category": "joint-challenger",
+    "pine_file": "indicators/warbird-pro-v9.pine",
+    "profile_module": "scripts.optuna.warbird_pro_v9_joint_challenger_profile",
+    "default_study_name": "Warbird Pro V9 Joint Challenger",
+    "symbol": "MES1!",
+    "timeframe": "5",
+    "data_floor": "2020-01-01",
+    "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
+    "objective_metric": "joint_challenger_lift",
+    "min_trades_floor": 200,
+    "allowed_capture_methods": [
+      "DATABENTO_OHLCV_CSV",
+      "DATABENTO_TRAINING_CSV",
+      "DATABENTO_BARS_CSV"
+    ],
+    "notes": "Hybrid+ Card 4 — bounded challenger only. Searches strategy params + AG hyperparams jointly. Capped trial budget (default 500). Promotes ONLY if it strictly beats the Card 1+2+3 winner on the locked OOS window per scripts/optuna/promote_v9_champion.py --allow-challenger."
+  },
+  {
     "key": "warbird_nexus_ml_rsi",
     "name": "Warbird Nexus Machine Learning RSI",
     "surface_type": "indicator",

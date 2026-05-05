@@ -281,6 +281,71 @@ budgets must be repriced before any Nexus edit.
 
 ## Current Blocker
 
-Run controlled 5m/15m tuning from manifest-backed Warbird Pro V9 training rows
-on ES/MES, then promote only evidence-backed settings. Keep Nexus available
-only for its retained footprint/research lane.
+V9 Hybrid+ 4-card authority run is active (Card 1 running, PID 71880).
+Do not interrupt. Cards 2–4 start after Card 1 completes via orchestrator.
+
+---
+
+## V9 Hybrid+ Optuna — Active Authority Run (2026-05-05)
+
+### Live Pine Settings (authoritative — must match `build_v9_dataset.py` exactly)
+
+| Parameter | Value | Pine input name |
+|-----------|-------|-----------------|
+| ZigZag Deviation | **3.0** | `fibDeviationManual` |
+| ZigZag Depth | **10** | `fibDepthManual` |
+| ZigZag Threshold Floor % | **0.15** | `fibThresholdFloorPct` |
+| Confluence Tolerance % | **0.05** | `fibConfluenceTolPct` |
+| Min Fib Range (ATR) | **0.5** | `minFibRangeAtr` |
+| Midpoint Hysteresis % | **2.0** | `fibHysteresisPct` |
+| MA Length (SMA) | **13** | `lengthMA` |
+| EMA Length | **6** | `lengthEMA` |
+
+**Critical rule:** Before every dataset build, read the live TradingView indicator
+inputs panel and verify `build_v9_dataset.py` constants match exactly.
+The Pine code `input.float(default, ...)` defaults are NOT authoritative —
+the user's saved TV settings are.
+
+### Training Dataset Contract
+
+- Source: `data/mes_1m.parquet` (Databento 1m MES, 2020-01-01+)
+- Build script: `scripts/optuna/workspaces/warbird_pro_v9/build_v9_dataset.py`
+- Output: `exports/mes_5m.csv` — 441,852 5m bars, sha256 recorded in manifest
+- IS window: `2020-01-01 → 2024-12-31` (runner `--start`/`--end` flags)
+- OOS lock: `2025-01-01+` — untouched until champion promotion
+- Clean build committed: `dd81ebf` (2026-05-05), after contamination purge
+
+**Contamination incident (2026-05-05):** Prior CSV was built with stale params
+`dev=4.0, depth=20, floor=0.50`. All study DBs were deleted and the dataset
+rebuilt clean with `dev=3.0, depth=10, floor=0.15`. Runner label `MES_15m` was
+also fixed to `MES_5m` (commit `c241214`).
+
+### Kirk's Exit Trade Preferences (GOAL — Optuna rewards these)
+
+- **Target SL:** 1.0 ATR (search range: 0.75–2.0; max SL = 2.0 ATR)
+- **Target breakeven range:** 1–3R (`targetRiskMultiple` range: 1.0–3.0)
+- Objective includes `target_hit_rate` reward (weight 0.14): fraction of trades
+  exiting at TARGET, not stop/time. Configs where price reaches the 1–3R goal
+  are actively scored higher.
+
+### 4-Card Sequence
+
+| Card | Profile | Trials | Status |
+|------|---------|--------|--------|
+| 1 | `warbird_pro_v9_exit_cpcv` | 1000 | **Running** (PID 71880) |
+| 2 | `warbird_pro_v9_entry_filter_cpcv` | 1000 | Pending Card 1 |
+| 3 | `warbird_pro_v9_ag_meta_cpcv` | 1000 | Pending Card 2 |
+| 4 | `warbird_pro_v9_joint_challenger` | 500 | Pending Card 3 |
+
+Cards run via `scripts/optuna/orchestrate_v9_run.py` in dependency order.
+AG (Card 3) uses `best_quality` preset + `num_bag_folds=8`, `num_stack_levels=1`.
+
+### Promotion Gate (champion.json)
+
+```bash
+python scripts/optuna/promote_v9_champion.py --run-id <run_id>
+```
+
+- WR drop IS→OOS ≤ 25%
+- OOS PF ≥ 1.10
+- Card 4 must strictly beat Cards 1+2+3 winner on OOS to promote

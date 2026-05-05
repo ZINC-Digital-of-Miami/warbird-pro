@@ -88,11 +88,30 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 
 ### Current Blocker
 
-Execute controlled 5m/15m tuning on
-`indicators/warbird-pro-v9.pine` with manifest-backed evidence, and
-keep Nexus footprint work isolated to the retained
-`NEXUS_FOOTPRINT_DELTA` lane. Do not start training/modeling unless the user
-explicitly approves it.
+V9 Hybrid+ 4-card authority run is active. **Do not stop or interrupt any
+running Optuna or AG processes.** Card 1 (exit_cpcv, 1000 trials) is running.
+Cards 2–4 start sequentially after Card 1 via the orchestrator.
+
+### Live Pine Settings (Canonical — read TV inputs panel, not Pine code defaults)
+
+| Input | Live Value |
+|-------|-----------|
+| ZigZag Deviation | **3.0** |
+| ZigZag Depth | **10** |
+| ZigZag Threshold Floor % | **0.15** |
+| Confluence Tolerance % | **0.05** |
+| Min Fib Range ATR | **0.5** |
+| Midpoint Hysteresis % | **2.0** |
+
+`build_v9_dataset.py` must match these exactly. The contamination incident
+(2026-05-05) used dev=4.0, depth=20, floor=0.50 — all wrong. Always verify
+live TV settings before building a new dataset.
+
+### Kirk's Exit Preferences (GOAL — actively rewarded in objective)
+
+- **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. `stopAtrMult` range: (0.75, 2.0).
+- **Target breakeven:** 1–3R. `targetRiskMultiple` range: (1.0, 3.0).
+- `target_hit_rate` (trades exiting at TARGET) carries 0.14 weight in objective.
 
 ## Locked Rules
 

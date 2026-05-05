@@ -106,6 +106,9 @@ context, or agent-facing notes pointing at an older trigger or training surface.
   - `warbird_pro_v9` is isolated from `warbird_pro`; it admits ES/MES
     training rows from TradingView exports or Databento market data, ignores
     NQ/MNQ rows, and models ATR/risk exits without Pine edits.
+  - Active 4-card Hybrid+ run: exit_cpcv → entry_filter_cpcv → ag_meta_cpcv → joint_challenger
+  - Dataset: `workspaces/warbird_pro_v9/exports/mes_5m.csv` (441,852 5m bars, clean build dd81ebf)
+  - Build script: `workspaces/warbird_pro_v9/build_v9_dataset.py` — params MUST match live TV settings
 - `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`: TradingView
   settings-trial helpers retained for Pine-derived modeling.
 - `artifacts/tuning/`: tuning suggestions, exports, and trial artifacts.
@@ -113,6 +116,30 @@ context, or agent-facing notes pointing at an older trigger or training surface.
   not active training truth.
 - `local_warehouse/`, local `warbird`, and `scripts/ag/train_ag_baseline.py`:
   legacy/reference unless explicitly reopened.
+
+## Live Pine Settings (Authoritative — 2026-05-05)
+
+These are the LIVE values from the TradingView indicator inputs panel.
+The Pine code `input.float(default, ...)` values are NOT authoritative.
+`build_v9_dataset.py` constants must match these exactly before every dataset build.
+
+| Setting | Live Value |
+|---------|-----------|
+| ZigZag Deviation (fibDeviationManual) | **3.0** |
+| ZigZag Depth (fibDepthManual) | **10** |
+| ZigZag Threshold Floor % (fibThresholdFloorPct) | **0.15** |
+| Confluence Tolerance % (fibConfluenceTolPct) | **0.05** |
+| Min Fib Range ATR (minFibRangeAtr) | **0.5** |
+| Midpoint Hysteresis % (fibHysteresisPct) | **2.0** |
+| MA Length SMA (lengthMA) | **13** |
+| EMA Length (lengthEMA) | **6** |
+
+## Kirk's Exit Trade Preferences (GOAL — Rewarded in Objective)
+
+- **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. Search range: `stopAtrMult` (0.75, 2.0).
+- **Target breakeven:** 1–3R. `targetRiskMultiple` range: (1.0, 3.0).
+- Objective scores `target_hit_rate` (fraction of trades exiting at TARGET) at weight 0.14.
+- Never freeze SL or target — Optuna searches the range; the goal values are the reward center.
 
 ## Contract First
 

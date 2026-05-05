@@ -66,7 +66,7 @@ def _git_sha() -> str:
 
 
 def _read_top_n(card_key: str, top_k: int) -> list[dict[str, Any]]:
-    top_path = workspace_dir(card_key) / "top5.json"
+    top_path = workspace_dir(card_key) / f"top{top_k}.json"
     if not top_path.exists():
         return []
     try:
@@ -137,7 +137,7 @@ def write_run_manifest(
     return path
 
 
-def _runner_cmd(card_key: str, profile_module: str, n_trials: int, study_name: str, run_id: str) -> str:
+def _runner_cmd(card_key: str, profile_module: str, n_trials: int, study_name: str, run_id: str, top_k: int = 5) -> str:
     parts = [
         "python", "scripts/optuna/runner.py",
         "--indicator-key", card_key,
@@ -146,7 +146,7 @@ def _runner_cmd(card_key: str, profile_module: str, n_trials: int, study_name: s
         "--start", IS_START,
         "--end", IS_END,
         "--study-name", study_name,
-        "--top-n", "10",
+        "--top-n", str(top_k),
     ]
     return " ".join(shlex.quote(p) for p in parts) + f"   # run_id={run_id}"
 
@@ -187,7 +187,7 @@ def main() -> int:
     for key, module, name in CARDS:
         if key not in n_trials:
             continue
-        cmds.append(_runner_cmd(key, module, n_trials[key], name, run_id))
+        cmds.append(_runner_cmd(key, module, n_trials[key], name, run_id, top_k=args.top_k))
 
     if args.dry_run:
         print("Dry run — runner.py commands that would be issued:")

@@ -159,10 +159,10 @@ _AG_FIXED_KWARGS: dict[str, Any] = {
     "problem_type": "binary",
 }
 _AG_FIT_FIXED_KWARGS: dict[str, Any] = {
-    "num_bag_folds": 0,
-    "num_stack_levels": 0,
+    "num_bag_folds": 8,       # safe: use_bag_holdout=True keeps bags off the test set
+    "num_stack_levels": 1,    # one stacking level; test set stays embargoed
     "dynamic_stacking": False,
-    "use_bag_holdout": True,
+    "use_bag_holdout": True,  # bags train on train_data only; tuning_data is the holdout
     "verbosity": 0,
 }
 
@@ -171,7 +171,7 @@ def ag_embargoed_train_and_score(
     trades_df: pd.DataFrame,
     label_col: str,
     feature_cols: list[str],
-    ag_hyperparams: dict[str, Any],
+    ag_hyperparams: dict[str, Any] | None,
     label_horizon_bars: int,
     output_dir: Path,
     train_frac: float = 0.6,
@@ -185,9 +185,9 @@ def ag_embargoed_train_and_score(
     metrics (AUC, accuracy, calibration), the model path, the prob threshold,
     and a leakage_flags dict that is empty on success.
 
-    AG is fit in LITE mode (caller passes ag_hyperparams that restrict
-    family/time_limit). num_bag_folds=0 and num_stack_levels=0 are forced
-    here so the embargo contract holds.
+    AG is fit with full bagging (num_bag_folds=8) and one stacking level.
+    use_bag_holdout=True ensures bags only train on train_data and use
+    tuning_data as the holdout, keeping the embargoed test set untouched.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     leakage_flags: dict[str, Any] = {}
@@ -246,7 +246,10 @@ def ag_embargoed_train_and_score(
     fit_kwargs["train_data"] = train
     fit_kwargs["tuning_data"] = val
     fit_kwargs["time_limit"] = time_limit
-    fit_kwargs["hyperparameters"] = ag_hyperparams
+    if ag_hyperparams is None:
+        fit_kwargs["presets"] = "best_quality"
+    else:
+        fit_kwargs["hyperparameters"] = ag_hyperparams
 
     pred = TabularPredictor(**predictor_kwargs).fit(**fit_kwargs)
 

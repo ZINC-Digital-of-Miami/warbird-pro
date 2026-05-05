@@ -124,22 +124,22 @@ def _candidate_ids() -> list[int]:
 # ── Optuna profile contract ─────────────────────────────────────────────────
 
 CATEGORICAL_PARAMS: dict[str, list[Any]] = {
-    "ag_family": ["GBM", "CAT", "XGB"],  # LITE families for per-trial fits
+    "ag_family": ["BEST"],  # best_quality preset: full model zoo + stacking
     "strategy_candidate_id": _candidate_ids(),
 }
 
 NUMERIC_RANGES: dict[str, tuple[float, float]] = {
     "prob_threshold": (0.50, 0.75),
-    "ag_time_limit": (180.0, 1200.0),  # seconds per fit
+    "ag_time_limit": (3600.0, 14400.0),  # 1–4 hours per fit
 }
 
 INT_PARAMS: set[str] = {"ag_time_limit"}
 BOOL_PARAMS: list[str] = []
 INPUT_DEFAULTS: dict[str, Any] = {
-    "ag_family": "GBM",
+    "ag_family": "BEST",
     "strategy_candidate_id": _candidate_ids()[0] if _candidate_ids() else 0,
     "prob_threshold": 0.55,
-    "ag_time_limit": 600,
+    "ag_time_limit": 7200,  # 2-hour default
 }
 
 
@@ -312,18 +312,19 @@ def _ag_card_empty_result(
     }
 
 
-def _resolve_family_hyperparameters(family: str) -> dict[str, Any]:
-    """LITE per-trial hyperparameters — single family per fit, single thread.
+def _resolve_family_hyperparameters(family: str) -> dict[str, Any] | None:
+    """Return AG hyperparameters dict, or None for best_quality full-zoo mode.
 
-    Card 3 fits AG hundreds to thousands of times; full-zoo per trial is
-    infeasible. Final full-zoo training happens in a separate locked run
-    after Card 3 has selected its champion AG hyperparameters.
+    None signals ag_embargoed_train_and_score to use presets="best_quality"
+    (LightGBM + CatBoost + XGBoost + Neural Net + RF + ExtraTrees ensemble).
     """
     family = family.upper()
+    if family == "BEST":
+        return None  # ag_embargoed_train_and_score uses best_quality preset
     if family == "GBM":
         return {"GBM": [{"num_threads": 1}]}
     if family == "CAT":
         return {"CAT": [{"thread_count": 1}]}
     if family == "XGB":
         return {"XGB": [{"n_jobs": 1}]}
-    raise ValueError(f"Unsupported AG family for Card 3 LITE mode: {family}")
+    raise ValueError(f"Unsupported AG family for Card 3: {family}")

@@ -1773,6 +1773,10 @@ def render_html(snapshot: dict[str, Any]) -> str:
         <button class="filter-btn" data-filter="strategy">Strategies</button>
         <button class="filter-btn" data-filter="lower-pane">Lower Pane</button>
         <button class="filter-btn" data-filter="chart-core">Chart Core</button>
+        <button class="filter-btn" data-filter="chart-core-exit-modeling">Exit</button>
+        <button class="filter-btn" data-filter="chart-core-entry-filter">Entry</button>
+        <button class="filter-btn" data-filter="ag-meta-labeler">AG Meta</button>
+        <button class="filter-btn" data-filter="joint-challenger">Challenger</button>
         <button class="filter-btn" data-filter="legacy">Legacy</button>
       </div>
       <div class="toolbar-spacer"></div>
@@ -1842,7 +1846,9 @@ def render_html(snapshot: dict[str, Any]) -> str:
       function isVisible(card, filter) {{
         const surface = stringAttr(card, 'data-surface');
         const category = stringAttr(card, 'data-category');
-        return filter === 'all' || filter === surface || filter === category;
+        return filter === 'all' || filter === surface || filter === category
+          || (filter === 'chart-core' && category.startsWith('chart-core'))
+          || (filter === 'lower-pane' && category.startsWith('lower-pane'));
       }}
 
       function updateUrl() {{

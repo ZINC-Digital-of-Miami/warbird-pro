@@ -15,12 +15,6 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.getClaims();
-
-    if (authError || !authData?.claims) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const url = new URL(request.url);
     const backfill = parseInt(url.searchParams.get("backfill") || "5000", 10);
 

@@ -53,11 +53,6 @@ interface SymbolEntry {
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.getClaims();
-
-    if (authError || !authData?.claims) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     // Coverage from RPC
     const { data: coverageRows, error: coverageError } = await supabase.rpc(

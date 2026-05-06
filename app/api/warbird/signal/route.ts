@@ -9,12 +9,6 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const symbolCode = url.searchParams.get("symbol") ?? "MES";
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.getClaims();
-
-    if (authError || !authData?.claims) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const runtime = await checkWarbirdLegacyReaderRuntime();
 
     if (runtime.active) {

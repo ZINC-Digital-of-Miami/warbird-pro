@@ -1,20 +1,5 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import DashboardLiveClient from "@/components/dashboard/DashboardLiveClient";
 import { Suspense } from "react";
-
-async function AuthGate() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-
-  if (error || !data?.claims) {
-    redirect("/auth/login");
-  }
-
-  return (
-    <DashboardLiveClient />
-  );
-}
 
 export default function DashboardPage() {
   return (
@@ -29,7 +14,7 @@ export default function DashboardPage() {
           </div>
         }
       >
-        <AuthGate />
+        <DashboardLiveClient />
       </Suspense>
     </div>
   );

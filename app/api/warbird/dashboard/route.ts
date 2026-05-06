@@ -14,12 +14,6 @@ import {
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.getClaims();
-
-    if (authError || !authData?.claims) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const url = new URL(request.url);
     const symbolCode = url.searchParams.get("symbol") ?? "MES";
     const days = Math.max(1, Math.min(30, Number(url.searchParams.get("days") ?? 7)));

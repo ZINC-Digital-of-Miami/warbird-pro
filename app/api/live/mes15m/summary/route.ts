@@ -5,12 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.getClaims();
-
-    if (authError || !authData?.claims) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const nowSec = Math.floor(Date.now() / 1000);
     const sessionStartIso = new Date(getMesSessionDayStart(nowSec) * 1000).toISOString();
 

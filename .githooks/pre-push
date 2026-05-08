@@ -6,5 +6,22 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
+# No-feature-branches guard (CLAUDE.md Locked Rule, 2026-05-08).
+# Refuses pushes to any remote ref that isn't refs/heads/main. The branch
+# names being pushed come from git on stdin (one line per ref).
+# Override for an emergency with ALLOW_NON_MAIN_PUSH=1.
+if [[ "${ALLOW_NON_MAIN_PUSH:-0}" != "1" ]]; then
+  while read -r local_ref _local_sha remote_ref _remote_sha; do
+    [[ -z "$local_ref" ]] && continue
+    if [[ "$remote_ref" != "refs/heads/main" ]]; then
+      echo "ERROR: pre-push refused — pushing to '$remote_ref'." >&2
+      echo "       CLAUDE.md Locked Rule (2026-05-08): only main is pushable." >&2
+      echo "       Fix: merge into main and push that, or delete the branch." >&2
+      echo "       Override (rare): ALLOW_NON_MAIN_PUSH=1 git push ..." >&2
+      exit 1
+    fi
+  done
+fi
+
 echo "INFO: pre-push gate -> scripts/guards/warbird-agent-precheck.sh"
 "$ROOT_DIR/scripts/guards/warbird-agent-precheck.sh" --mode pre-push

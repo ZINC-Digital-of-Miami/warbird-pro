@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { composeWarbirdSignal } from "@/lib/warbird/projection";
 import {
   emptyDashboardCounts,
@@ -14,6 +15,7 @@ import {
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     const url = new URL(request.url);
     const symbolCode = url.searchParams.get("symbol") ?? "MES";
     const days = Math.max(1, Math.min(30, Number(url.searchParams.get("days") ?? 7)));
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
         setups: [],
         events: [],
         signalEvents: [],
-        correlations: await fetchDashboardCorrelations(supabase),
+        correlations: await fetchDashboardCorrelations(adminSupabase),
         counts: emptyDashboardCounts(),
         runtime: runtimeForUi,
         generatedAt: runtime.checkedAt,
@@ -49,7 +51,7 @@ export async function GET(request: Request) {
         .select("signal_event_id, signal_id, ts, event_type, price, note")
         .order("ts", { ascending: false })
         .limit(50),
-      fetchDashboardCorrelations(supabase),
+      fetchDashboardCorrelations(adminSupabase),
     ]);
 
     // Build signal events array (may not exist yet — table is in migration 037)

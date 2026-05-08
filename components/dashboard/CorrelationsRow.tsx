@@ -4,7 +4,7 @@
 // 6 boxes: NQ, ZN, CL, SPX Vol, YM, NYSE — all from Supabase hourly bars.
 // Each lane computes its directional MES impact (in bps) server-side:
 //   mes_bps_i = weight_i * beta(MES|i) * ret_i * vol_weight_i * confidence_i
-// IM Score is the sum of all weighted lane MES impacts in basis points.
+// Pressure % splits total absolute pressure into UP vs DOWN buckets.
 
 interface TickerConfig {
   label: string;
@@ -22,6 +22,7 @@ const TICKERS: TickerConfig[] = [
 ];
 
 const MES_BPS_NEUTRAL_THRESHOLD = 0.75;
+const PRESSURE_DOMINANCE_THRESHOLD_PCT = 55;
 
 interface CorrelationsRowProps {
   correlations: Record<
@@ -79,22 +80,24 @@ export default function CorrelationsRow({ correlations }: CorrelationsRowProps) 
     return { ticker, close, prevClose, changePct, impact, mesBps, confidence, rvol, atomicState };
   });
 
-  const states = tickerData.map((d) => d.atomicState);
-
-  // Strict consensus: all must agree for colored background
-  const allLongAligned = states.every((v) => v === 1);
-  const allShortAligned = states.every((v) => v === -1);
-  const globalBg = allLongAligned
-    ? "rgba(38, 166, 91, 0.15)"
-    : allShortAligned
-      ? "rgba(242, 54, 69, 0.15)"
-      : "transparent";
-
   // Weighted IM score in MES bps (lane contributions are pre-weighted server-side)
   const imScore = tickerData.reduce(
     (sum, d) => sum + d.mesBps,
     0,
   );
+  const upPressureBps = tickerData.reduce((sum, d) => sum + Math.max(0, d.mesBps), 0);
+  const downPressureBps = tickerData.reduce((sum, d) => sum + Math.max(0, -d.mesBps), 0);
+  const totalAbsPressureBps = upPressureBps + downPressureBps;
+  const upPressurePct = totalAbsPressureBps > 0 ? (upPressureBps / totalAbsPressureBps) * 100 : 50;
+  const downPressurePct = 100 - upPressurePct;
+
+  const netUpDominant = upPressurePct >= PRESSURE_DOMINANCE_THRESHOLD_PCT;
+  const netDownDominant = downPressurePct >= PRESSURE_DOMINANCE_THRESHOLD_PCT;
+  const globalBg = netUpDominant
+    ? "rgba(38, 198, 218, 0.10)"
+    : netDownDominant
+      ? "rgba(242, 54, 69, 0.14)"
+      : "transparent";
 
   return (
     <div
@@ -104,6 +107,9 @@ export default function CorrelationsRow({ correlations }: CorrelationsRowProps) 
       {/* Symbol boxes */}
       <div className="flex items-center gap-0 w-full overflow-x-auto">
         {tickerData.map(({ ticker, close, changePct, mesBps, confidence, rvol, atomicState }) => {
+          const lanePressurePct = totalAbsPressureBps > 0
+            ? (Math.abs(mesBps) / totalAbsPressureBps) * 100
+            : 0;
           const changeColor =
             changePct == null
               ? "rgba(255,255,255,0.15)"
@@ -170,6 +176,9 @@ export default function CorrelationsRow({ correlations }: CorrelationsRowProps) 
                     RV {rvol.toFixed(2)}x
                   </span>
                 ) : null}
+                <span className="text-[9px] text-white/38 tabular-nums">
+                  P {lanePressurePct.toFixed(0)}%
+                </span>
               </div>
             </div>
           );
@@ -184,20 +193,25 @@ export default function CorrelationsRow({ correlations }: CorrelationsRowProps) 
           }}
         >
           <span className="text-[9px] text-white/30 uppercase tracking-wider font-medium">
-            IM Score
+            MES Pressure
           </span>
           <span
             className="text-sm font-bold tabular-nums"
             style={{
-              color: imScore > 2.5
-                ? "#26a65b"
-                : imScore < -2.5
+              color: netUpDominant
+                ? "#26C6DA"
+                : netDownDominant
                   ? "#F23645"
                   : "rgba(255,255,255,0.40)",
             }}
           >
-            {imScore >= 0 ? "+" : ""}
-            {imScore.toFixed(1)}bp
+            {upPressurePct >= downPressurePct ? "UP" : "DOWN"} {Math.max(upPressurePct, downPressurePct).toFixed(0)}%
+          </span>
+          <span className="text-[9px] text-white/45 tabular-nums">
+            D {downPressurePct.toFixed(0)}% / U {upPressurePct.toFixed(0)}%
+          </span>
+          <span className="text-[9px] text-white/40 tabular-nums">
+            NET {imScore >= 0 ? "+" : ""}{imScore.toFixed(1)}bp
           </span>
         </div>
       </div>

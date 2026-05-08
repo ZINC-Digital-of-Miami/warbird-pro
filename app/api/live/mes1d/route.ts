@@ -77,18 +77,34 @@ function buildLatestDailyFromHourly(rows: PriceRow[]): MesPriceBar | null {
 export async function GET() {
   try {
     const supabase = createAdminClient();
+    const rows: PriceRow[] = [];
+    const pageSize = 1000;
+    let from = 0;
 
-    const { data: rows, error } = await supabase
-      .from("mes_1d")
-      .select("ts, open, high, low, close, volume")
-      .order("ts", { ascending: true })
-      .limit(5000);
+    while (true) {
+      const { data, error } = await supabase
+        .from("mes_1d")
+        .select("ts, open, high, low, close, volume")
+        .order("ts", { ascending: true })
+        .range(from, from + pageSize - 1);
 
-    if (error) {
-      return NextResponse.json(
-        { ok: false, data: [], asOf: new Date().toISOString(), error: error.message },
-        { status: 500 },
-      );
+      if (error) {
+        return NextResponse.json(
+          { ok: false, data: [], asOf: new Date().toISOString(), error: error.message },
+          { status: 500 },
+        );
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      rows.push(...(data as PriceRow[]));
+      if (data.length < pageSize) {
+        break;
+      }
+
+      from += pageSize;
     }
 
     const bars: MesPriceBar[] = (rows ?? []).map((row) => ({

@@ -1,7 +1,7 @@
 // Edge Function: mes-hourly
 // Triggered by Supabase pg_cron (warbird_mes_hourly_pull).
 // Market-hours skip logic is handled internally via isMarketOpen().
-// Pulls ohlcv-1h and ohlcv-1d directly from Databento (MES.c.0 continuous).
+// Pulls ohlcv-1h and ohlcv-1d directly from Databento (MES.n.0 continuous).
 // Aggregates 1h → 4h locally (Databento has no ohlcv-4h schema).
 // Auth: x-cron-secret header validated against EDGE_CRON_SECRET env var.
 
@@ -15,6 +15,7 @@ const BAR_4H_SEC = 14_400;
 const LOOKBACK_ON_EMPTY_HOURS = 168; // 7 days
 const MAX_INCREMENTAL_LOOKBACK_HOURS = 720; // 30 days
 const UPSERT_CHUNK_SIZE = 200;
+const MES_CONTINUOUS_SYMBOL = "MES.n.0";
 
 function floorTo4h(timeSec: number): number {
   return Math.floor(timeSec / BAR_4H_SEC) * BAR_4H_SEC;
@@ -95,7 +96,7 @@ Deno.serve(async (req: Request) => {
     if (rangeEndMs > rangeStartMs) {
       const bars1h = await fetchOhlcv({
         dataset: "GLBX.MDP3",
-        symbol: "MES.c.0",
+        symbol: MES_CONTINUOUS_SYMBOL,
         stypeIn: "continuous",
         schema: "ohlcv-1h",
         start: new Date(rangeStartMs).toISOString(),
@@ -185,7 +186,7 @@ Deno.serve(async (req: Request) => {
     if (now > rangeStart1dMs) {
       const bars1d = await fetchOhlcv({
         dataset: "GLBX.MDP3",
-        symbol: "MES.c.0",
+        symbol: MES_CONTINUOUS_SYMBOL,
         stypeIn: "continuous",
         schema: "ohlcv-1d",
         start: new Date(rangeStart1dMs).toISOString(),
@@ -225,7 +226,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({
       success: true,
-      symbol: "MES.c.0",
+      symbol: MES_CONTINUOUS_SYMBOL,
       rows_1h: rows1h,
       rows_4h: rows4h,
       rows_1d: rows1d,

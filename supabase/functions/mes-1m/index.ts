@@ -18,6 +18,7 @@ const LOOKBACK_ON_EMPTY_MINUTES = 180;
 const MAX_INCREMENTAL_LOOKBACK_MINUTES = 360;
 const LIVE_API_MAX_GAP_MINUTES = 60; // use Live API for gaps <= 60 min (24h replay)
 const UPSERT_CHUNK_SIZE = 200;
+const MES_CONTINUOUS_SYMBOL = "MES.n.0";
 
 function floorTo15m(timeSec: number): number {
   return Math.floor(timeSec / BAR_15M_SEC) * BAR_15M_SEC;
@@ -139,7 +140,7 @@ Deno.serve(async (req: Request) => {
         const startSec = Math.floor(rangeStartMs / 1000);
         const result = await fetchLiveOhlcv1m({
           dataset: "GLBX.MDP3",
-          symbol: "MES.c.0",
+          symbol: MES_CONTINUOUS_SYMBOL,
           startSec,
         });
         bars = result.bars1m;
@@ -150,7 +151,7 @@ Deno.serve(async (req: Request) => {
         source = `hist(live_err=${msg.slice(0, 80)})`;
         bars = await fetchOhlcv({
           dataset: "GLBX.MDP3",
-          symbol: "MES.c.0",
+          symbol: MES_CONTINUOUS_SYMBOL,
           stypeIn: "continuous",
           schema: "ohlcv-1m",
           start: new Date(rangeStartMs).toISOString(),
@@ -162,7 +163,7 @@ Deno.serve(async (req: Request) => {
       source = "hist";
       bars = await fetchOhlcv({
         dataset: "GLBX.MDP3",
-        symbol: "MES.c.0",
+        symbol: MES_CONTINUOUS_SYMBOL,
         stypeIn: "continuous",
         schema: "ohlcv-1m",
         start: new Date(rangeStartMs).toISOString(),
@@ -245,7 +246,7 @@ Deno.serve(async (req: Request) => {
       pulled_1m: mes1mRows.length,
       upserted_15m: mes15mRows.length,
       source,
-      symbol: "MES.c.0",
+      symbol: MES_CONTINUOUS_SYMBOL,
       from: new Date(rangeStartMs).toISOString(),
       duration_ms: Date.now() - startMs,
     });

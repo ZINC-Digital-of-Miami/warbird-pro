@@ -80,6 +80,8 @@ Deno.serve(async (req: Request) => {
       .eq("is_active", true)
       .eq("data_source", "DATABENTO")
       .neq("code", "MES")
+      // Top-bar only: NQ, ZN, CL, YM, ES (NYSE + SPXVOL derive from ES on dashboard).
+      .in("code", ["NQ", "ZN", "CL", "YM", "ES"])
       .not("databento_symbol", "is", null)
       // Exclude options — they use a different schema
       .not("code", "like", "%.OPT");

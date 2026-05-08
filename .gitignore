@@ -50,8 +50,12 @@ venv/
 # logs
 /logs/
 
-# claude code
-.claude/
+# claude code (commit team-wide settings + hooks; ignore local overrides)
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+.claude/hooks/*.local.*
+.claude/settings.local.json
 .tmp/
 
 # tradingview mcp (local tool, not project code)

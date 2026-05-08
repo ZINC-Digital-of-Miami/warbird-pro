@@ -1,7 +1,7 @@
 # V9 Full Tunable Rebuild — Design Doc (REDRAFT)
 
 **Date drafted:** 2026-05-07
-**Date finalized:** 2026-05-08
+**Last updated:** 2026-05-08
 **Status:** DRAFT v2 — supersedes the 2026-05-07 reflection draft and the
 2026-05-05 WIP. NOT yet approved, NOT yet committed as authoritative,
 NOT yet acted on. Awaiting Kirk approval at the Approval Gate.
@@ -10,9 +10,9 @@ session + 2026-05-08 quant second-opinion synthesis)
 **Predecessors:**
 - `docs/plans/2026-05-05-v9-full-tunable-rebuild-design.md` (5 pending
   decisions, machine-shutdown lock — superseded)
-- 2026-05-07 reflection draft at
-  `/Users/zincdigital/claude_analysis/v9_rebuild_design_DRAFT.md` (30+
-  tunables, 4 cards, narrow C1 flex — superseded by simplification
+- 2026-05-07 reflection draft (off-repo, on author's workstation; not
+  committed) — 30+ tunables, 4 cards, narrow C1 flex — superseded by
+  simplification
   directive 2026-05-07: *"we should only be confirming the 1 of 3 levels
   for entry are hit... when hit, there should be entry logic that looks
   at the three symbols, volume, htf structure, liquidity, MAs"* +
@@ -98,9 +98,17 @@ entry, short TP):
 - `tp2_score_long    = P(reach_TP2 | reached_TP1, features, long)`
 - `tp2_score_short   = P(reach_TP2 | reached_TP1, features, short)`
 
-Each fit uses AG `best_quality` + `num_bag_folds=8`, CPCV folds with
-purge + embargo (López de Prado), isotonic calibration on a held-out
-fold post-fit. Calibrated outputs only flow downstream.
+Each fit follows the locked V9 time-series AG discipline (per
+`scripts/ag/train_v9_locked.py`): `presets="good_quality"` (NOT
+`best_quality` — `best_quality` enables `dynamic_stacking` which
+violates time-series ordering), `num_bag_folds=0` (mandatory for
+time-series — AG's internal K-fold uses random splits and would
+defeat outer CPCV), `num_stack_levels=0` (required when
+`num_bag_folds=0`), `dynamic_stacking=False` explicit. Outer CPCV
+folds with purge + embargo (López de Prado) provide the cross-
+validation; AG's internal validation uses an embargoed chronological
+split per fold. Isotonic calibration on a held-out fold post-fit;
+calibrated outputs only flow downstream.
 
 ### Layer 3 — Decision Rule (EV-maximization, AG-driven SL)
 
@@ -181,10 +189,13 @@ folder. New ruling:
   `bull_vol_5m`, `bear_vol_5m`, `delta_divergence_5m`.
 - Real aggressor flow is now an **IS feature**, not OOS-only.
 - **Tick-rule sanity gate** (one-time, not a promotion gate):
-  `corr(signed_delta_per_bar, bar_return) > 0.30` on a 10K-bar random
-  sample. If it fails, the classifier or aggregation has a bug — fix
-  before training. Healthy implementations land 0.5+; 0.30 is a
-  defensive floor.
+  `corr(signed_delta_per_bar, bar_return) > 0.30` on a deterministic
+  10,000-bar sample. Sampling strategy: contiguous window from
+  `2024-07-01 00:00:00 UTC` (one full RTH+ETH calendar half spanning
+  ~10K 5m bars), no random subselection — this gives byte-identical
+  reproduction across runs and machines. If correlation < 0.30,
+  classifier or aggregation has a bug; fix before training. Healthy
+  implementations land 0.5+; 0.30 is a defensive floor.
 - Parity check from D2-original is no longer needed (real flow on both
   sides; nothing to parity-check against).
 
@@ -216,8 +227,10 @@ filter on workspace name; legacy path is read-only post-rebuild.
 space reduced to 4 continuous knobs + 2 booleans, TPE converges faster.
 
 **Card B (AG fits): no Optuna trial count.** Single AG fit per head ×
-direction = 4 fits. AG `best_quality` + 8-fold bagging provides sample
-efficiency natively.
+direction = 4 fits. AG config locked to `good_quality` +
+`num_bag_folds=0` + `num_stack_levels=0` + `dynamic_stacking=False`
+per the established V9 time-series discipline (see Layer 2 for
+rationale).
 
 **Total compute ~10% of original 3500 trials.**
 
@@ -545,8 +558,9 @@ fired at bar `t`.
   anywhere
 
 **Tick-rule sanity gate** (one-time, not a promotion gate):
-- `corr(signed_delta_per_bar, bar_return) > 0.30` on a 10K-bar random
-  sample
+- `corr(signed_delta_per_bar, bar_return) > 0.30` on a deterministic
+  10,000-bar contiguous sample starting at `2024-07-01 00:00:00 UTC`
+  (no random subselection; reproducible across runs/machines)
 - If fails: classifier or aggregation has a bug, fix before training
 - Healthy implementations land 0.5+; 0.30 is a defensive floor
 
@@ -554,8 +568,18 @@ fired at bar `t`.
 
 ## Pine V9 Edits — Phase 3 Scope
 
-All edits trip the standard Phase 5 gates: pine-facade compile,
-pine-lint, contamination check, no-tv-force check, npm build.
+All edits trip the full Pine Verification Pipeline per CLAUDE.md
+(in order):
+
+1. pine-facade compile check
+2. `./scripts/guards/pine-lint.sh <file>`
+3. `./scripts/guards/check-fib-scanner-guardrails.sh`
+4. `./scripts/guards/check-contamination.sh`
+5. `./scripts/guards/check-no-tv-force.sh`
+6. `npm run build`
+7. `./scripts/guards/check-indicator-strategy-parity.sh` — only if a
+   strategy harness is explicitly reopened and coupled to Warbird Pro
+   (skipped here; no strategy harness in active scope)
 
 ### Adds
 
@@ -627,8 +651,11 @@ artifact: snapshot diff before/after Phase 3.
 
 **Card B — AG Entry + TP-Prob Heads:**
 - 4 fits total: long-entry, short-entry, long-tp2, short-tp2
-- AG `best_quality` + `num_bag_folds=8`
-- CPCV folds with purge + embargo (same fold structure as Card A)
+- AG config (locked per `scripts/ag/train_v9_locked.py` discipline):
+  `presets="good_quality"`, `num_bag_folds=0`, `num_stack_levels=0`,
+  `dynamic_stacking=False`. NOT `best_quality` (time-series
+  contamination via dynamic stacking).
+- Outer CPCV folds with purge + embargo (same fold structure as Card A)
 - Calibration: isotonic regression on held-out validation fold per fit;
   versioned artifact saved
 - No Optuna over feature weights — feature importance is the output
@@ -662,7 +689,8 @@ pipeline.**
 - Verify row count matches existing dataset; verify hashes recorded in
   manifest; verify live Pine settings (dev=3.0, depth=10, floor=0.15)
   applied (per CLAUDE.md contamination history).
-- Tick-rule sanity gate: correlation check on 10K-bar sample.
+- Tick-rule sanity gate: correlation check on the deterministic
+  10,000-bar window from 2024-07-01 (per Data Pipeline section).
 
 **Phase 2 — `scripts/optuna/v9_trigger.py` Python re-trigger module.**
 - Implement the trigger ("touched any of 3 fib levels?") + exit
@@ -674,9 +702,11 @@ pipeline.**
 
 **Phase 3 — Pine V9 edits (D8, D9, ADX, HTF D+M, AND-chain
 simplification).**
-- All Phase 5 gates: pine-facade compile, pine-lint, contamination
-  check, no-tv-force, npm build, plot-budget recount.
-- Indicator/strategy parity check skipped (no strategy harness in
+- Full Pine Verification Pipeline per CLAUDE.md, in order:
+  pine-facade compile, `pine-lint.sh`,
+  `check-fib-scanner-guardrails.sh`, `check-contamination.sh`,
+  `check-no-tv-force.sh`, `npm run build`, plus plot-budget recount.
+- `check-indicator-strategy-parity.sh` skipped (no strategy harness in
   active scope).
 
 **Phase 4 — Card A (Optuna exit tuner).**

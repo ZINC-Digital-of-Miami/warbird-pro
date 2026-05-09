@@ -92,9 +92,9 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 
 ### Current Blocker
 
-V9 Hybrid+ 4-card authority run is active. **Do not stop or interrupt any
-running Optuna or AG processes.** Card 1 (exit_cpcv, 1000 trials) is running.
-Cards 2–4 start sequentially after Card 1 via the orchestrator.
+Hybrid+ 4-card authority run is deprecated. Active direction is the single
+Core training card (`scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`).
+Treat legacy Hybrid+ runtime notes as historical only.
 
 ### Live Pine Settings (Canonical — read TV inputs panel, not Pine code defaults)
 

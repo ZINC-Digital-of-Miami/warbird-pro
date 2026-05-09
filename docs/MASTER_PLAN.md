@@ -289,12 +289,13 @@ budgets must be repriced before any Nexus edit.
 
 ## Current Blocker
 
-V9 Hybrid+ 4-card authority run is active (Card 1 running, PID 71880).
-Do not interrupt. Cards 2–4 start after Card 1 completes via orchestrator.
+Hybrid+ 4-card authority run is deprecated. Active direction is the single
+Core training card (`scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`).
+Treat legacy Hybrid+ runtime notes as historical only.
 
 ---
 
-## V9 Hybrid+ Optuna — Active Authority Run (2026-05-05)
+## V9 Core AutoGluon — Active Plan (2026-05-09)
 
 ### Live Pine Settings (authoritative — must match `build_v9_dataset.py` exactly)
 

@@ -459,10 +459,10 @@ def replay(df: pd.DataFrame) -> pd.DataFrame:
         "ml_bar_delta": bar_delta,
         "ml_net_delta_20": net_delta_20,
         "ml_xa_nq_code": nq_codes,
-        # ZN and DX are not available in local cross_asset_1h.parquet — emitted
+        # ZN and DXY are not available in local cross_asset_1h.parquet — emitted
         # as constant 0 for schema parity. Trainer/HPO must NOT use these.
         "ml_xa_zn_code": np.zeros(n),
-        "ml_xa_dx_code": np.zeros(n),
+        "ml_xa_dxy_code": np.zeros(n),
         "ml_exhaust_long": np.zeros(n),
         "ml_exhaust_short": np.zeros(n),
         "ml_entry_route_code": np.zeros(n),

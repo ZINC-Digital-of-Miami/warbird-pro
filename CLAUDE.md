@@ -136,9 +136,9 @@ volume profile HVN/LVN + UTC-anchored economic-event features.
 Bull: `patRisingWindow`. Bear: `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`.
 Dropped 2026-05-09: `patBullEngulf`, `patPiercing`, `patHaramiBull`, `patHaramiBear`.
 
-**DXY rename:** HELD per Kirk 2026-05-09. `ml_xa_dx_code` stays as-is for now;
-atomic rename pass will sweep Pine + train_v9_locked.py + profile in a single
-commit when Kirk authorizes.
+**DXY source:** ICE futures are not allowed for the operator account. V9 Pine
+uses TradingView `TVC:DXY`; AG/ETL must use Yahoo `DX-Y.NYB` for DXY parity.
+Feature lists expect `ml_xa_dxy_code` and `ml_xa_dxy_diverge`.
 
 **Three Line Strike pattern:** HELD for v10. 84% citation is unverified vendor
 claim — validate in Python first before reserving Pine plot budget.

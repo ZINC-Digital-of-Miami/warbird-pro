@@ -67,7 +67,7 @@ ML_FEATURE_COLS = [
     "ml_liq_eqh_dist_atr", "ml_liq_eql_dist_atr",
     "ml_liq_vwap_dist_atr", "ml_liq_vol_zscore",
     # cross-asset 5m
-    "ml_xa_nq_code", "ml_xa_zn_code", "ml_xa_dx_code",
+    "ml_xa_nq_code", "ml_xa_zn_code", "ml_xa_dxy_code",
     # cross-asset advanced (VIX, MES↔NQ correlation, DXY divergence)
     "ml_xa_vix_zscore", "ml_xa_corr_nq", "ml_xa_dxy_diverge",
     # HTF confluence

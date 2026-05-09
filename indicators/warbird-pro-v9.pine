@@ -14,7 +14,7 @@
 //   plumbing with the same widths, styles, label sizes, and label offsets
 // - Liquidity is its own first-class package: BSL/SSL sweep+reclaim,
 //   equal-highs/lows pools, session VWAP+bands, volume z-score
-// - Cross-asset: NQ/ZN/DX trend codes + VIX z-score + MES↔NQ rolling
+// - Cross-asset: NQ/ZN/DXY trend codes + VIX z-score + MES↔NQ rolling
 //   correlation + DXY divergence
 // - Daily/weekly S/R: PDH/PDL/PWH/PWL distance features + thin lines
 // - Footprint: real intrabar bid/ask delta + POC distance + VA position
@@ -266,15 +266,15 @@ int adxLength = 14
 [adxDiPlus, adxDiMinus, adxValue] = ta.dmi(adxLength, adxLength)
 
 //=====================
-// Cross-asset 5m trend codes (NQ/ZN/DX)
+// Cross-asset 5m trend codes (NQ/ZN/DXY)
 //=====================
 [nqClose5, nqSlow5, nqFast5] = request.security("CME_MINI:NQ1!", "5", [close, ta.sma(close, 21), ta.ema(close, 9)], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
 [znClose5, znSlow5, znFast5] = request.security("CBOT:ZN1!", "5", [close, ta.sma(close, 21), ta.ema(close, 9)], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
-[dxClose5, dxSlow5, dxFast5] = request.security("ICEUS:DX1!", "5", [close, ta.sma(close, 21), ta.ema(close, 9)], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+[dxyClose5, dxySlow5, dxyFast5] = request.security("TVC:DXY", "5", [close, ta.sma(close, 21), ta.ema(close, 9)], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
 
 int nqCode = f_xa_code(nqClose5, nqSlow5, nqFast5)
 int znCode = f_xa_code(znClose5, znSlow5, znFast5)
-int dxCode = f_xa_code(dxClose5, dxSlow5, dxFast5)
+int dxyCode = f_xa_code(dxyClose5, dxySlow5, dxyFast5)
 
 //=====================
 // Cross-asset advanced — VIX z-score, MES↔NQ rolling correlation, DXY divergence
@@ -287,8 +287,8 @@ float vixZscore = vixSd > 0 and not na(vixClose) ? (vixClose - vixMean) / vixSd 
 float corrMesNq = ta.correlation(close, nqClose5, corrLength)
 
 bool mesUp = close > close[1]
-bool dxUp = not na(dxClose5) and not na(dxClose5[1]) and dxClose5 > dxClose5[1]
-bool dxyDiverge = (mesUp and dxUp) or (not mesUp and not dxUp)
+bool dxyUp = not na(dxyClose5) and not na(dxyClose5[1]) and dxyClose5 > dxyClose5[1]
+bool dxyDiverge = (mesUp and dxyUp) or (not mesUp and not dxyUp)
 float dxyDivergeFloat = dxyDiverge ? 1.0 : 0.0
 
 //=====================
@@ -886,7 +886,7 @@ float volPct = atr14 / close * 100.0
 string volatilityText = na(volPct) ? "--" : volPct >= 0.15 ? "HIGH" : volPct >= 0.06 ? "MEDIUM" : "LOW"
 string nqTrend = f_xa_label(nqCode)
 string znTrend = f_xa_label(znCode)
-string dxTrend = f_xa_label(dxCode)
+string dxyTrend = f_xa_label(dxyCode)
 
 f_cell_h(table t, int c, int r, string txt) =>
     table.cell(t, c, r, txt, text_color=TBL_TEXT_HDR, bgcolor=color.new(TBL_BG_HEADER, 0), text_size=size.tiny)
@@ -940,8 +940,8 @@ if showMlTable and not na(mlTable) and barstate.islast
     f_cell_b(mlTable, 1, 17, nqTrend)
     f_cell_b(mlTable, 0, 18, "ZN")
     f_cell_b(mlTable, 1, 18, znTrend)
-    f_cell_b(mlTable, 0, 19, "DX")
-    f_cell_b(mlTable, 1, 19, dxTrend)
+    f_cell_b(mlTable, 0, 19, "DXY")
+    f_cell_b(mlTable, 1, 19, dxyTrend)
 
 //=====================
 // Alerts
@@ -996,7 +996,7 @@ plot(volZscore, "ml_liq_vol_zscore", display=display.none, editable=false)
 // cross-asset (5m aligned)
 plot(float(nqCode), "ml_xa_nq_code", display=display.none, editable=false)
 plot(float(znCode), "ml_xa_zn_code", display=display.none, editable=false)
-plot(float(dxCode), "ml_xa_dx_code", display=display.none, editable=false)
+plot(float(dxyCode), "ml_xa_dxy_code", display=display.none, editable=false)
 
 // cross-asset advanced (VIX, MES↔NQ correlation, DXY divergence)
 plot(vixZscore, "ml_xa_vix_zscore", display=display.none, editable=false)

@@ -94,7 +94,6 @@ BEAR_PATTERN_COLS = (
 
 # Required feature columns for filter HPO (raised by load_data on missing).
 # Must match the ml_* plot() surface of indicators/warbird-pro-v9.pine exactly.
-# ml_xa_dx_code renamed to ml_xa_dxy_code — update here when Pine rename lands.
 REQUIRED_FEATURE_COLS = (
     "ml_entry_long_trigger",
     "ml_entry_short_trigger",
@@ -112,7 +111,7 @@ REQUIRED_FEATURE_COLS = (
     "ml_reclaimed_ssl",
     "ml_xa_nq_code",
     "ml_xa_zn_code",
-    "ml_xa_dx_code",
+    "ml_xa_dxy_code",
     "ml_htf_conf_total",
 )
 

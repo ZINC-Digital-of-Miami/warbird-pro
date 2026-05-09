@@ -11,7 +11,7 @@
     "allowed_symbol_roots": ["MES"],
     "ignored_symbol_roots": ["ES", "NQ", "MNQ"],
     "timeframe": "5",
-    "data_floor": "2020-01-01",
+    "data_floor": "2025-05-01",
     "label_column": "ml_entry_long_trigger/ml_entry_short_trigger",
     "output_budget": "55/64 (53 plot + 2 alertcondition); 4 request.security",
     "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
@@ -26,12 +26,10 @@
       "targetLookbackBars",
       "extendLevelsRight",
       "useConfluenceAnchorSpan",
-      "fibLineStyleInput",
       "showFibLevelLabelsInput",
       "fibLabelOffsetBarsInput",
       "fibLabelSizeInput",
       "zoneFillTransparencyInput",
-      "useMaGate",
       "lengthMA",
       "lengthEMA",
       "showMaLines"
@@ -70,7 +68,8 @@
     "allowed_capture_methods": [
       "DATABENTO_OHLCV_CSV",
       "DATABENTO_TRAINING_CSV",
-      "DATABENTO_BARS_CSV"
+      "DATABENTO_BARS_CSV",
+      "DATABENTO_TRADES_CSV"
     ],
     "notes": "V9 entry-filter HPO. MES 5m only, Databento historical only. Treats Pine V9 ml_entry_long_trigger / ml_entry_short_trigger as candidates and tunes a post-trigger filter that decides which to TAKE based on the rich ml_* feature surface (candlestick patterns, BSL/SSL liquidity, volume delta, HTF confluence, exhaustion, cross-asset codes). Pine fib core, MA setup, and visuals are frozen. Negative-fib stop candidates banned by contract."
   },
@@ -86,7 +85,7 @@
     "allowed_symbol_roots": ["MES"],
     "ignored_symbol_roots": ["ES", "NQ", "MNQ"],
     "timeframe": "5",
-    "data_floor": "2020-01-01",
+    "data_floor": "2025-05-01",
     "label_column": "ml_entry_long_trigger/ml_entry_short_trigger",
     "output_budget": "55/64 (53 plot + 2 alertcondition); 4 request.security",
     "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
@@ -101,7 +100,6 @@
       "targetLookbackBars",
       "extendLevelsRight",
       "useConfluenceAnchorSpan",
-      "useMaGate",
       "lengthMA",
       "lengthEMA",
       "showMaLines"
@@ -125,7 +123,8 @@
     "allowed_capture_methods": [
       "DATABENTO_OHLCV_CSV",
       "DATABENTO_TRAINING_CSV",
-      "DATABENTO_BARS_CSV"
+      "DATABENTO_BARS_CSV",
+      "DATABENTO_TRADES_CSV"
     ],
     "notes": "V9 exit-policy HPO. MES 5m only, Databento historical only. Models ATR/risk exits (bracket, R:R, breakeven, ATR trail) on the same Pine V9 entry triggers. Negative-fib extension stops banned. Pine source frozen until promotion approval."
   },

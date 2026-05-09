@@ -41,6 +41,7 @@ DATABENTO_CAPTURE_METHODS = frozenset(
         "DATABENTO_OHLCV_CSV",
         "DATABENTO_TRAINING_CSV",
         "DATABENTO_BARS_CSV",
+        "DATABENTO_TRADES_CSV",
     }
 )
 ALLOWED_CAPTURE_METHODS = DATABENTO_CAPTURE_METHODS
@@ -48,7 +49,7 @@ ALLOWED_CAPTURE_METHODS = DATABENTO_CAPTURE_METHODS
 POINT_VALUE_BY_ROOT = {"MES": 5.0}
 COMMISSION_SIDE_USD = 1.0
 MINTICK = 0.25
-DATA_FLOOR = "2020-01-01"
+DATA_FLOOR = "2025-05-01"
 MIN_TRADES = 20
 OBJECTIVE_METRIC = "v9_risk_exit_score"
 
@@ -64,12 +65,10 @@ FROZEN_PINE_PARAMS = frozenset(
         "targetLookbackBars",
         "extendLevelsRight",
         "useConfluenceAnchorSpan",
-        "fibLineStyleInput",
         "showFibLevelLabelsInput",
         "fibLabelOffsetBarsInput",
         "fibLabelSizeInput",
         "zoneFillTransparencyInput",
-        "useMaGate",
         "lengthMA",
         "lengthEMA",
         "showMaLines",

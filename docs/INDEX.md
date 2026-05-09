@@ -8,6 +8,14 @@ This file is the single entrypoint for Warbird architecture, contract, and opera
 
 Ignore all other plans, decisions, scratch notes, and historical architecture docs unless they are linked from this index.
 
+## Governance Precedence
+
+If documentation conflicts, apply this precedence:
+
+1. Hard safety rules are immutable top priority unless Kirk explicitly revokes them.
+2. Dated decision records define current direction when summaries lag.
+3. Summary docs (`AGENTS.md`, `CLAUDE.md`, `docs/MASTER_PLAN.md`, runbooks) are derived operational views and must not override (1) or (2).
+
 ## Iteration Rule
 
 The indicator-only plan is active, but tuning and training are ongoing. Treat

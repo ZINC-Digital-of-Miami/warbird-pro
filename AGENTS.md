@@ -39,6 +39,14 @@ is a thin redirector only; do not expand it into a competing source.
 10. `CLAUDE.md`
 11. `docs/agent-safety-gates.md`
 
+### Governance Precedence (Conflict Resolver)
+
+When docs conflict, precedence is:
+
+1. Hard safety rules are immutable top priority unless Kirk explicitly revokes them.
+2. Dated decision records define current direction when summaries lag.
+3. Summary docs (`AGENTS.md`, `CLAUDE.md`, `docs/MASTER_PLAN.md`, runbooks) are derived operational views and must not override (1) or (2).
+
 ### Startup / Start-of-Day Review
 
 At the start of every fresh chat, start of day, context reset, or resumed

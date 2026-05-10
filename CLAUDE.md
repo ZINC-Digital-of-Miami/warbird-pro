@@ -99,7 +99,7 @@ The Hybrid+ 4-card system (`warbird_pro_v9_exit_cpcv`,
 2 cards → single Core card. The Core card supersedes all four.
 
 **Single active training card:** `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`
-(under construction). MAE-regression side card scaffolds in
+(smoke/validation Optuna wrapper wired; full 1y AG launch still pending). MAE-regression side card scaffolds in
 `scripts/optuna/cards/side_models/` and trains AFTER Core lands.
 
 **AG config (locked):**
@@ -147,9 +147,11 @@ claim — validate in Python first before reserving Pine plot budget.
 
 Core ETL/trainer partial — DXY parity, fixed 10/-5/24 labels, strict feature
 schema, Yahoo `DX-Y.NYB`, and Databento trade-side CVD/order-flow features are
-wired in code. Pending: full 1y Core build, Core card body + hard-gate launch
-wiring, Optuna hub wiring, and pre-launch gate report. Owner/next trigger:
-Codex resumes when Kirk approves the full 1y Core build/training path.
+wired in code. The Core Optuna card can now record smoke/validation trials into
+`scripts/optuna/workspaces/warbird_pro_core/study.db`. Pending: full 1y Core
+build, hard-gate launch wiring for full AG training, and pre-launch gate report.
+Owner/next trigger: Codex resumes when Kirk approves the full 1y Core
+build/training path.
 
 Smoke verification evidence is recorded in
 `docs/audits/2026-05-10-v9-core-smoke-verification.md`; use

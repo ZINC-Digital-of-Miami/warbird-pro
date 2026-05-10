@@ -365,7 +365,7 @@ floor=0.50 — all wrong; do not repeat.
 
 | Card | Profile | Status |
 |------|---------|--------|
-| Core | `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Under construction |
+| Core | `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Smoke/validation Optuna wrapper wired; full 1y AG launch pending |
 
 **AG config (locked):**
 

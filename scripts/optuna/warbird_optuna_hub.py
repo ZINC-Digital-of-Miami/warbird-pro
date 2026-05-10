@@ -452,6 +452,15 @@ def load_topn_stats(path: Path) -> dict[str, Any]:
 
 
 def build_run_command(spec: IndicatorSpec) -> str:
+    if spec.key == "warbird_pro_core":
+        return " \\\n  ".join(
+            [
+                "python scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py",
+                "--mode smoke",
+                "--csv artifacts/v9_core_smoke_may2025/mes_5m_core.csv",
+                "--manifest artifacts/v9_core_smoke_may2025/mes_5m_core.manifest.json",
+            ]
+        )
     parts = [
         "python scripts/optuna/runner.py",
         f"--indicator-key {spec.key}",
@@ -1064,10 +1073,11 @@ class HubState:
         _CATEGORY_ORDER = {
             "chart-core-exit-modeling": 0,
             "chart-core-entry-filter": 1,
-            "ag-meta-labeler": 2,
-            "joint-challenger": 3,
-            "chart-core": 4,
-            "lower-pane": 5,
+            "ag-binary-classifier": 2,
+            "ag-meta-labeler": 3,
+            "joint-challenger": 4,
+            "chart-core": 5,
+            "lower-pane": 6,
         }
         cards.sort(key=lambda c: (
             _CATEGORY_ORDER.get(c["category"], 99),

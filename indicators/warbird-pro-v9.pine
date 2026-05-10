@@ -124,7 +124,7 @@ bool useSessionVwap = input.bool(true, "Enable Session VWAP Feature", group=grou
 // CROSS-ASSET PACKAGE
 //=====================
 string groupXa = "Cross-Asset Context"
-bool useXaGate = input.bool(true, "Use NQ Trend As Entry Gate", group=groupXa)
+bool useXaGate = input.bool(true, "Gate Entries With NQ Trend", group=groupXa)
 string xaTrendTimeframe = input.timeframe("5", "Trend Timeframe", group=groupXa)
 string nqSymbol = input.symbol("CME_MINI:NQ1!", "NQ Symbol", group=groupXa)
 string znSymbol = input.symbol("CBOT:ZN1!", "ZN Symbol", group=groupXa)
@@ -788,8 +788,8 @@ if barstate.islast
     _slLbl    := setFibLevelLabel(_slLbl,    tradeActive, tradeStopPrice,  "SL",    fibStopColorInput)
     _tpLbl    := setFibLevelLabel(_tpLbl,    tradeActive, tradeTargetPrice,"TP",    fibTargetColorInput)
 
-plot(showMaLines ? xMA : na, title="Slow MA", color=color.white, linewidth=2, display=display.all)
-plot(showMaLines ? xEMA : na, title="Fast MA", color=#26A69A, linewidth=2, display=display.all)
+plot(showMaLines ? xMA : na, title="MA (SMA)", color=color.white, linewidth=2, display=display.all)
+plot(showMaLines ? xEMA : na, title="EMA (close)", color=#26A69A, linewidth=2, display=display.all)
 
 //=====================
 // Status table — black bg, white body, dark gray dividers; headers unchanged

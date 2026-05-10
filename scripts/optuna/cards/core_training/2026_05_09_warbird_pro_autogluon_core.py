@@ -106,6 +106,37 @@ def _trial_attrs(report: dict[str, Any], mode: str) -> dict[str, Any]:
     }
 
 
+def _suggest_dashboard_params(trial: optuna.trial.Trial, report: dict[str, Any], mode: str) -> None:
+    """Ensure the study has a concrete search space for dashboard importances.
+
+    The Core card currently records validation-only trials (no HPO), but
+    optuna-dashboard param-importance can fail on studies with empty trial
+    params. Use deterministic single-choice params so behavior stays unchanged
+    while exposing a non-empty search space.
+    """
+    # Keep distributions compatible with existing study history; Optuna disallows
+    # changing categorical choice sets or fixed-int ranges for a param name.
+    prev_mode = mode
+    prev_window = f"{report['ts_first']}__{report['ts_last']}"
+    prev_hold = int(report["max_hold_bars"])
+    for prev_trial in trial.study.trials:
+        if "core_card_mode" in prev_trial.params:
+            prev_mode = str(prev_trial.params["core_card_mode"])
+        if "core_dataset_window" in prev_trial.params:
+            prev_window = str(prev_trial.params["core_dataset_window"])
+        if "core_max_hold_bars" in prev_trial.params:
+            prev_hold = int(prev_trial.params["core_max_hold_bars"])
+        if (
+            "core_card_mode" in prev_trial.params
+            and "core_dataset_window" in prev_trial.params
+            and "core_max_hold_bars" in prev_trial.params
+        ):
+            break
+    trial.suggest_categorical("core_card_mode", [prev_mode])
+    trial.suggest_categorical("core_dataset_window", [prev_window])
+    trial.suggest_int("core_max_hold_bars", prev_hold, prev_hold)
+
+
 def write_optuna_trial(
     report: dict[str, Any],
     *,
@@ -137,6 +168,7 @@ def write_optuna_trial(
     study.set_user_attr("gate_status", "smoke_validated" if mode == "smoke" else "validated")
 
     trial = study.ask()
+    _suggest_dashboard_params(trial, report, mode)
     for key, value in _trial_attrs(report, mode).items():
         trial.set_user_attr(key, value)
     study.tell(trial, 1.0)

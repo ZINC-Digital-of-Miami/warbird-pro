@@ -259,13 +259,13 @@ def zigzag_anchors(high: np.ndarray, low: np.ndarray, close: np.ndarray, atr10: 
             swing_low = float(low[i])
             swing_low_idx = i
         if last_dir != 1 and (swing_high - low[i]) >= threshold_abs:
-            if not pivots or (swing_high_idx - pivots[-1][0]) >= FIB_DEPTH:
+            if not pivots or (i - pivots[-1][0]) >= FIB_DEPTH:
                 pivots.append((swing_high_idx, swing_high, 1))
                 last_dir = 1
                 swing_low = float(low[i])
                 swing_low_idx = i
         elif last_dir != -1 and (high[i] - swing_low) >= threshold_abs:
-            if not pivots or (swing_low_idx - pivots[-1][0]) >= FIB_DEPTH:
+            if not pivots or (i - pivots[-1][0]) >= FIB_DEPTH:
                 pivots.append((swing_low_idx, swing_low, -1))
                 last_dir = -1
                 swing_high = float(high[i])
@@ -624,7 +624,7 @@ def read_trade_chunks(zip_path: Path, members: list[str], start: pd.Timestamp, e
                 reader = zstd.ZstdDecompressor().stream_reader(raw)
                 text = io.TextIOWrapper(reader, encoding="utf-8")
                 for chunk in pd.read_csv(text, usecols=usecols, chunksize=500_000):
-                    chunk["ts_event"] = pd.to_datetime(chunk["ts_event"], utc=True)
+                    chunk["ts_event"] = pd.to_datetime(chunk["ts_event"], utc=True, format="ISO8601")
                     chunk = chunk.loc[(chunk["ts_event"] >= start) & (chunk["ts_event"] <= end)]
                     if chunk.empty:
                         continue

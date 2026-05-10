@@ -65,12 +65,13 @@ Retired/removed Pine variants:
 - `indicators/v7-warbird-institutional-backtest-strategy.pine`
 - `indicators/fibs-only.pine`
 
-Budget verification from 2026-05-09 by `scripts/guards/pine-lint.sh`:
+Budget verification from 2026-05-10 by `scripts/guards/pine-lint.sh`:
 
-- Warbird Pro V9: 53 output-consuming calls
-  (51 `plot()` + 2 `alertcondition()`), 9 `request.security()` after
+- Warbird Pro V9: 60 output-consuming calls
+  (58 `plot()` + 2 `alertcondition()`), 9 `request.security()` after
   comment-line normalization, 1 `request.footprint()`, 19 `line.new()`,
-  1 `box.new()`, and 1 `table.new()`
+  1 `box.new()`, and 1 `table.new()`. The new footprint diagnostics leave
+  only 4 output slots; price every additional plot before editing Pine.
 
 Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 

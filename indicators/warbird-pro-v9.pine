@@ -151,6 +151,10 @@ bool useFootprint = input.bool(true, "Enable Footprint Features", group=groupFp)
 int fpTicksPerRow = input.int(4, "Ticks Per Row", minval=1, maxval=100, group=groupFp)
 float fpVaPct = input.float(70.0, "Value Area %", minval=50.0, maxval=95.0, step=1.0, group=groupFp)
 float fpImbalancePct = input.float(300.0, "Imbalance %", minval=100.0, maxval=1000.0, step=10.0, group=groupFp)
+float fpAbsorptionDeltaPct = input.float(35.0, "Absorption Delta %", minval=5.0, maxval=100.0, step=1.0, group=groupFp)
+float fpFlushDeltaPct = input.float(35.0, "Flush Delta %", minval=5.0, maxval=100.0, step=1.0, group=groupFp)
+float fpEventVolSpike = input.float(1.50, "Event Volume Spike", minval=0.50, maxval=10.0, step=0.10, group=groupFp)
+float fpCompressedRangeAtr = input.float(0.75, "Compressed Range ATR", minval=0.10, maxval=5.0, step=0.05, group=groupFp)
 
 //=====================
 // FOMC EVENT DATES (heads-up only — no plot budget)
@@ -379,6 +383,9 @@ float pwlDistAtr = atr14 > 0 and not na(pwl) ? (close - pwl) / atr14 : 0.0
 float fpDeltaPct = 0.0
 float fpPocDistAtr = 0.0
 int fpVaPosition = 0
+float fpDeltaVol = 0.0
+float fpTotalVol = 0.0
+float fpPocPrice = na
 if useFootprint
     footprint fp = request.footprint(fpTicksPerRow, fpVaPct, fpImbalancePct)
     if not na(fp)
@@ -386,15 +393,29 @@ if useFootprint
         float sellVol = fp.sell_volume()
         float totalVol = buyVol + sellVol
         float deltaVol = fp.delta()
+        fpTotalVol := totalVol
+        fpDeltaVol := deltaVol
         fpDeltaPct := totalVol > 0 ? (deltaVol / totalVol) * 100.0 : 0.0
         volume_row pocRow = fp.poc()
         float pocPrice = na(pocRow) ? na : pocRow.up_price()
+        fpPocPrice := pocPrice
         fpPocDistAtr := atr14 > 0 and not na(pocPrice) ? (close - pocPrice) / atr14 : 0.0
         volume_row vahRow = fp.vah()
         volume_row valRow = fp.val()
         float vah = na(vahRow) ? na : vahRow.up_price()
         float val_ = na(valRow) ? na : valRow.down_price()
         fpVaPosition := not na(vah) and close > vah ? 1 : not na(val_) and close < val_ ? -1 : 0
+
+float fpDeltaImbalancePct = fpDeltaPct
+float fpDeltaAcceleration = fpDeltaVol - nz(fpDeltaVol[1])
+float fpDeltaVolSd = ta.stdev(fpDeltaVol, volZLength)
+float fpAggressorPulse = not na(fpDeltaVolSd) and fpDeltaVolSd > 0 ? fpDeltaVol / fpDeltaVolSd : 0.0
+float fpVolumeMean = ta.sma(fpTotalVol, volZLength)
+float fpVolumeSpikeRatio = not na(fpVolumeMean) and fpVolumeMean > 0 ? fpTotalVol / fpVolumeMean : 0.0
+float fpPocShift = atr14 > 0 and not na(fpPocPrice) and not na(fpPocPrice[1]) ? (fpPocPrice - fpPocPrice[1]) / atr14 : 0.0
+float fpRangeAtr = atr14 > 0 ? barRange / atr14 : 0.0
+bool fpAbsorptionCandidate = math.abs(fpDeltaPct) >= fpAbsorptionDeltaPct and fpVolumeSpikeRatio >= fpEventVolSpike and fpRangeAtr <= fpCompressedRangeAtr
+bool fpFlushCandidate = math.abs(fpDeltaPct) >= fpFlushDeltaPct and fpVolumeSpikeRatio >= fpEventVolSpike and fpRangeAtr > fpCompressedRangeAtr
 
 float htf1hRange = nz(htf1hHigh - htf1hLow)
 
@@ -887,6 +908,10 @@ string volatilityText = na(volPct) ? "--" : volPct >= 0.15 ? "HIGH" : volPct >= 
 string nqTrend = f_xa_label(nqCode)
 string znTrend = f_xa_label(znCode)
 string dxyTrend = f_xa_label(dxyCode)
+string fpDeltaText = str.tostring(fpDeltaPct, "#.##") + "%"
+string fpVolumeSpikeText = str.tostring(fpVolumeSpikeRatio, "#.##") + "x"
+string fpEventText = fpAbsorptionCandidate ? "ABSORPTION" : fpFlushCandidate ? "FLUSH" : "NONE"
+color fpEventColor = fpAbsorptionCandidate ? #26A69A : fpFlushCandidate ? COLOR_STOP : TBL_TEXT_BODY
 
 f_cell_h(table t, int c, int r, string txt) =>
     table.cell(t, c, r, txt, text_color=TBL_TEXT_HDR, bgcolor=color.new(TBL_BG_HEADER, 0), text_size=size.tiny)
@@ -899,7 +924,7 @@ f_cell_v(table t, int c, int r, string txt, color tcol) =>
 
 var table mlTable = na
 if barstate.isfirst and showMlTable
-    mlTable := table.new(f_table_pos(tablePositionInput), 2, 20, bgcolor=color.new(TBL_BG_BODY, 0), border_color=color.new(TBL_BORDER, 0), border_width=1, frame_color=color.new(TBL_BORDER, 0), frame_width=1, force_overlay=true)
+    mlTable := table.new(f_table_pos(tablePositionInput), 2, 24, bgcolor=color.new(TBL_BG_BODY, 0), border_color=color.new(TBL_BORDER, 0), border_width=1, frame_color=color.new(TBL_BORDER, 0), frame_width=1, force_overlay=true)
 
 if showMlTable and not na(mlTable) and barstate.islast
     f_cell_h(mlTable, 0, 0, "TREND")
@@ -942,6 +967,14 @@ if showMlTable and not na(mlTable) and barstate.islast
     f_cell_b(mlTable, 1, 18, znTrend)
     f_cell_b(mlTable, 0, 19, "DXY")
     f_cell_b(mlTable, 1, 19, dxyTrend)
+    f_cell_h(mlTable, 0, 20, "FOOTPRINT")
+    f_cell_h(mlTable, 1, 20, "")
+    f_cell_b(mlTable, 0, 21, "DELTA")
+    f_cell_b(mlTable, 1, 21, fpDeltaText)
+    f_cell_b(mlTable, 0, 22, "VOL SPIKE")
+    f_cell_b(mlTable, 1, 22, fpVolumeSpikeText)
+    f_cell_b(mlTable, 0, 23, "EVENT")
+    f_cell_v(mlTable, 1, 23, fpEventText, fpEventColor)
 
 //=====================
 // Alerts
@@ -1016,6 +1049,13 @@ plot(pwlDistAtr, "ml_lvl_pwl_dist_atr", display=display.none, editable=false)
 plot(fpDeltaPct, "ml_fp_delta_pct", display=display.none, editable=false)
 plot(fpPocDistAtr, "ml_fp_poc_dist_atr", display=display.none, editable=false)
 plot(float(fpVaPosition), "ml_fp_va_position", display=display.none, editable=false)
+plot(fpDeltaImbalancePct, "ml_delta_imbalance_pct", display=display.none, editable=false)
+plot(fpDeltaAcceleration, "ml_delta_acceleration", display=display.none, editable=false)
+plot(fpAggressorPulse, "ml_aggressor_pulse", display=display.none, editable=false)
+plot(fpAbsorptionCandidate ? 1.0 : 0.0, "ml_absorption_candidate", display=display.none, editable=false)
+plot(fpFlushCandidate ? 1.0 : 0.0, "ml_flush_candidate", display=display.none, editable=false)
+plot(fpVolumeSpikeRatio, "ml_volume_spike_ratio", display=display.none, editable=false)
+plot(fpPocShift, "ml_poc_shift", display=display.none, editable=false)
 
 // triggers + trade engine
 plot(entryLongTrigger ? 1.0 : 0.0, "ml_entry_long_trigger", display=display.none, editable=false)

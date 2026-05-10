@@ -43,8 +43,8 @@ records the reproducible command path and checksums.
 
 ```json
 {
-  "csv_sha256": "7e18f2b9fa6135552ebcee3b10ba87919166e09bb5ee91642c3816662a701c15",
-  "manifest_sha256": "d3e1158b3e71dfe47d7024279953224e964ad852699f59d49cdffdecfd00e071",
+  "csv_sha256": "e867cf17e500eb653a2345ae1642266c34381245348a6817fae797aecf88bd4d",
+  "manifest_sha256": "8a230d08f9abbb4bc90f62b481e88c44cb6db79d436c522a0c24908f7039bc29",
   "manifest_sha256_matches_csv": true,
   "row_count": 6000,
   "ts_first": "2025-05-01T00:00:00+00:00",
@@ -55,7 +55,7 @@ records the reproducible command path and checksums.
   "winner_count": 62,
   "loss_count": 6,
   "winner_rate": 0.9117647058823529,
-  "feature_count_locked": 45,
+  "feature_count_locked": 52,
   "missing_features": [],
   "stale_columns": [],
   "manifest_warnings": [],
@@ -64,12 +64,38 @@ records the reproducible command path and checksums.
     "ml_xa_dxy_diverge": 3111,
     "ml_xa_corr_nq": 2142,
     "ml_fp_delta_pct": 4603,
+    "ml_delta_imbalance_pct": 4603,
+    "ml_delta_acceleration": 4613,
+    "ml_aggressor_pulse": 4603,
     "ml_cvd_div_bull": 486,
     "ml_cvd_div_bear": 714,
-    "ml_absorption_candidate": 0,
-    "ml_flush_candidate": 0,
+    "ml_absorption_candidate": 10,
+    "ml_flush_candidate": 8,
     "ml_volume_spike_ratio": 4620,
     "ml_poc_shift": 4356
+  }
+}
+```
+
+## Order-Flow Threshold Evidence
+
+`scripts/ag/report_v9_core_orderflow_distribution.py` now emits the
+distribution proof for absorption/flush thresholds. May smoke showed absolute
+delta max `51.86%`, so the old `55%` absorption and `65%` flush thresholds were
+mathematically unable to fire in this month. The refactor uses `35%` delta with
+the existing `1.5x` volume-spike and `0.75 ATR` range split:
+
+```json
+{
+  "selected_recomputed_counts": {
+    "absorption_count": 10,
+    "flush_count": 8
+  },
+  "thresholds": {
+    "absorption_delta_pct": 35.0,
+    "flush_delta_pct": 35.0,
+    "event_volume_spike": 1.5,
+    "compressed_range_atr": 0.75
   }
 }
 ```
@@ -88,4 +114,4 @@ resolved-trade and chronological split floors.
 | Full 1y Core ETL build | Codex, after Kirk approval to run full Core build | User asks to run the 1y Core build |
 | Core card body + hard-gate launch wiring | Codex | Full 1y Core CSV passes full `--validate-only` gate |
 | Optuna hub wiring | Codex | Core card body exists and hard-gate command is stable |
-| Absorption/flush threshold review | Codex | Multi-month distribution report shows whether current thresholds are too strict |
+| Absorption/flush 1y confirmation | Codex | Full 1y Core build confirms or revises the 35%/1.5x/0.75 ATR smoke-tuned thresholds |

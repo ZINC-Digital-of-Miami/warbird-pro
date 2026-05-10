@@ -81,6 +81,10 @@ Primary metrics:
     candlestick confirmation, EMA/MA crossover alignment, optional ML RSI
     filter, optional liquidity-sweep confirm, cooldown, and the bullish-trend
     short gate
+  - footprint/order-flow hidden exports now include Pine-native delta
+    imbalance, delta acceleration, aggressor pulse, volume-spike ratio, POC
+    shift, absorption candidate, and flush candidate fields for Core parity and
+    live visual checks
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
   - retained Nexus lower-pane footprint-delta research/tuning surface
   - active trigger family: `NEXUS_FOOTPRINT_DELTA`

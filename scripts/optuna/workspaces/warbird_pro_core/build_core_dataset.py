@@ -78,6 +78,11 @@ EQH_LOOKBACK = 100
 VOL_Z_LEN = 20
 CORR_LEN = 20
 VIX_Z_LEN = 20
+ORDERFLOW_ROLLING_LEN = 20
+ORDERFLOW_ABSORPTION_DELTA_PCT = 35.0
+ORDERFLOW_FLUSH_DELTA_PCT = 35.0
+ORDERFLOW_EVENT_VOLUME_SPIKE = 1.5
+ORDERFLOW_COMPRESSED_RANGE_ATR = 0.75
 
 OUTRIGHT_MES_RE = re.compile(r"^MES[FGHJKMNQUVXZ]\d{1,2}$")
 TRADES_MEMBER_RE = re.compile(r"(\d{8})-(\d{8})\.trades\.csv\.zst$")
@@ -668,7 +673,7 @@ def build_orderflow_features(df: pd.DataFrame, trades_zip: Path | None, gate_mod
     delta = bars["delta"].astype(float)
     delta_pct = (delta / total.replace(0, np.nan) * 100.0).fillna(0.0)
     trade_vol = bars["total_trade_volume"].astype(float)
-    volume_spike = (trade_vol / trade_vol.rolling(20, min_periods=1).mean().replace(0, np.nan)).fillna(0.0)
+    volume_spike = (trade_vol / trade_vol.rolling(ORDERFLOW_ROLLING_LEN, min_periods=1).mean().replace(0, np.nan)).fillna(0.0)
     atr = out["ml_atr14"].replace(0, np.nan)
     atr_arr = atr.to_numpy(dtype=float)
     poc = bars["poc_price"]
@@ -702,17 +707,21 @@ def build_orderflow_features(df: pd.DataFrame, trades_zip: Path | None, gate_mod
 
     out["ml_delta_imbalance_pct"] = out["ml_fp_delta_pct"]
     out["ml_delta_acceleration"] = delta.diff().fillna(0.0).to_numpy(dtype=float)
-    out["ml_aggressor_pulse"] = (delta / delta.rolling(20, min_periods=5).std(ddof=0).replace(0, np.nan)).replace([np.inf, -np.inf], np.nan).fillna(0.0).to_numpy(dtype=float)
+    out["ml_aggressor_pulse"] = (delta / delta.rolling(ORDERFLOW_ROLLING_LEN, min_periods=5).std(ddof=0).replace(0, np.nan)).replace([np.inf, -np.inf], np.nan).fillna(0.0).to_numpy(dtype=float)
     out["ml_volume_spike_ratio"] = volume_spike.to_numpy(dtype=float)
     poc_shift = np.r_[np.nan, np.diff(poc_arr)] / atr_arr
     out["ml_poc_shift"] = np.nan_to_num(poc_shift, nan=0.0, posinf=0.0, neginf=0.0)
     compressed_range = ((high_arr - low_arr) / atr_arr)
     compressed_range = np.nan_to_num(compressed_range, nan=0.0, posinf=0.0, neginf=0.0)
     out["ml_absorption_candidate"] = (
-        (np.abs(delta_pct_arr) >= 55.0) & (volume_spike_arr >= 1.5) & (compressed_range <= 0.75)
+        (np.abs(delta_pct_arr) >= ORDERFLOW_ABSORPTION_DELTA_PCT)
+        & (volume_spike_arr >= ORDERFLOW_EVENT_VOLUME_SPIKE)
+        & (compressed_range <= ORDERFLOW_COMPRESSED_RANGE_ATR)
     ).astype(float)
     out["ml_flush_candidate"] = (
-        (np.abs(delta_pct_arr) >= 65.0) & (volume_spike_arr >= 1.5) & (compressed_range > 0.75)
+        (np.abs(delta_pct_arr) >= ORDERFLOW_FLUSH_DELTA_PCT)
+        & (volume_spike_arr >= ORDERFLOW_EVENT_VOLUME_SPIKE)
+        & (compressed_range > ORDERFLOW_COMPRESSED_RANGE_ATR)
     ).astype(float)
 
     if gate_mode in {"smoke", "strict"} and float(out["ml_fp_delta_pct"].abs().sum()) == 0.0:
@@ -892,6 +901,13 @@ def main() -> int:
             "dxy_interval": None if args.skip_yahoo_dxy else args.dxy_interval,
             "cross_asset_source": str(args.cross_asset_1h) if args.cross_asset_1h else None,
             "warnings": warnings,
+            "orderflow_candidate_thresholds": {
+                "rolling_len": ORDERFLOW_ROLLING_LEN,
+                "absorption_delta_pct": ORDERFLOW_ABSORPTION_DELTA_PCT,
+                "flush_delta_pct": ORDERFLOW_FLUSH_DELTA_PCT,
+                "event_volume_spike": ORDERFLOW_EVENT_VOLUME_SPIKE,
+                "compressed_range_atr": ORDERFLOW_COMPRESSED_RANGE_ATR,
+            },
             "extra_candidate_features": [
                 "ml_delta_imbalance_pct",
                 "ml_delta_acceleration",

@@ -13,7 +13,7 @@
     "timeframe": "5",
     "data_floor": "2025-05-01",
     "label_column": "ml_entry_long_trigger/ml_entry_short_trigger",
-    "output_budget": "53/64 output-consuming calls (51 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
+    "output_budget": "60/64 output-consuming calls (58 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
     "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
     "frozen_params": [
       "autoTuneZZ",
@@ -83,7 +83,7 @@
     "timeframe": "5",
     "data_floor": "2025-05-01",
     "label_column": "ml_entry_long_trigger/ml_entry_short_trigger",
-    "output_budget": "53/64 output-consuming calls (51 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
+    "output_budget": "60/64 output-consuming calls (58 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
     "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
     "frozen_params": [
       "autoTuneZZ",
@@ -136,7 +136,7 @@
     "timeframe": "5",
     "data_floor": "2025-05-01",
     "label_column": "winner_10pt_24bar",
-    "output_budget": "53/64 output-consuming calls (51 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
+    "output_budget": "60/64 output-consuming calls (58 plot + 2 alertcondition); 9 request.security; 1 request.footprint (pine-lint counting)",
     "trigger_family": "LIVE_ANCHOR_FOOTPRINT",
     "objective_metric": "ag_test_log_loss",
     "min_trades_floor": 200,

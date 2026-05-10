@@ -291,9 +291,13 @@ budgets must be repriced before any Nexus edit.
 
 Core ETL/trainer partial — DXY parity, fixed 10/-5/24 labels, strict feature
 schema, Yahoo `DX-Y.NYB`, and Databento trade-side CVD/order-flow features are
-wired in code. Pending: full 1y Core build, Core card body + hard-gate launch
-wiring, Optuna hub wiring, and pre-launch gate report. Owner/next trigger:
-Codex resumes when Kirk approves the full 1y Core build/training path.
+wired in code. The May smoke order-flow threshold review lowered
+absorption/flush candidate delta thresholds to `35%` with the existing `1.5x`
+volume-spike and `0.75 ATR` range split, producing nonzero smoke candidates.
+Pending: full 1y Core build, 1y order-flow distribution confirmation, Core card
+body + hard-gate launch wiring, Optuna hub wiring, and pre-launch gate report.
+Owner/next trigger: Codex resumes when Kirk approves the full 1y Core
+build/training path.
 
 Smoke verification evidence is recorded in
 `docs/audits/2026-05-10-v9-core-smoke-verification.md`; use

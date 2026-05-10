@@ -92,8 +92,11 @@ ML_FEATURES = [
     # daily/weekly S/R distances
     "ml_lvl_pdh_dist_atr", "ml_lvl_pdl_dist_atr",
     "ml_lvl_pwh_dist_atr", "ml_lvl_pwl_dist_atr",
-    # footprint (real intrabar bid/ask delta, POC, VA position)
+    # footprint / order flow (real intrabar bid/ask delta, POC, VA position)
     "ml_fp_delta_pct", "ml_fp_poc_dist_atr", "ml_fp_va_position",
+    "ml_delta_imbalance_pct", "ml_delta_acceleration",
+    "ml_aggressor_pulse", "ml_absorption_candidate",
+    "ml_flush_candidate", "ml_volume_spike_ratio", "ml_poc_shift",
 ]
 LABEL_COL = "winner_10pt_24bar"
 

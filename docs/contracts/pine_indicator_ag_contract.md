@@ -106,6 +106,9 @@ Allowed tuning scope while lock is active:
 - non-fib thresholds and safety gates
 - lookback/cooldown controls outside fib anchor math
 - pattern/EMA-MA/ML gating strictness and execution toggles
+- footprint/order-flow feature exports and diagnostic table rows, as long as
+  the single `request.footprint()` path is reused and the Pine output budget is
+  explicitly repriced
 
 Any proposed fib-core change requires explicit approval plus before/after
 TradingView evidence with manifest coverage.

@@ -35,15 +35,37 @@ Use the emitted JSON as the source of truth for row counts, entry counts,
 feature nonzero counts, label counts, and CSV/manifest checksums. Do not cite
 chat-transcribed smoke metrics without this JSON output.
 
-Current reference run from 2026-05-10:
+Current reference run from 2026-05-10 after the order-flow threshold refactor:
 
-- CSV SHA256: `7e18f2b9fa6135552ebcee3b10ba87919166e09bb5ee91642c3816662a701c15`
-- Manifest SHA256: `d3e1158b3e71dfe47d7024279953224e964ad852699f59d49cdffdecfd00e071`
+- CSV SHA256: `e867cf17e500eb653a2345ae1642266c34381245348a6817fae797aecf88bd4d`
+- Manifest SHA256: `8a230d08f9abbb4bc90f62b481e88c44cb6db79d436c522a0c24908f7039bc29`
 - Rows: `6000`
 - Entries: `68` long, `0` short
 - Resolved labels: `68` total, `62` winners, `6` losses
+- Locked features: `52`
 - Nonzero counts: DXY code `5980`, DXY divergence `3111`, fp delta `4603`,
-  CVD bull `486`, CVD bear `714`, POC shift `4356`
+  delta acceleration `4613`, aggressor pulse `4603`, CVD bull `486`, CVD bear
+  `714`, absorption `10`, flush `8`, volume spike `4620`, POC shift `4356`
+
+## Order-Flow Threshold Distribution
+
+```bash
+python3 scripts/ag/report_v9_core_orderflow_distribution.py \
+  --csv artifacts/v9_core_smoke_may2025/mes_5m_core.csv \
+  --manifest artifacts/v9_core_smoke_may2025/mes_5m_core.manifest.json \
+  --out-json artifacts/v9_core_smoke_may2025/orderflow_distribution.json
+```
+
+The current candidate thresholds are:
+
+- Absorption delta: `35%`
+- Flush delta: `35%`
+- Event volume spike: `1.5x`
+- Compressed range split: `0.75 ATR`
+
+May smoke distribution evidence: absolute delta max was `51.86%`, so the old
+`55%`/`65%` thresholds could not fire in this month. The `35%` + `1.5x` grid
+point produces `10` absorption candidates and `8` flush candidates.
 
 ## Smoke Label Validation
 

@@ -3,7 +3,7 @@
 
 This lane models ATR/risk exits from manifest-backed Databento ES 5m training
 rows for Warbird Pro V9. Databento is the only admitted historical data source;
-MES, NQ, MNQ, and other timeframes are ignored. This profile intentionally does
+non-ES symbols (including MES/NQ/MNQ) and other timeframes are ignored. This profile intentionally does
 not mutate Pine or optimize fib-anchor, visual, or EMA/MA setup inputs.
 """
 
@@ -365,7 +365,7 @@ def load_data() -> pd.DataFrame:
     if not frames:
         raise ValueError(
             "Warbird Pro V9 found no usable ES 5m export rows. "
-            f"Ignored non-MES files: {ignored}"
+            f"Ignored non-ES files: {ignored}"
         )
 
     df = pd.concat(frames, ignore_index=True).sort_values(["symbol_root", "ts"]).reset_index(drop=True)

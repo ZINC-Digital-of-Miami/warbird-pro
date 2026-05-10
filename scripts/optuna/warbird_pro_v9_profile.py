@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Warbird Pro V9 Optuna profile.
 
-This lane models ATR/risk exits from manifest-backed Databento MES 5m training
+This lane models ATR/risk exits from manifest-backed Databento ES 5m training
 rows for Warbird Pro V9. Databento is the only admitted historical data source;
-ES, NQ, MNQ, and other timeframes are ignored. This profile intentionally does
+MES, NQ, MNQ, and other timeframes are ignored. This profile intentionally does
 not mutate Pine or optimize fib-anchor, visual, or EMA/MA setup inputs.
 """
 
@@ -33,8 +33,8 @@ OPTUNA_DIR = workspace_dir(PROFILE_KEY)
 EXPORT_ENV = "WARBIRD_PRO_V9_EXPORT"
 MANIFEST_ENV = "WARBIRD_PRO_V9_MANIFEST"
 
-ALLOWED_SYMBOL_ROOTS = frozenset({"MES"})
-IGNORED_SYMBOL_ROOTS = frozenset({"ES", "NQ", "MNQ"})
+ALLOWED_SYMBOL_ROOTS = frozenset({"ES"})
+IGNORED_SYMBOL_ROOTS = frozenset({"MES", "NQ", "MNQ"})
 ALLOWED_TIMEFRAMES = frozenset({"5", "5m"})
 DATABENTO_CAPTURE_METHODS = frozenset(
     {
@@ -46,10 +46,10 @@ DATABENTO_CAPTURE_METHODS = frozenset(
 )
 ALLOWED_CAPTURE_METHODS = DATABENTO_CAPTURE_METHODS
 
-POINT_VALUE_BY_ROOT = {"MES": 5.0}
+POINT_VALUE_BY_ROOT = {"ES": 50.0}
 COMMISSION_SIDE_USD = 1.0
 MINTICK = 0.25
-DATA_FLOOR = "2025-05-01"
+DATA_FLOOR = "2010-01-01"
 MIN_TRADES = 20
 OBJECTIVE_METRIC = "v9_risk_exit_score"
 
@@ -261,7 +261,7 @@ def _prepare_export_frame(frame: pd.DataFrame, manifest: dict[str, Any], source_
         return empty
     if symbol_root not in ALLOWED_SYMBOL_ROOTS:
         raise ValueError(
-            f"Warbird Pro V9 admits MES-only Databento exports; got {symbol!r}."
+            f"Warbird Pro V9 admits ES-only Databento exports; got {symbol!r}."
         )
 
     required = {"ts", "open", "high", "low", "close", "volume"}
@@ -345,8 +345,8 @@ def load_data() -> pd.DataFrame:
     export_files = _discover_export_files()
     if not export_files:
         raise FileNotFoundError(
-            "No Warbird Pro V9 MES 5m Databento exports found. Put Databento "
-            "MES 5m CSV files at "
+            "No Warbird Pro V9 ES 5m Databento exports found. Put Databento "
+            "ES 5m CSV files at "
             f"{OPTUNA_DIR / 'export.csv'} or {OPTUNA_DIR / 'exports'}/*.csv, "
             "with a .manifest.json next to each CSV (capture_method must be "
             "DATABENTO_OHLCV_CSV / DATABENTO_TRAINING_CSV / DATABENTO_BARS_CSV)."
@@ -364,7 +364,7 @@ def load_data() -> pd.DataFrame:
 
     if not frames:
         raise ValueError(
-            "Warbird Pro V9 found no usable MES 5m export rows. "
+            "Warbird Pro V9 found no usable ES 5m export rows. "
             f"Ignored non-MES files: {ignored}"
         )
 

@@ -27,10 +27,35 @@ ready for reuse by another agent.
 Allowed training inputs are only manifest-backed active-lane sources:
 
 - TradingView indicator CSV exports for non-Nexus lanes
-- Databento ES market-data training rows (5m/15m) when declared as Databento source
-  data in the manifest
+- Databento ES market-data training rows (15m and 5m) when declared as Databento
+  source data in the manifest
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
+
+## Data Layer (locked 2026-05-11)
+
+V9/Core ETL and training is **file-based** (parquet + CSV). The active stack:
+
+- **DuckDB 1.5.2** for sort/filter/join/build over the source parquet and intermediate exports
+- **Pandera 0.31.1** for schema/contract validation of every export CSV and manifest (knob set, ml_* features, label policy, dtypes)
+- **fg-data-profiling 4.19.1** (`data_profiling` module) for profiling/report output
+
+Local PG17 `warbird` and the `ag_training` / `ag_fib_*` warehouse tables remain
+on disk for legacy lineage only — they back `scripts/ag/train_ag_baseline.py`,
+not the active V9/Core trainer. The V9 path
+(`scripts/ag/train_v9_locked.py`,
+`scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py`,
+`scripts/ag/monte_carlo_v9.py`, `scripts/ag/shap_v9.py`) does not import
+psycopg2 and has no Postgres dependency.
+
+## Training Sequence (locked 2026-05-11)
+
+- Build and train ES **15m first**.
+- Build and train ES **5m only after** 15m success (fit + SHAP + Monte Carlo) is documented.
+
+Rationale: per the 2026-04-27 operator checkpoint, 15m had +6.74% PnL / PF 1.143
+vs. 5m −2.55% / PF 0.91. The 15m surface is the cleaner baseline; tune mechanics
+there first before moving to the noisier 5m lane.
 
 Disallowed active training inputs:
 

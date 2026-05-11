@@ -24,11 +24,20 @@ from the active `indicators/` surface.
 
 V9 lane update (2026-05-02): `warbird_pro_v9` is a separate Optuna lane over the
 same active Warbird Pro V9 indicator. It models ATR/risk exits from
-manifest-backed ES training rows (5m/15m) from TradingView exports or Databento
-market data, ignores MES/NQ/MNQ rows,
+manifest-backed ES training rows (15m and 5m) from TradingView exports or
+Databento market data, ignores MES/NQ/MNQ rows,
 excludes `-.236` and other negative fib extensions as stop candidates, keeps
 `-.236` only as optional context/export data, and freezes fib anchors, fib
 visuals, and EMA/MA setup until a champion is approved for Pine promotion.
+
+Data-layer + sequencing update (locked 2026-05-11):
+
+- V9/Core ETL and training is file-based: **DuckDB 1.5.2** (sort/filter/build),
+  **Pandera 0.31.1** (schema/contract validation), **fg-data-profiling 4.19.1**
+  (`data_profiling` module — profiling reports). Local PG17 `warbird` warehouse
+  is legacy-reference only; the V9/Core path does not import psycopg2.
+- Build and train ES **15m first**; build and train ES 5m only after 15m
+  success (fit + SHAP + Monte Carlo) is documented.
 
 ## Current Contract
 

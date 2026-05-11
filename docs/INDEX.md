@@ -89,7 +89,8 @@ strategy-harness sessions.
 - **Active Pine files** = `warbird-pro-v9.pine` plus retained Nexus
   `warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 - **Local Optuna workspaces** under `scripts/optuna/workspaces/` = active optimization state
-- **Local `warbird` PG17 warehouse** = legacy/reference unless explicitly reopened
+- **Local `warbird` PG17 warehouse** = legacy/reference unless explicitly reopened. The active V9/Core data layer is file-based: **DuckDB 1.5.2** (sort/filter/build), **Pandera 0.31.1** (schema/contract validation), **fg-data-profiling 4.19.1** (`data_profiling` module — profiling reports). Locked 2026-05-11.
+- **Training sequence (locked 2026-05-11)**: build and train ES **15m first**; ES 5m only after 15m success (fit + SHAP + Monte Carlo) is documented.
 - **Cloud Supabase** = runtime/support only, not training truth
 - Active artifacts: `artifacts/tuning/` and `scripts/optuna/workspaces/<indicator_key>/`
 - Active Warbird Pro V9 lane: `scripts/optuna/workspaces/warbird_pro_v9/` and

@@ -1,16 +1,28 @@
-# Warbird Pro 5m/15m Tuning Runbook
+# Warbird Pro 15m → 5m Tuning Runbook
 
-**Date:** 2026-05-05
+**Date:** 2026-05-11
 **Status:** Active — Warbird Pro main-indicator tuning lane
 
 ## Purpose
 
-Tune `indicators/warbird-pro-v9.pine` on ES (5m/15m) using manifest-backed active-lane
-training data and produce defensible Pine settings or build recommendations.
-TradingView/Pine exports and approved Databento ES 5m/15m market-data training
-rows are valid when the manifest declares the true source/capture kind. Nexus
-remains a separate retained lane and is tuned only from TradingView/Pine
-`request.footprint()` evidence for `NEXUS_FOOTPRINT_DELTA`.
+Tune `indicators/warbird-pro-v9.pine` on ES (15m first, then 5m after 15m success)
+using manifest-backed active-lane training data and produce defensible Pine
+settings or build recommendations. TradingView/Pine exports and approved
+Databento ES 15m/5m market-data training rows are valid when the manifest
+declares the true source/capture kind. Nexus remains a separate retained lane
+and is tuned only from TradingView/Pine `request.footprint()` evidence for
+`NEXUS_FOOTPRINT_DELTA`.
+
+**Sequencing rule (locked 2026-05-11):** build and train ES **15m first**;
+build and train ES 5m only after 15m success (fit + SHAP + Monte Carlo) is
+documented. Per the 2026-04-27 operator checkpoint, 15m had +6.74% PnL /
+PF 1.143 vs. 5m −2.55% / PF 0.91 — 15m is the cleaner baseline.
+
+**Data layer (locked 2026-05-11):** V9/Core ETL is file-based —
+**DuckDB 1.5.2** (sort/filter/build over parquet+CSV), **Pandera 0.31.1**
+(schema/contract validation), **fg-data-profiling 4.19.1** (`data_profiling`
+module — profiling reports). The local `warbird` PG17 warehouse is legacy
+lineage only; the V9/Core trainer/ETL does not import psycopg2.
 
 No FRED, macro, cross-asset, Supabase, local legacy warehouse rows
 (`ag_training`), synthetic OHLCV reconstruction, or mislabeled

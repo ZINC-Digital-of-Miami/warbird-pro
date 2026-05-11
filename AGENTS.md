@@ -191,8 +191,9 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 
 - TradingView + Pine Script — canonical live and modeling surface
 - Optuna — local offline analysis over approved manifest-backed source rows
+- **Data layer (V9/Core, locked 2026-05-11):** DuckDB 1.5.2 (sort/filter/build over parquet+CSV), Pandera 0.31.1 (schema/contract validation), fg-data-profiling 4.19.1 (`data_profiling` module — profiling/report output). The deprecated `ydata-profiling` package is uninstalled.
 - Next.js + Supabase — runtime/dashboard/support only
-- Local PG17 `warbird` — legacy/reference for this plan unless explicitly reopened
+- Local PG17 `warbird` — legacy/reference for this plan unless explicitly reopened; the V9/Core trainer/ETL does not import psycopg2 and has no Postgres dependency
 
 ## Hard Rules
 
@@ -227,11 +228,14 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
   pivot-window `fibHtfSnapshot` variant that uses `ta.barssince(...)` and
   `pivotHighInWindow` / `pivotLowInWindow`. That pattern is banned due to
   repeated wide-fib regressions.
-- Pine budget baseline verified 2026-05-09 by `scripts/guards/pine-lint.sh`:
-  - `warbird-pro-v9.pine`: 53 output-consuming calls
-    (51 `plot()` + 2 `alertcondition()`), 9 `request.security()` calls
-    after comment-line normalization, 1 `request.footprint()` call,
-    19 `line.new()` calls, 1 `box.new()`, and 1 `table.new()`
+- Pine budget baseline verified 2026-05-11 by `scripts/guards/pine-lint.sh`:
+  - `warbird-pro-v9.pine`: **60** output-consuming calls
+    (**58** `plot()` + 2 `alertcondition()`) — above the 75% TradingView-hard-cap
+    warning threshold; 9 `request.security()` calls after comment-line
+    normalization, 1 `request.footprint()` call, 19 `line.new()` calls,
+    1 `box.new()`, and 1 `table.new()`. Only **4 output slots remain** before
+    the 64-call hard cap; price every new plot or alertcondition before
+    editing Pine.
   - Nexus files are retained; price their request/output budget before any
     Nexus edit.
 - Price every new output or request path before writing Pine code.
@@ -289,8 +293,13 @@ If any `.pine` file is touched, run:
 - Warbird Pro V9 must not use `-.236` or other negative fib extensions as stop
   candidates. `-.236` may remain only as a context/export feature while V9
   models ATR/risk exits.
-- Warbird Pro V9 must ingest ES 5m/15m training rows only, whether sourced from
+- Warbird Pro V9 must ingest ES 15m and 5m training rows only, whether sourced from
   TradingView exports or Databento market data, and must ignore MES/NQ/MNQ rows.
+- **Training sequence (locked 2026-05-11):** build and train ES **15m first**;
+  build and train ES 5m only after 15m success (fit + SHAP + Monte Carlo) is
+  documented. Per the 2026-04-27 operator checkpoint, 15m had +6.74% PnL /
+  PF 1.143 while 5m had −2.55% / PF 0.91 — 15m is the cleaner baseline to tune
+  mechanics on before moving to the noisier surface.
 - Do not start training/modeling unless explicitly asked.
 - Nexus ML RSI Optuna must use TradingView/Pine `request.footprint()`
   `nexus_fp_*` evidence only. Do not tune Nexus from CSV exports, local OHLCV

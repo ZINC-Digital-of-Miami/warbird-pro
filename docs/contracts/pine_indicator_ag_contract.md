@@ -21,8 +21,18 @@ settings still match the current contract.
 V9 lane contract (2026-05-02): `warbird_pro_v9` is a separate Optuna lane over
 the active **Warbird Pro V9** indicator at `indicators/warbird-pro-v9.pine`. It does not create a new Pine source,
 does not authorize Pine edits, and does not mutate the canonical fib anchor,
-fib visual, or EMA/MA setup. It admits manifest-backed ES training rows (5m/15m)
-from TradingView exports or Databento market data and ignores MES/NQ/MNQ rows.
+fib visual, or EMA/MA setup. It admits manifest-backed ES training rows
+(15m and 5m) from TradingView exports or Databento market data and ignores
+MES/NQ/MNQ rows.
+
+Data-layer + sequencing contract (locked 2026-05-11):
+
+- The V9/Core ETL stack is **DuckDB 1.5.2** (sort/filter/build over parquet+CSV),
+  **Pandera 0.31.1** (schema/contract validation), and **fg-data-profiling 4.19.1**
+  (`data_profiling` module — profiling/report output). No Postgres dependency on
+  the V9 path.
+- Training sequence: build and train ES **15m first**, ES 5m only after 15m
+  success.
 
 Operational preflight contract (2026-05-05): V9 has no active strategy
 harness. Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-only`

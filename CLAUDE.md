@@ -94,6 +94,22 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 - `scripts/ag/train_ag_baseline.py`, local `ag_training`, and FRED-join lineage
   tables are legacy unless explicitly reopened.
 
+### Data Layer (2026-05-11)
+
+The V9/Core ETL and training pipeline is **file-based, not Postgres-backed**:
+
+- **DuckDB 1.5.2** — sort/filter/join/build over parquet + CSV. No server, no daemon, no role/credential setup; reads source parquets in place and emits the export CSVs the Core trainer consumes.
+- **Pandera 0.31.1** — schema/contract validation for every export CSV and manifest. Knob columns, ml_* features, label policy, and dtype enforcement are validated by a Pandera schema; the schema is the test surface, not psql.
+- **fg-data-profiling 4.19.1** (module: `data_profiling`) — required profiling/report output for every Core build. Replaces the deprecated `ydata-profiling` package; the older package is uninstalled.
+
+The local `warbird` Postgres 17 warehouse and the `ag_training` / `ag_fib_*` tables remain on disk for **legacy lineage only** — they back `scripts/ag/train_ag_baseline.py`, which is not the V9/Core trainer. The V9 path (`scripts/ag/train_v9_locked.py`, `scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py`, `scripts/ag/monte_carlo_v9.py`, `scripts/ag/shap_v9.py`) does not import psycopg2 and has no Postgres dependency.
+
+### Training Sequence (locked 2026-05-11)
+
+**Build and train ES 15m first. Build and train ES 5m only after 15m success is documented.**
+
+Rationale: per the 2026-04-27 operator checkpoint, 15m showed +6.74% PnL / PF 1.143 vs. 5m −2.55% / PF 0.91 — 15m is the stronger lane and the cleaner baseline. Tune mechanics on the surface that's already producing signal before moving to the noisier timeframe. The Core ETL builder accepts `--timeframe 15` today; do not run `--timeframe 5` until the 15m model is fit, SHAP'd, and Monte-Carlo-validated.
+
 ### Current Plan — Warbird Pro V9 Core AutoGluon (2026-05-09)
 
 The Hybrid+ 4-card system (`warbird_pro_v9_exit_cpcv`,

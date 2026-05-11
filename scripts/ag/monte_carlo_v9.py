@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Monte Carlo robustness analysis for Warbird Pro V9 binary classifier.
+"""Monte Carlo robustness analysis for Warbird Pro V9 ES binary classifier.
 
-Parquet/CSV-based, no DB dependency. Binary classification (winner/loser).
+Parquet/CSV-based, no DB dependency. Binary classification on resolved ES entries.
 Loads a trained AG predictor, builds a trade dataset from the V9 export CSV,
 and runs vectorized Monte Carlo simulation over resampled trade sequences.
 
 Tasks:
   A — Overall P&L distribution, drawdown, win rate, profit factor
   B — Per-direction (long/short) breakdown
-  C — Threshold sweep: P(winner) >= tau gating
+  C — Threshold sweep: P(winner_10pt_24bar) >= tau gating
   G — Calibration: predicted vs realized per cohort
   H — Regime stability: early/late half comparison
   I — Win/loss streak profile
@@ -16,7 +16,7 @@ Tasks:
 Usage:
   python scripts/ag/monte_carlo_v9.py \
       --predictor-path models/warbird_pro_v9/locked_<tag> \
-      --csv exports/mes_5m.csv \
+      --csv exports/es_15m_core.csv \
       --split oos \
       [--n-paths 2000] [--seed 42] \
       [--output-dir artifacts/mc_v9/<tag>]
@@ -44,9 +44,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-LABEL_COL = "winner"
-MES_POINT_VALUE = 5.0
-COMMISSION_ROUND_TRIP = 6.75
+LABEL_COL = "winner_10pt_24bar"
+ES_POINT_VALUE = 50.0
+COMMISSION_ROUND_TRIP = 2.0
 DEFAULT_SL_POINTS = 7.0
 DEFAULT_TP_POINTS = 14.0
 OOS_START = pd.Timestamp("2025-01-01", tz="UTC")
@@ -56,26 +56,25 @@ IS_END = pd.Timestamp("2024-12-31T23:59:59", tz="UTC")
 def _build_trades(
     df: pd.DataFrame, feature_cols: list[str], max_hold_bars: int
 ) -> pd.DataFrame:
-    df = df.sort_values("ts").reset_index(drop=True)
-    long_mask = df["ml_entry_long_trigger"].astype(float) > 0
-    short_mask = df["ml_entry_short_trigger"].astype(float) > 0
-    entry_idx = np.where(long_mask | short_mask)[0]
-    outcomes = df["ml_last_exit_outcome"].astype(float).to_numpy()
-    dirs = df["ml_dir"].astype(float).to_numpy() if "ml_dir" in df.columns else np.ones(len(df))
-    rows: list[dict[str, Any]] = []
-    for i in entry_idx:
-        end = min(i + max_hold_bars + 1, len(df))
-        future = outcomes[i + 1:end]
-        nz = np.where(future != 0)[0]
-        if nz.size == 0:
-            continue
-        offset = int(nz[0])
-        rec = {col: df[col].iloc[i] for col in feature_cols if col in df.columns}
-        rec["ts"] = df["ts"].iloc[i]
-        rec[LABEL_COL] = 1 if int(future[offset]) == 1 else 0
-        rec["direction"] = int(dirs[i])
-        rows.append(rec)
-    return pd.DataFrame(rows).sort_values("ts").reset_index(drop=True)
+    from scripts.ag.train_v9_locked import build_trade_dataset as build_locked_trade_dataset
+
+    trades = build_locked_trade_dataset(df, max_hold_bars=max_hold_bars)
+    keep = [
+        c for c in [
+            *feature_cols,
+            "ts",
+            LABEL_COL,
+            "tp_hit",
+            "stop_hit",
+            "mfe_points",
+            "mae_points",
+            "direction",
+            "entry_price",
+            "target_price",
+            "stop_price",
+        ] if c in trades.columns
+    ]
+    return trades[keep].sort_values("ts").reset_index(drop=True)
 
 
 def _compute_payoffs(
@@ -83,8 +82,8 @@ def _compute_payoffs(
     sl_pts: float = DEFAULT_SL_POINTS,
     tp_pts: float = DEFAULT_TP_POINTS,
 ) -> np.ndarray:
-    win_payoff = tp_pts * MES_POINT_VALUE - COMMISSION_ROUND_TRIP
-    loss_payoff = -(sl_pts * MES_POINT_VALUE + COMMISSION_ROUND_TRIP)
+    win_payoff = tp_pts * ES_POINT_VALUE - COMMISSION_ROUND_TRIP
+    loss_payoff = -(sl_pts * ES_POINT_VALUE + COMMISSION_ROUND_TRIP)
     return np.where(y_true == 1, win_payoff, loss_payoff)
 
 
@@ -124,8 +123,8 @@ def quantiles(arr: np.ndarray, qs=(0.05, 0.25, 0.50, 0.75, 0.95)) -> dict[str, f
 
 def rollup(proba_pos: np.ndarray, y_true: np.ndarray, n_paths: int,
            rng: np.random.Generator, sl_pts: float, tp_pts: float) -> dict[str, Any]:
-    payoffs_win = tp_pts * MES_POINT_VALUE - COMMISSION_ROUND_TRIP
-    payoffs_loss = -(sl_pts * MES_POINT_VALUE + COMMISSION_ROUND_TRIP)
+    payoffs_win = tp_pts * ES_POINT_VALUE - COMMISSION_ROUND_TRIP
+    payoffs_loss = -(sl_pts * ES_POINT_VALUE + COMMISSION_ROUND_TRIP)
     ev_per_trade = proba_pos * payoffs_win + (1 - proba_pos) * payoffs_loss
     ev_mean = float(ev_per_trade.mean()) if ev_per_trade.size else 0.0
     ev_std = float(ev_per_trade.std(ddof=1)) if ev_per_trade.size > 1 else 0.0
@@ -351,8 +350,8 @@ def main() -> int:
     print(f"  verdict={task_h['verdict']}  EV_diff=${task_h['ev_absolute_diff']:.2f}", flush=True)
 
     print("\n=== Task I — Streak profile ===", flush=True)
-    payoffs_win = args.tp_points * MES_POINT_VALUE - COMMISSION_ROUND_TRIP
-    payoffs_loss = -(args.sl_points * MES_POINT_VALUE + COMMISSION_ROUND_TRIP)
+    payoffs_win = args.tp_points * ES_POINT_VALUE - COMMISSION_ROUND_TRIP
+    payoffs_loss = -(args.sl_points * ES_POINT_VALUE + COMMISSION_ROUND_TRIP)
     rng_i = np.random.default_rng(rng_root.integers(0, 2**31 - 1))
     task_i = task_I_streaks(proba_pos, args.n_paths, rng_i, payoffs_win, payoffs_loss)
     if task_i:
@@ -367,6 +366,7 @@ def main() -> int:
         "n_paths": args.n_paths,
         "sl_points": args.sl_points,
         "tp_points": args.tp_points,
+        "point_value": ES_POINT_VALUE,
         "commission_rt": COMMISSION_ROUND_TRIP,
         "task_A_overall": task_a,
         "task_B_per_direction": task_b,

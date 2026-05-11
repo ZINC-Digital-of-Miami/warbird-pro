@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Warbird Pro V9 — SHAP explainability for binary winner/loser AG predictor.
+"""Warbird Pro V9 — SHAP explainability for Core AG predictors.
 
 No DB dependency. Loads a trained AG predictor directory, computes SHAP values
 via TreeExplainer (auto-selects best tree model if best_model is NN/ensemble),
@@ -16,7 +16,7 @@ and writes:
 Usage:
   python scripts/ag/shap_v9.py \
       --predictor-dir models/warbird_pro_v9/locked_20260508_... \
-      --csv exports/mes_5m.csv \
+      --csv exports/es_15m_core.csv \
       [--max-hold-bars 72] \
       [--max-rows 5000] \
       [--output-dir artifacts/shap_v9/<tag>]
@@ -45,7 +45,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "artifacts" / "shap_v9"
-LABEL_COL = "winner"
+LABEL_COL = "winner_10pt_24bar"
 
 _SHAP_TREE_FAMILIES = {"GBM", "CAT", "XGB", "RF", "XT"}
 
@@ -95,24 +95,11 @@ def _build_trade_dataset(
     feature_cols: list[str],
     max_hold_bars: int,
 ) -> pd.DataFrame:
-    df = df.sort_values("ts").reset_index(drop=True)
-    long_mask = df["ml_entry_long_trigger"].astype(float) > 0
-    short_mask = df["ml_entry_short_trigger"].astype(float) > 0
-    entry_idx = np.where(long_mask | short_mask)[0]
-    outcomes = df["ml_last_exit_outcome"].astype(float).to_numpy()
-    rows: list[dict[str, Any]] = []
-    for i in entry_idx:
-        end = min(i + max_hold_bars + 1, len(df))
-        future = outcomes[i + 1:end]
-        nz = np.where(future != 0)[0]
-        if nz.size == 0:
-            continue
-        offset = int(nz[0])
-        rec = {col: df[col].iloc[i] for col in feature_cols if col in df.columns}
-        rec["ts"] = df["ts"].iloc[i]
-        rec[LABEL_COL] = 1 if int(future[offset]) == 1 else 0
-        rows.append(rec)
-    return pd.DataFrame(rows).sort_values("ts").reset_index(drop=True)
+    from scripts.ag.train_v9_locked import build_trade_dataset as build_locked_trade_dataset
+
+    trades = build_locked_trade_dataset(df, max_hold_bars=max_hold_bars)
+    keep = [c for c in [*feature_cols, "ts", LABEL_COL, "tp_hit", "stop_hit", "mfe_points", "mae_points"] if c in trades.columns]
+    return trades[keep].sort_values("ts").reset_index(drop=True)
 
 
 def _explain_model(
@@ -278,6 +265,52 @@ def _compute_calibration(
     return pd.DataFrame(rows)
 
 
+def _compute_cohort_importance(
+    trades: pd.DataFrame,
+    shap_values: np.ndarray,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    cohort_cols = [
+        "ml_fib_touch_level_code",
+        "ml_recent_liq_bull",
+        "ml_recent_liq_bear",
+        "knob_length_ema",
+        "knob_length_ma",
+        "knob_nq_symbol",
+        "knob_zn_symbol",
+        "knob_dxy_symbol",
+        "knob_vix_symbol",
+        "ml_absorption_candidate",
+        "ml_flush_candidate",
+        "ml_fp_va_position",
+    ]
+    rows: list[dict[str, Any]] = []
+    for col in cohort_cols:
+        if col not in trades.columns:
+            continue
+        series = trades[col].fillna("__NA__")
+        for value, idx in series.groupby(series).groups.items():
+            idx_arr = np.asarray(list(idx), dtype=int)
+            if idx_arr.size < 5:
+                continue
+            mean_abs = np.abs(shap_values[idx_arr]).mean(axis=0)
+            top_idx = int(np.argmax(mean_abs))
+            rows.append(
+                {
+                    "cohort_column": col,
+                    "cohort_value": str(value),
+                    "n": int(idx_arr.size),
+                    "top_feature": feature_names[top_idx],
+                    "top_mean_abs_shap": float(mean_abs[top_idx]),
+                }
+            )
+    return pd.DataFrame(rows).sort_values(
+        ["cohort_column", "top_mean_abs_shap"], ascending=[True, False]
+    ).reset_index(drop=True) if rows else pd.DataFrame(
+        columns=["cohort_column", "cohort_value", "n", "top_feature", "top_mean_abs_shap"]
+    )
+
+
 def _compute_redundancy(
     X: pd.DataFrame,
     feature_names: list[str],
@@ -425,6 +458,8 @@ def main() -> int:
     ap.add_argument("--max-rows", type=int, default=None,
                     help="Cap rows for fast smoke runs")
     ap.add_argument("--output-dir", type=Path, default=None)
+    ap.add_argument("--label-col", default=LABEL_COL,
+                    help="Resolved trade label to explain: winner_10pt_24bar, tp_hit, stop_hit, mfe_points, or mae_points.")
     ap.add_argument("--corr-threshold", type=float, default=0.95,
                     help="Pearson threshold for redundancy detection")
     args = ap.parse_args()
@@ -439,7 +474,11 @@ def main() -> int:
 
     feature_cols = [c for c in ML_FEATURES if c in df.columns]
     trades = _build_trade_dataset(df, feature_cols, max_hold_bars=args.max_hold_bars)
-    print(f"  trades={len(trades):,}  WR={trades[LABEL_COL].mean():.4f}", flush=True)
+    if args.label_col not in trades.columns:
+        raise SystemExit(f"Label column not found in resolved trade dataset: {args.label_col}")
+    label_col = args.label_col
+    label_mean = trades[label_col].mean() if pd.api.types.is_numeric_dtype(trades[label_col]) else float("nan")
+    print(f"  trades={len(trades):,}  {label_col}_mean={label_mean:.4f}", flush=True)
 
     if args.max_rows and len(trades) > args.max_rows:
         trades = trades.tail(args.max_rows).reset_index(drop=True)
@@ -453,7 +492,7 @@ def main() -> int:
 
     model_name = _resolve_shap_model(predictor)
     X = trades[feature_cols]
-    y_true = trades[LABEL_COL].to_numpy()
+    y_true = trades[label_col].to_numpy()
 
     print(f"\ncomputing SHAP values ({len(trades):,} rows × {len(feature_cols)} features)...", flush=True)
     shap_values, shap_features = _explain_model(predictor, model_name, X)
@@ -467,7 +506,7 @@ def main() -> int:
     per_class = _compute_per_class_importance(shap_values, shap_features, y_true)
     per_class.to_csv(output_dir / "shap_per_class.csv", index=False)
 
-    raw_df = trades[["ts", LABEL_COL]].copy().reset_index(drop=True)
+    raw_df = trades[["ts", label_col]].copy().reset_index(drop=True)
     shap_cols = {f"shap__{feat}": shap_values[:, i] for i, feat in enumerate(shap_features)}
     raw_df = pd.concat([raw_df, pd.DataFrame(shap_cols)], axis=1)
     raw_df.to_parquet(output_dir / "shap_raw_values.parquet", index=False)
@@ -476,8 +515,11 @@ def main() -> int:
     stability.to_csv(output_dir / "shap_temporal_stability.csv", index=False)
     print(f"\nstability: {stability['stability_bucket'].value_counts().to_dict()}", flush=True)
 
-    calibration = _compute_calibration(predictor, X, y_true)
+    calibration = _compute_calibration(predictor, X, y_true) if set(pd.Series(y_true).dropna().unique()).issubset({0, 1}) else pd.DataFrame()
     calibration.to_csv(output_dir / "shap_calibration.csv", index=False)
+
+    cohort = _compute_cohort_importance(trades, shap_values, shap_features)
+    cohort.to_csv(output_dir / "shap_cohort_importance.csv", index=False)
 
     redundancy = _compute_redundancy(X, feature_cols, threshold=args.corr_threshold)
     redundancy.to_csv(output_dir / "shap_redundancy.csv", index=False)
@@ -500,6 +542,7 @@ def main() -> int:
         "generated_at": tag,
         "predictor_dir": str(args.predictor_dir),
         "csv": str(args.csv),
+        "label_col": label_col,
         "model_name": model_name,
         "n_rows": len(trades),
         "n_features": len(shap_features),

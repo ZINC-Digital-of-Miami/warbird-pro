@@ -71,8 +71,12 @@ FIB_HYSTERESIS_PCT = 2.0
 HTF_CONF_TOL_PCT = 1.5
 
 USE_MA_GATE = True
-MA_SLOW_LEN = 100
-MA_FAST_LEN = 50
+MA_FAST_BASE = 21
+MA_SLOW_BASE = 50
+MA_FAST_GRID = tuple(range(MA_FAST_BASE - 10, MA_FAST_BASE + 11))
+MA_SLOW_GRID = tuple(range(MA_SLOW_BASE - 10, MA_SLOW_BASE + 11))
+MA_FAST_LEN = MA_FAST_BASE
+MA_SLOW_LEN = MA_SLOW_BASE
 XA_MIN_AGREEMENT = 3
 VIX_PRESSURE_BAND = 0.35
 RSI_LEN = 14
@@ -93,10 +97,99 @@ ORDERFLOW_FLUSH_DELTA_PCT = 35.0
 ORDERFLOW_EVENT_VOLUME_SPIKE = 1.5
 ORDERFLOW_COMPRESSED_RANGE_ATR = 0.75
 
+DEFAULT_INDICATOR_KNOBS: dict[str, Any] = {
+    "knob_auto_tune_zz": False,
+    "knob_fib_deviation_manual": FIB_DEVIATION,
+    "knob_fib_depth_manual": FIB_DEPTH,
+    "knob_fib_threshold_floor_pct": FIB_THRESHOLD_FLOOR_PCT,
+    "knob_min_fib_range_atr": MIN_FIB_RANGE_ATR,
+    "knob_fib_hysteresis_pct": FIB_HYSTERESIS_PCT,
+    "knob_htf_conf_tol_pct": HTF_CONF_TOL_PCT,
+    "knob_use_pattern_confirm": False,
+    "knob_use_liq_gate": True,
+    "knob_liq_recency_bars": LIQ_RECENCY_BARS,
+    "knob_trade_stop_atr_mult": 1.50,
+    "knob_trade_max_hold_bars": 72,
+    "knob_use_ma_gate": True,
+    "knob_length_ema": MA_FAST_BASE,
+    "knob_length_ma": MA_SLOW_BASE,
+    "knob_rsi_length": RSI_LEN,
+    "knob_rsi_overbought": RSI_OVERBOUGHT,
+    "knob_rsi_oversold": RSI_OVERSOLD,
+    "knob_liq_lookback_bars": LIQ_LOOKBACK_BARS,
+    "knob_eqh_tol_pct": EQH_TOL_PCT,
+    "knob_eqh_min_taps": EQH_MIN_TAPS,
+    "knob_eqh_lookback": EQH_LOOKBACK,
+    "knob_vol_z_length": VOL_Z_LEN,
+    "knob_use_session_vwap": True,
+    "knob_use_xa_gate": True,
+    "knob_nq_symbol": "CME_MINI:NQ1!",
+    "knob_zn_symbol": "CBOT:ZN1!",
+    "knob_dxy_symbol": "TVC:DXY",
+    "knob_vix_symbol": "CBOE:VIX",
+    "knob_corr_length": CORR_LEN,
+    "knob_vix_move_bars": VIX_MOVE_BARS,
+    "knob_vix_atr_length": VIX_ATR_LEN,
+    "knob_vix_pressure_band": VIX_PRESSURE_BAND,
+    "knob_xa_min_agreement": XA_MIN_AGREEMENT,
+    "knob_zn_gate_direction": "Same Direction",
+    "knob_use_footprint": True,
+    "knob_fp_ticks_per_row": 4,
+    "knob_fp_va_pct": 70.0,
+    "knob_fp_imbalance_pct": 300.0,
+    "knob_fp_absorption_delta_pct": ORDERFLOW_ABSORPTION_DELTA_PCT,
+    "knob_fp_flush_delta_pct": ORDERFLOW_FLUSH_DELTA_PCT,
+    "knob_fp_event_vol_spike": ORDERFLOW_EVENT_VOLUME_SPIKE,
+    "knob_fp_compressed_range_atr": ORDERFLOW_COMPRESSED_RANGE_ATR,
+}
+KNOB_COLUMNS = tuple(DEFAULT_INDICATOR_KNOBS.keys())
+
 OUTRIGHT_ROOT_PATTERNS = {
     "ES": re.compile(r"^ES[FGHJKMNQUVXZ]\d{1,2}$"),
 }
 TRADES_MEMBER_RE = re.compile(r"(\d{8})-(\d{8})\.trades\.csv\.zst$")
+
+
+def generate_indicator_profiles(profile_mode: str = "base") -> list[dict[str, Any]]:
+    """Return AG input profiles derived from the Warbird V9 indicator contract."""
+    mode = str(profile_mode).strip().lower()
+    if mode not in {"base", "ma-grid"}:
+        raise ValueError(f"Unsupported profile mode: {profile_mode!r}")
+    if mode == "base":
+        profile = dict(DEFAULT_INDICATOR_KNOBS)
+        profile["profile_id"] = "base_ema21_sma50"
+        profile["profile_mode"] = "base"
+        profile["profile_is_ma_base"] = True
+        profile["profile_ema_offset"] = 0
+        profile["profile_ma_offset"] = 0
+        return [profile]
+
+    profiles: list[dict[str, Any]] = []
+    for ema_len in MA_FAST_GRID:
+        for ma_len in MA_SLOW_GRID:
+            profile = dict(DEFAULT_INDICATOR_KNOBS)
+            profile["knob_length_ema"] = int(ema_len)
+            profile["knob_length_ma"] = int(ma_len)
+            profile["profile_id"] = f"ma_grid_ema{ema_len}_sma{ma_len}"
+            profile["profile_mode"] = "ma-grid"
+            profile["profile_is_ma_base"] = ema_len == MA_FAST_BASE and ma_len == MA_SLOW_BASE
+            profile["profile_ema_offset"] = int(ema_len - MA_FAST_BASE)
+            profile["profile_ma_offset"] = int(ma_len - MA_SLOW_BASE)
+            profiles.append(profile)
+    return profiles
+
+
+def _knob(knobs: dict[str, Any], name: str) -> Any:
+    return knobs.get(name, DEFAULT_INDICATOR_KNOBS[name])
+
+
+def _with_knob_columns(df: pd.DataFrame, knobs: dict[str, Any]) -> pd.DataFrame:
+    out = df.copy()
+    for col in KNOB_COLUMNS:
+        out[col] = _knob(knobs, col)
+    for col in ("profile_id", "profile_mode", "profile_is_ma_base", "profile_ema_offset", "profile_ma_offset"):
+        out[col] = knobs.get(col)
+    return out
 
 
 def repo_commit() -> str:
@@ -262,7 +355,15 @@ def normalize_to_timeframe(df: pd.DataFrame, timeframe_min: int) -> pd.DataFrame
     return df.copy().sort_values("ts").reset_index(drop=True)
 
 
-def zigzag_anchors(high: np.ndarray, low: np.ndarray, close: np.ndarray, atr10: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def zigzag_anchors(
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    atr10: np.ndarray,
+    fib_deviation: float = FIB_DEVIATION,
+    fib_threshold_floor_pct: float = FIB_THRESHOLD_FLOOR_PCT,
+    fib_depth: int = FIB_DEPTH,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     n = len(close)
     anchor_high = np.full(n, np.nan)
     anchor_low = np.full(n, np.nan)
@@ -276,9 +377,9 @@ def zigzag_anchors(high: np.ndarray, low: np.ndarray, close: np.ndarray, atr10: 
     last_dir = 0
     for i in range(n):
         if close[i] > 0 and np.isfinite(atr10[i]):
-            threshold_pct = max((atr10[i] / close[i]) * 100.0 * FIB_DEVIATION, FIB_THRESHOLD_FLOOR_PCT)
+            threshold_pct = max((atr10[i] / close[i]) * 100.0 * fib_deviation, fib_threshold_floor_pct)
         else:
-            threshold_pct = FIB_THRESHOLD_FLOOR_PCT
+            threshold_pct = fib_threshold_floor_pct
         threshold_abs = threshold_pct * 0.01 * close[i]
         if high[i] > swing_high:
             swing_high = float(high[i])
@@ -287,13 +388,13 @@ def zigzag_anchors(high: np.ndarray, low: np.ndarray, close: np.ndarray, atr10: 
             swing_low = float(low[i])
             swing_low_idx = i
         if last_dir != 1 and (swing_high - low[i]) >= threshold_abs:
-            if not pivots or (i - pivots[-1][0]) >= FIB_DEPTH:
+            if not pivots or (i - pivots[-1][0]) >= fib_depth:
                 pivots.append((swing_high_idx, swing_high, 1))
                 last_dir = 1
                 swing_low = float(low[i])
                 swing_low_idx = i
         elif last_dir != -1 and (high[i] - swing_low) >= threshold_abs:
-            if not pivots or (i - pivots[-1][0]) >= FIB_DEPTH:
+            if not pivots or (i - pivots[-1][0]) >= fib_depth:
                 pivots.append((swing_low_idx, swing_low, -1))
                 last_dir = -1
                 swing_high = float(high[i])
@@ -308,7 +409,14 @@ def zigzag_anchors(high: np.ndarray, low: np.ndarray, close: np.ndarray, atr10: 
     return anchor_high, anchor_low, anchor_high_bar, anchor_low_bar
 
 
-def htf_confluence(df: pd.DataFrame, p_pivot: np.ndarray, p_382: np.ndarray, p_618: np.ndarray, fib_range: np.ndarray) -> np.ndarray:
+def htf_confluence(
+    df: pd.DataFrame,
+    p_pivot: np.ndarray,
+    p_382: np.ndarray,
+    p_618: np.ndarray,
+    fib_range: np.ndarray,
+    htf_conf_tol_pct: float = HTF_CONF_TOL_PCT,
+) -> np.ndarray:
     s = df.set_index("ts").sort_index()
     high_1h = s["high"].resample("1h", label="left", closed="left").max()
     low_1h = s["low"].resample("1h", label="left", closed="left").min()
@@ -320,13 +428,120 @@ def htf_confluence(df: pd.DataFrame, p_pivot: np.ndarray, p_382: np.ndarray, p_6
     htf["p500"] = htf_low + htf_range * FIB_PIVOT
     htf["p618"] = htf_low + htf_range * FIB_618
     aligned = htf.reindex(s.index, method="ffill")
-    tol = fib_range * HTF_CONF_TOL_PCT * 0.01
+    tol = fib_range * htf_conf_tol_pct * 0.01
     total = np.zeros(len(df), dtype=float)
     for level in (p_pivot, p_382, p_618):
         for col in ("p382", "p500", "p618"):
             ref = aligned[col].to_numpy(dtype=float)
             total += np.where(np.isfinite(level) & np.isfinite(ref) & (np.abs(level - ref) <= tol), 1.0, 0.0)
     return total
+
+
+def compute_liquidity_state(
+    *,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    lookback_bars: int,
+    recency_bars: int,
+) -> dict[str, np.ndarray]:
+    bsl = pd.Series(high).rolling(lookback_bars, min_periods=lookback_bars).max().shift(1).to_numpy()
+    ssl = pd.Series(low).rolling(lookback_bars, min_periods=lookback_bars).min().shift(1).to_numpy()
+    swept_bsl = (high > bsl) & (close < bsl)
+    swept_ssl = (low < ssl) & (close > ssl)
+    reclaimed_bsl = np.r_[False, swept_bsl[:-1] & (close[1:] < bsl[1:])]
+    reclaimed_ssl = np.r_[False, swept_ssl[:-1] & (close[1:] > ssl[1:])]
+    liq_bull = swept_ssl | reclaimed_ssl
+    liq_bear = swept_bsl | reclaimed_bsl
+    bars_since_liq_bull = bars_since_event(liq_bull)
+    bars_since_liq_bear = bars_since_event(liq_bear)
+    recent_liq_bull = (bars_since_liq_bull >= 0) & (bars_since_liq_bull < recency_bars)
+    recent_liq_bear = (bars_since_liq_bear >= 0) & (bars_since_liq_bear < recency_bars)
+    return {
+        "bsl": bsl,
+        "ssl": ssl,
+        "swept_bsl": swept_bsl,
+        "swept_ssl": swept_ssl,
+        "reclaimed_bsl": reclaimed_bsl,
+        "reclaimed_ssl": reclaimed_ssl,
+        "bars_since_liq_bull": bars_since_liq_bull,
+        "bars_since_liq_bear": bars_since_liq_bear,
+        "recent_liq_bull": recent_liq_bull,
+        "recent_liq_bear": recent_liq_bear,
+    }
+
+
+def compute_fib_entry_reaction_features(
+    *,
+    open_: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    atr: np.ndarray,
+    direction: np.ndarray,
+    p_pivot: np.ndarray,
+    p_618: np.ndarray,
+    p_786: np.ndarray,
+) -> dict[str, np.ndarray]:
+    touched500_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_pivot[1:]) & (close[:-1] > p_pivot[1:]) & (low[1:] <= p_pivot[1:]) & (close[1:] >= p_pivot[1:])]
+    touched618_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_618[1:]) & (close[:-1] > p_618[1:]) & (low[1:] <= p_618[1:]) & (close[1:] >= p_618[1:])]
+    touched786_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_786[1:]) & (close[:-1] > p_786[1:]) & (low[1:] <= p_786[1:]) & (close[1:] >= p_786[1:])]
+    touched500_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_pivot[1:]) & (close[:-1] < p_pivot[1:]) & (high[1:] >= p_pivot[1:]) & (close[1:] <= p_pivot[1:])]
+    touched618_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_618[1:]) & (close[:-1] < p_618[1:]) & (high[1:] >= p_618[1:]) & (close[1:] <= p_618[1:])]
+    touched786_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_786[1:]) & (close[:-1] < p_786[1:]) & (high[1:] >= p_786[1:]) & (close[1:] <= p_786[1:])]
+
+    selected_entry_level = np.where(
+        touched786_long | touched786_short,
+        p_786,
+        np.where(touched618_long | touched618_short, p_618, np.where(touched500_long | touched500_short, p_pivot, np.nan)),
+    )
+    fib_touch_level_code = np.where(
+        touched786_long | touched786_short,
+        786.0,
+        np.where(touched618_long | touched618_short, 618.0, np.where(touched500_long | touched500_short, 500.0, 0.0)),
+    )
+    selected_long = touched500_long | touched618_long | touched786_long
+    selected_short = touched500_short | touched618_short | touched786_short
+    pierce = np.where(
+        selected_long,
+        selected_entry_level - low,
+        np.where(selected_short, high - selected_entry_level, 0.0),
+    )
+    reclaim = np.where(
+        selected_long,
+        close - selected_entry_level,
+        np.where(selected_short, selected_entry_level - close, 0.0),
+    )
+    bar_range = high - low
+    body_size = np.abs(close - open_)
+    upper_wick = high - np.maximum(open_, close)
+    lower_wick = np.minimum(open_, close) - low
+    body_ratio = np.where(bar_range > 0, body_size / np.maximum(bar_range, 1e-12), 0.0)
+    upper_wick_ratio = np.where(bar_range > 0, upper_wick / np.maximum(bar_range, 1e-12), 0.0)
+    lower_wick_ratio = np.where(bar_range > 0, lower_wick / np.maximum(bar_range, 1e-12), 0.0)
+    reclaim_atr = safe_div(reclaim, atr)
+    reaction_code = np.where(
+        fib_touch_level_code == 0.0,
+        0.0,
+        np.where(reclaim_atr >= 0.10, 1.0, np.where(reclaim_atr >= 0.0, 0.0, -1.0)),
+    )
+    return {
+        "touched500_long": touched500_long,
+        "touched618_long": touched618_long,
+        "touched786_long": touched786_long,
+        "touched500_short": touched500_short,
+        "touched618_short": touched618_short,
+        "touched786_short": touched786_short,
+        "selected_entry_level": selected_entry_level,
+        "fib_touch_level_code": fib_touch_level_code,
+        "fib_entry_dist_atr": safe_div(close - selected_entry_level, atr),
+        "fib_pierce_atr": safe_div(np.maximum(pierce, 0.0), atr),
+        "fib_close_reclaim_atr": reclaim_atr,
+        "fib_reaction_body_ratio": body_ratio,
+        "fib_reaction_upper_wick_ratio": upper_wick_ratio,
+        "fib_reaction_lower_wick_ratio": lower_wick_ratio,
+        "fib_reaction_code": reaction_code,
+    }
 
 
 def prior_day_week_levels(df: pd.DataFrame) -> pd.DataFrame:
@@ -337,7 +552,8 @@ def prior_day_week_levels(df: pd.DataFrame) -> pd.DataFrame:
     return levels.reset_index(drop=True)
 
 
-def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
+def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = None) -> pd.DataFrame:
+    knobs = dict(DEFAULT_INDICATOR_KNOBS if knobs is None else knobs)
     df = df_5m.copy().reset_index(drop=True)
     n = len(df)
     open_ = df["open"].to_numpy(dtype=float)
@@ -348,9 +564,12 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
 
     atr14 = atr_rma(high, low, close, 14)
     atr10 = atr_rma(high, low, close, 10)
-    rsi14 = rsi_rma(close, RSI_LEN)
-    slow_ma = sma(close, MA_SLOW_LEN)
-    fast_ma = ema(close, MA_FAST_LEN)
+    rsi_len = int(_knob(knobs, "knob_rsi_length"))
+    rsi_overbought = float(_knob(knobs, "knob_rsi_overbought"))
+    rsi_oversold = float(_knob(knobs, "knob_rsi_oversold"))
+    slow_ma = sma(close, int(_knob(knobs, "knob_length_ma")))
+    fast_ma = ema(close, int(_knob(knobs, "knob_length_ema")))
+    rsi14 = rsi_rma(close, rsi_len)
     ma_bull = fast_ma > slow_ma
     ma_bear = fast_ma < slow_ma
     plus_di, minus_di, adx = dmi_adx(high, low, close, 14)
@@ -370,11 +589,19 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
     pat_marubozu_black = bearish & (body_ratio >= 0.85) & (upper_wick_ratio <= 0.10) & (lower_wick_ratio <= 0.10)
     pat_tweezer_top = np.r_[False, bearish[1:] & (np.abs(high[1:] - high[:-1]) <= atr14[1:] * 0.05) & bullish[:-1]]
 
-    anchors_high, anchors_low, _ahb, _alb = zigzag_anchors(high, low, close, atr10)
+    anchors_high, anchors_low, _ahb, _alb = zigzag_anchors(
+        high,
+        low,
+        close,
+        atr10,
+        fib_deviation=float(_knob(knobs, "knob_fib_deviation_manual")),
+        fib_threshold_floor_pct=float(_knob(knobs, "knob_fib_threshold_floor_pct")),
+        fib_depth=int(_knob(knobs, "knob_fib_depth_manual")),
+    )
     fib_range = anchors_high - anchors_low
-    is_valid = np.isfinite(anchors_high) & np.isfinite(anchors_low) & (fib_range >= MIN_FIB_RANGE_ATR * atr14)
+    is_valid = np.isfinite(anchors_high) & np.isfinite(anchors_low) & (fib_range >= float(_knob(knobs, "knob_min_fib_range_atr")) * atr14)
     midpoint = anchors_low + fib_range * 0.5
-    hyst = fib_range * FIB_HYSTERESIS_PCT * 0.01
+    hyst = fib_range * float(_knob(knobs, "knob_fib_hysteresis_pct")) * 0.01
     fib_bull = np.ones(n, dtype=bool)
     state = True
     for i in range(n):
@@ -414,49 +641,66 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
             last_break = i
         bars_since_break[i] = -1.0 if last_break < 0 else float(i - last_break)
 
-    bsl = pd.Series(high).rolling(LIQ_LOOKBACK_BARS, min_periods=LIQ_LOOKBACK_BARS).max().shift(1).to_numpy()
-    ssl = pd.Series(low).rolling(LIQ_LOOKBACK_BARS, min_periods=LIQ_LOOKBACK_BARS).min().shift(1).to_numpy()
-    swept_bsl = (high > bsl) & (close < bsl)
-    swept_ssl = (low < ssl) & (close > ssl)
-    reclaimed_bsl = np.r_[False, swept_bsl[:-1] & (close[1:] < bsl[1:])]
-    reclaimed_ssl = np.r_[False, swept_ssl[:-1] & (close[1:] > ssl[1:])]
-    liq_bull = swept_ssl | reclaimed_ssl
-    liq_bear = swept_bsl | reclaimed_bsl
-    bars_since_liq_bull = bars_since_event(liq_bull)
-    bars_since_liq_bear = bars_since_event(liq_bear)
-    recent_liq_bull = (bars_since_liq_bull >= 0) & (bars_since_liq_bull < LIQ_RECENCY_BARS)
-    recent_liq_bear = (bars_since_liq_bear >= 0) & (bars_since_liq_bear < LIQ_RECENCY_BARS)
+    liq_state = compute_liquidity_state(
+        high=high,
+        low=low,
+        close=close,
+        lookback_bars=int(_knob(knobs, "knob_liq_lookback_bars")),
+        recency_bars=int(_knob(knobs, "knob_liq_recency_bars")),
+    )
+    bsl = liq_state["bsl"]
+    ssl = liq_state["ssl"]
+    swept_bsl = liq_state["swept_bsl"]
+    swept_ssl = liq_state["swept_ssl"]
+    reclaimed_bsl = liq_state["reclaimed_bsl"]
+    reclaimed_ssl = liq_state["reclaimed_ssl"]
+    bars_since_liq_bull = liq_state["bars_since_liq_bull"]
+    bars_since_liq_bear = liq_state["bars_since_liq_bear"]
+    recent_liq_bull = liq_state["recent_liq_bull"]
+    recent_liq_bear = liq_state["recent_liq_bear"]
 
-    eqh_tol = atr14 * (EQH_TOL_PCT / 100.0)
+    eqh_tol = atr14 * (float(_knob(knobs, "knob_eqh_tol_pct")) / 100.0)
     hi_taps = np.zeros(n, dtype=int)
     lo_taps = np.zeros(n, dtype=int)
     for i in range(n):
-        lo_idx = max(0, i - EQH_LOOKBACK)
+        lo_idx = max(0, i - int(_knob(knobs, "knob_eqh_lookback")))
         if i > lo_idx and np.isfinite(eqh_tol[i]):
             hi_taps[i] = int(np.sum(np.abs(high[lo_idx:i] - high[i]) <= eqh_tol[i]))
             lo_taps[i] = int(np.sum(np.abs(low[lo_idx:i] - low[i]) <= eqh_tol[i]))
-    last_eqh = pd.Series(np.where(hi_taps >= EQH_MIN_TAPS, high, np.nan)).ffill().to_numpy()
-    last_eql = pd.Series(np.where(lo_taps >= EQH_MIN_TAPS, low, np.nan)).ffill().to_numpy()
+    last_eqh = pd.Series(np.where(hi_taps >= int(_knob(knobs, "knob_eqh_min_taps")), high, np.nan)).ffill().to_numpy()
+    last_eql = pd.Series(np.where(lo_taps >= int(_knob(knobs, "knob_eqh_min_taps")), low, np.nan)).ffill().to_numpy()
 
-    vwap_session = session_vwap(df, volume)
-    vol_z = zscore(pd.Series(volume), VOL_Z_LEN).to_numpy(dtype=float)
-    htf_conf_total = htf_confluence(df, p_pivot, p_382, p_618, fib_range)
+    vwap_session = session_vwap(df, volume) if bool(_knob(knobs, "knob_use_session_vwap")) else close
+    vol_z = zscore(pd.Series(volume), int(_knob(knobs, "knob_vol_z_length"))).to_numpy(dtype=float)
+    htf_conf_total = htf_confluence(df, p_pivot, p_382, p_618, fib_range, float(_knob(knobs, "knob_htf_conf_tol_pct")))
     levels = prior_day_week_levels(df)
 
-    touched500_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_pivot[1:]) & (close[:-1] > p_pivot[1:]) & (low[1:] <= p_pivot[1:]) & (close[1:] >= p_pivot[1:])]
-    touched618_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_618[1:]) & (close[:-1] > p_618[1:]) & (low[1:] <= p_618[1:]) & (close[1:] >= p_618[1:])]
-    touched786_long = np.r_[False, (direction[1:] == 1) & np.isfinite(p_786[1:]) & (close[:-1] > p_786[1:]) & (low[1:] <= p_786[1:]) & (close[1:] >= p_786[1:])]
-    touched500_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_pivot[1:]) & (close[:-1] < p_pivot[1:]) & (high[1:] >= p_pivot[1:]) & (close[1:] <= p_pivot[1:])]
-    touched618_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_618[1:]) & (close[:-1] < p_618[1:]) & (high[1:] >= p_618[1:]) & (close[1:] <= p_618[1:])]
-    touched786_short = np.r_[False, (direction[1:] == -1) & np.isfinite(p_786[1:]) & (close[:-1] < p_786[1:]) & (high[1:] >= p_786[1:]) & (close[1:] <= p_786[1:])]
+    fib_reaction = compute_fib_entry_reaction_features(
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        atr=atr14,
+        direction=direction,
+        p_pivot=p_pivot,
+        p_618=p_618,
+        p_786=p_786,
+    )
+    touched500_long = fib_reaction["touched500_long"]
+    touched618_long = fib_reaction["touched618_long"]
+    touched786_long = fib_reaction["touched786_long"]
+    touched500_short = fib_reaction["touched500_short"]
+    touched618_short = fib_reaction["touched618_short"]
+    touched786_short = fib_reaction["touched786_short"]
     trigger_long = touched500_long | touched618_long | touched786_long
     trigger_short = touched500_short | touched618_short | touched786_short
-    entry_level = np.where(
-        touched786_long | touched786_short,
-        p_786,
-        np.where(touched618_long | touched618_short, p_618, np.where(touched500_long | touched500_short, p_pivot, np.nan)),
+    entry_level = fib_reaction["selected_entry_level"]
+    fib_touch_level_code = fib_reaction["fib_touch_level_code"]
+    trade_stop = np.where(
+        trigger_long,
+        entry_level - atr14 * float(_knob(knobs, "knob_trade_stop_atr_mult")),
+        np.where(trigger_short, entry_level + atr14 * float(_knob(knobs, "knob_trade_stop_atr_mult")), np.nan),
     )
-    fib_touch_level_code = np.where(touched500_long | touched500_short, 500.0, np.where(touched618_long | touched618_short, 618.0, np.where(touched786_long | touched786_short, 786.0, 0.0)))
 
     out = pd.DataFrame(
         {
@@ -474,7 +718,7 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
             "ml_bars_since_break": bars_since_break,
             "ml_break_in_dir": break_in_dir.astype(float),
             "ml_rsi_value": rsi14,
-            "ml_rsi_stance_code": np.where(rsi14 <= RSI_OVERSOLD, 1.0, np.where(rsi14 >= RSI_OVERBOUGHT, -1.0, 0.0)),
+            "ml_rsi_stance_code": np.where(rsi14 <= rsi_oversold, 1.0, np.where(rsi14 >= rsi_overbought, -1.0, 0.0)),
             "ml_ma_bias": np.where(ma_bull, 1.0, np.where(ma_bear, -1.0, 0.0)),
             "ml_ma_slow_dist_atr": safe_div(close - slow_ma, atr14),
             "ml_ma_fast_dist_atr": safe_div(close - fast_ma, atr14),
@@ -491,6 +735,10 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
             "ml_swept_ssl": swept_ssl.astype(float),
             "ml_reclaimed_bsl": reclaimed_bsl.astype(float),
             "ml_reclaimed_ssl": reclaimed_ssl.astype(float),
+            "ml_recent_liq_bull": recent_liq_bull.astype(float),
+            "ml_recent_liq_bear": recent_liq_bear.astype(float),
+            "ml_liq_bars_since_bull": bars_since_liq_bull.astype(float),
+            "ml_liq_bars_since_bear": bars_since_liq_bear.astype(float),
             "ml_liq_eqh_dist_atr": safe_div(last_eqh - close, atr14),
             "ml_liq_eql_dist_atr": safe_div(close - last_eql, atr14),
             "ml_liq_vwap_dist_atr": safe_div(close - vwap_session, atr14),
@@ -501,8 +749,22 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
             "ml_lvl_pwh_dist_atr": safe_div(levels["pwh"].to_numpy(dtype=float) - close, atr14),
             "ml_lvl_pwl_dist_atr": safe_div(close - levels["pwl"].to_numpy(dtype=float), atr14),
             "ml_trade_entry": entry_level,
+            "ml_trade_stop": trade_stop,
             "ml_trade_tp": p_t1,
             "ml_fib_touch_level_code": fib_touch_level_code,
+            "ml_fib_touch_500_long": touched500_long.astype(float),
+            "ml_fib_touch_618_long": touched618_long.astype(float),
+            "ml_fib_touch_786_long": touched786_long.astype(float),
+            "ml_fib_touch_500_short": touched500_short.astype(float),
+            "ml_fib_touch_618_short": touched618_short.astype(float),
+            "ml_fib_touch_786_short": touched786_short.astype(float),
+            "ml_fib_entry_dist_atr": fib_reaction["fib_entry_dist_atr"],
+            "ml_fib_pierce_atr": fib_reaction["fib_pierce_atr"],
+            "ml_fib_close_reclaim_atr": fib_reaction["fib_close_reclaim_atr"],
+            "ml_fib_reaction_body_ratio": fib_reaction["fib_reaction_body_ratio"],
+            "ml_fib_reaction_upper_wick_ratio": fib_reaction["fib_reaction_upper_wick_ratio"],
+            "ml_fib_reaction_lower_wick_ratio": fib_reaction["fib_reaction_lower_wick_ratio"],
+            "ml_fib_reaction_code": fib_reaction["fib_reaction_code"],
             "__trigger_long": trigger_long.astype(bool),
             "__trigger_short": trigger_short.astype(bool),
             "__recent_liq_bull": recent_liq_bull.astype(bool),
@@ -510,7 +772,7 @@ def compute_base_features(df_5m: pd.DataFrame) -> pd.DataFrame:
             "__is_valid": is_valid.astype(bool),
         }
     )
-    return out
+    return _with_knob_columns(out, knobs)
 
 
 def safe_div(num: np.ndarray, denom: np.ndarray) -> np.ndarray:
@@ -565,12 +827,22 @@ def load_yahoo_dxy(target_index: pd.DatetimeIndex, start: pd.Timestamp, end: pd.
     return align_series_to_index(dxy, target_index)
 
 
-def merge_cross_assets(df: pd.DataFrame, cross_asset_path: Path | None, dxy_interval: str, use_yahoo_dxy: bool, vix_csv: Path | None, warnings: list[str]) -> pd.DataFrame:
+def merge_cross_assets(
+    df: pd.DataFrame,
+    cross_asset_path: Path | None,
+    dxy_interval: str,
+    use_yahoo_dxy: bool,
+    vix_csv: Path | None,
+    warnings: list[str],
+    knobs: dict[str, Any] | None = None,
+) -> pd.DataFrame:
+    knobs = dict(DEFAULT_INDICATOR_KNOBS if knobs is None else knobs)
     out = df.copy()
     idx = pd.DatetimeIndex(pd.to_datetime(out["ts"], utc=True))
     start = idx.min()
     end = idx.max()
 
+    out["_nq_close"] = np.nan
     for symbol, col in (("NQ", "ml_xa_nq_code"), ("ZN", "ml_xa_zn_code")):
         out[col] = 0.0
     if cross_asset_path and cross_asset_path.exists():
@@ -587,6 +859,8 @@ def merge_cross_assets(df: pd.DataFrame, cross_asset_path: Path | None, dxy_inte
             close = sym.drop_duplicates(ts_col).set_index(ts_col)["close"]
             code = xa_code(close)
             out[col] = align_series_to_index(code, idx).to_numpy(dtype=float)
+            if symbol == "NQ":
+                out["_nq_close"] = align_series_to_index(close, idx).to_numpy(dtype=float)
     else:
         warnings.append("cross-asset 1h source unavailable; NQ/ZN codes set to 0")
 
@@ -596,8 +870,8 @@ def merge_cross_assets(df: pd.DataFrame, cross_asset_path: Path | None, dxy_inte
         dxy_arr = dxy.to_numpy(dtype=float)
         dxy_up = dxy_arr > np.r_[np.nan, dxy_arr[:-1]]
         close_arr = out["close"].to_numpy(dtype=float)
-        mes_up = close_arr > np.r_[np.nan, close_arr[:-1]]
-        out["ml_xa_dxy_diverge"] = ((mes_up & dxy_up) | (~mes_up & ~dxy_up)).astype(float)
+        es_up = close_arr > np.r_[np.nan, close_arr[:-1]]
+        out["ml_xa_dxy_diverge"] = ((es_up & dxy_up) | (~es_up & ~dxy_up)).astype(float)
         out["_dxy_close"] = dxy.to_numpy(dtype=float)
     else:
         out["ml_xa_dxy_code"] = 0.0
@@ -612,16 +886,23 @@ def merge_cross_assets(df: pd.DataFrame, cross_asset_path: Path | None, dxy_inte
         vix[value_col] = pd.to_numeric(vix[value_col], errors="coerce")
         vix_series = vix.dropna(subset=[value_col]).set_index(date_col)[value_col].sort_index()
         vix_aligned = align_series_to_index(vix_series, idx)
-        out["ml_xa_vix_pressure"] = close_movement_pressure(vix_aligned, VIX_MOVE_BARS, VIX_ATR_LEN).to_numpy(dtype=float)
+        out["ml_xa_vix_pressure"] = close_movement_pressure(
+            vix_aligned,
+            int(_knob(knobs, "knob_vix_move_bars")),
+            int(_knob(knobs, "knob_vix_atr_length")),
+        ).to_numpy(dtype=float)
     else:
         out["ml_xa_vix_pressure"] = 0.0
         warnings.append("VIX CSV unavailable; VIX movement pressure set to 0")
 
-    nq_proxy = out["ml_xa_nq_code"].replace(0, np.nan).ffill().fillna(0.0)
+    nq_close = pd.Series(out["_nq_close"], index=out.index).replace(0, np.nan).ffill().bfill()
+    if nq_close.isna().all():
+        nq_close = out["ml_xa_nq_code"].replace(0, np.nan).ffill().fillna(0.0)
+        warnings.append("NQ close unavailable; ml_xa_corr_nq fell back to NQ trend code")
     out["ml_xa_corr_nq"] = (
         out["close"]
-        .rolling(CORR_LEN, min_periods=CORR_LEN)
-        .corr(nq_proxy)
+        .rolling(int(_knob(knobs, "knob_corr_length")), min_periods=int(_knob(knobs, "knob_corr_length")))
+        .corr(nq_close)
         .replace([np.inf, -np.inf], np.nan)
         .fillna(0.0)
     )
@@ -687,7 +968,9 @@ def build_orderflow_features(
     warnings: list[str],
     symbol_root: str,
     bar_freq: str,
+    knobs: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
+    knobs = dict(DEFAULT_INDICATOR_KNOBS if knobs is None else knobs)
     out = df.copy()
     idx = pd.DatetimeIndex(pd.to_datetime(out["ts"], utc=True))
     zeros = np.zeros(len(out), dtype=float)
@@ -777,14 +1060,14 @@ def build_orderflow_features(
     compressed_range = ((high_arr - low_arr) / atr_arr)
     compressed_range = np.nan_to_num(compressed_range, nan=0.0, posinf=0.0, neginf=0.0)
     out["ml_absorption_candidate"] = (
-        (np.abs(delta_pct_arr) >= ORDERFLOW_ABSORPTION_DELTA_PCT)
-        & (volume_spike_arr >= ORDERFLOW_EVENT_VOLUME_SPIKE)
-        & (compressed_range <= ORDERFLOW_COMPRESSED_RANGE_ATR)
+        (np.abs(delta_pct_arr) >= float(_knob(knobs, "knob_fp_absorption_delta_pct")))
+        & (volume_spike_arr >= float(_knob(knobs, "knob_fp_event_vol_spike")))
+        & (compressed_range <= float(_knob(knobs, "knob_fp_compressed_range_atr")))
     ).astype(float)
     out["ml_flush_candidate"] = (
-        (np.abs(delta_pct_arr) >= ORDERFLOW_FLUSH_DELTA_PCT)
-        & (volume_spike_arr >= ORDERFLOW_EVENT_VOLUME_SPIKE)
-        & (compressed_range > ORDERFLOW_COMPRESSED_RANGE_ATR)
+        (np.abs(delta_pct_arr) >= float(_knob(knobs, "knob_fp_flush_delta_pct")))
+        & (volume_spike_arr >= float(_knob(knobs, "knob_fp_event_vol_spike")))
+        & (compressed_range > float(_knob(knobs, "knob_fp_compressed_range_atr")))
     ).astype(float)
 
     if gate_mode in {"smoke", "strict"} and float(out["ml_fp_delta_pct"].abs().sum()) == 0.0:
@@ -840,24 +1123,35 @@ def build_volume_profile(price_aggs: list[pd.DataFrame], target_index: pd.Dateti
     return profile.set_index("bar_ts").reindex(target_index)
 
 
-def finalize_entries(df: pd.DataFrame) -> pd.DataFrame:
+def finalize_entries(df: pd.DataFrame, knobs: dict[str, Any] | None = None) -> pd.DataFrame:
+    knobs = dict(DEFAULT_INDICATOR_KNOBS if knobs is None else knobs)
     out = df.copy()
-    ma_long_ok = (out["ml_ma_bias"] > 0) if USE_MA_GATE else True
-    ma_short_ok = (out["ml_ma_bias"] < 0) if USE_MA_GATE else True
+    ma_long_ok = (out["ml_ma_bias"] > 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
+    ma_short_ok = (out["ml_ma_bias"] < 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
+    zn_same_direction = str(_knob(knobs, "knob_zn_gate_direction")) == "Same Direction"
+    zn_long_vote = out["ml_xa_zn_code"] > 0 if zn_same_direction else out["ml_xa_zn_code"] < 0
+    zn_short_vote = out["ml_xa_zn_code"] < 0 if zn_same_direction else out["ml_xa_zn_code"] > 0
+    vix_band = float(_knob(knobs, "knob_vix_pressure_band"))
     xa_long_agreement = (
         (out["ml_xa_nq_code"] > 0).astype(int)
-        + (out["ml_xa_zn_code"] > 0).astype(int)
+        + zn_long_vote.astype(int)
         + (out["ml_xa_dxy_code"] < 0).astype(int)
-        + (out["ml_xa_vix_pressure"] < -VIX_PRESSURE_BAND).astype(int)
+        + (out["ml_xa_vix_pressure"] < -vix_band).astype(int)
     )
     xa_short_agreement = (
         (out["ml_xa_nq_code"] < 0).astype(int)
-        + (out["ml_xa_zn_code"] < 0).astype(int)
+        + zn_short_vote.astype(int)
         + (out["ml_xa_dxy_code"] > 0).astype(int)
-        + (out["ml_xa_vix_pressure"] > VIX_PRESSURE_BAND).astype(int)
+        + (out["ml_xa_vix_pressure"] > vix_band).astype(int)
     )
-    long_ok = out["__is_valid"] & out["__trigger_long"] & ma_long_ok & (xa_long_agreement >= XA_MIN_AGREEMENT) & out["__recent_liq_bull"]
-    short_ok = out["__is_valid"] & out["__trigger_short"] & ma_short_ok & (xa_short_agreement >= XA_MIN_AGREEMENT) & out["__recent_liq_bear"]
+    xa_long_ok = (xa_long_agreement >= int(_knob(knobs, "knob_xa_min_agreement"))) if bool(_knob(knobs, "knob_use_xa_gate")) else True
+    xa_short_ok = (xa_short_agreement >= int(_knob(knobs, "knob_xa_min_agreement"))) if bool(_knob(knobs, "knob_use_xa_gate")) else True
+    liq_long_ok = out["__recent_liq_bull"] if bool(_knob(knobs, "knob_use_liq_gate")) else True
+    liq_short_ok = out["__recent_liq_bear"] if bool(_knob(knobs, "knob_use_liq_gate")) else True
+    long_ok = out["__is_valid"] & out["__trigger_long"] & ma_long_ok & xa_long_ok & liq_long_ok
+    short_ok = out["__is_valid"] & out["__trigger_short"] & ma_short_ok & xa_short_ok & liq_short_ok
+    out["ml_xa_long_agreement"] = xa_long_agreement.astype(float)
+    out["ml_xa_short_agreement"] = xa_short_agreement.astype(float)
     out["ml_entry_long_trigger"] = long_ok.astype(float)
     out["ml_entry_short_trigger"] = short_ok.astype(float)
     return out.drop(columns=[c for c in out.columns if c.startswith("__")])
@@ -880,6 +1174,8 @@ def validate_core_frame(df: pd.DataFrame, gate_mode: str) -> None:
         entries = int(df["ml_entry_long_trigger"].sum() + df["ml_entry_short_trigger"].sum())
         if entries < 25:
             raise RuntimeError(f"strict gate failed: only {entries} entry candidates")
+        if "_nq_close" not in df.columns or df["_nq_close"].isna().all():
+            raise RuntimeError("strict gate failed: NQ close unavailable for ml_xa_corr_nq")
         if float(df["ml_fp_delta_pct"].abs().sum()) == 0.0:
             raise RuntimeError("strict gate failed: all-zero footprint delta")
 
@@ -943,6 +1239,8 @@ def main() -> int:
                     help="Allow order-flow features to be zero-filled for a base/regime build.")
     ap.add_argument("--skip-yahoo-dxy", action="store_true")
     ap.add_argument("--gate-mode", choices=["schema", "smoke", "strict"], default="smoke")
+    ap.add_argument("--profile-mode", choices=["base", "ma-grid"], default="base",
+                    help="Emit one base indicator profile or the full EMA/SMA 10-up/10-down grid.")
     args = ap.parse_args()
     symbol_root = normalize_symbol_root(args.symbol)
     source_path = args.source or default_source_for_symbol(symbol_root)
@@ -968,25 +1266,31 @@ def main() -> int:
     print(f"range: {bars_tf['ts'].min()} -> {bars_tf['ts'].max()}")
 
     warnings: list[str] = []
-    features = compute_base_features(bars_tf)
-    features = merge_cross_assets(
-        features,
-        args.cross_asset_1h,
-        args.dxy_interval,
-        not args.skip_yahoo_dxy,
-        args.vix_csv,
-        warnings,
-    )
     trades_zip = None if args.base_regime_only else args.trades_zip
-    features = build_orderflow_features(
-        features,
-        trades_zip,
-        args.gate_mode,
-        warnings,
-        symbol_root=symbol_root,
-        bar_freq=bar_freq,
-    )
-    features = finalize_entries(features)
+    profiles = generate_indicator_profiles(args.profile_mode)
+    profile_frames: list[pd.DataFrame] = []
+    for profile in profiles:
+        profile_features = compute_base_features(bars_tf, profile)
+        profile_features = merge_cross_assets(
+            profile_features,
+            args.cross_asset_1h,
+            args.dxy_interval,
+            not args.skip_yahoo_dxy,
+            args.vix_csv,
+            warnings,
+            profile,
+        )
+        profile_features = build_orderflow_features(
+            profile_features,
+            trades_zip,
+            args.gate_mode,
+            warnings,
+            symbol_root=symbol_root,
+            bar_freq=bar_freq,
+            knobs=profile,
+        )
+        profile_frames.append(finalize_entries(profile_features, profile))
+    features = pd.concat(profile_frames, ignore_index=True).sort_values(["ts", "profile_id"]).reset_index(drop=True)
 
     validate_core_frame(features, args.gate_mode)
     csv_path, manifest_path = write_outputs(
@@ -1002,6 +1306,13 @@ def main() -> int:
             "dxy_source": None if args.skip_yahoo_dxy else "Yahoo Finance DX-Y.NYB",
             "dxy_interval": None if args.skip_yahoo_dxy else args.dxy_interval,
             "cross_asset_source": str(args.cross_asset_1h) if args.cross_asset_1h else None,
+            "profile_mode": args.profile_mode,
+            "profile_count": len(profiles),
+            "indicator_knob_columns": KNOB_COLUMNS,
+            "ma_fast_base": MA_FAST_BASE,
+            "ma_slow_base": MA_SLOW_BASE,
+            "ma_fast_grid": MA_FAST_GRID,
+            "ma_slow_grid": MA_SLOW_GRID,
             "warnings": warnings,
             "orderflow_candidate_thresholds": {
                 "rolling_len": ORDERFLOW_ROLLING_LEN,
@@ -1019,6 +1330,12 @@ def main() -> int:
                 "ml_volume_spike_ratio",
                 "ml_poc_shift",
                 "ml_fib_touch_level_code",
+                "ml_fib_pierce_atr",
+                "ml_fib_close_reclaim_atr",
+                "ml_fib_reaction_code",
+                "ml_trade_entry",
+                "ml_trade_stop",
+                "ml_trade_tp",
             ],
         },
     )

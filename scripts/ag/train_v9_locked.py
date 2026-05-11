@@ -62,6 +62,40 @@ OUTPUT_ROOT = REPO_ROOT / "models/warbird_pro_v9"
 # Missing columns are fatal. The Core trainer must not silently fall back to an
 # older replay/export schema because that masks stale feature contracts.
 ML_FEATURES = [
+    # indicator profile / Pine input knobs
+    "knob_auto_tune_zz", "knob_fib_deviation_manual",
+    "knob_fib_depth_manual", "knob_fib_threshold_floor_pct",
+    "knob_min_fib_range_atr", "knob_fib_hysteresis_pct",
+    "knob_htf_conf_tol_pct",
+    "knob_use_pattern_confirm", "knob_use_liq_gate",
+    "knob_liq_recency_bars", "knob_trade_stop_atr_mult",
+    "knob_trade_max_hold_bars",
+    "knob_use_ma_gate", "knob_length_ema", "knob_length_ma",
+    "knob_rsi_length", "knob_rsi_overbought", "knob_rsi_oversold",
+    "knob_liq_lookback_bars", "knob_eqh_tol_pct",
+    "knob_eqh_min_taps", "knob_eqh_lookback", "knob_vol_z_length",
+    "knob_use_session_vwap",
+    "knob_use_xa_gate", "knob_nq_symbol", "knob_zn_symbol",
+    "knob_dxy_symbol", "knob_vix_symbol", "knob_corr_length",
+    "knob_vix_move_bars", "knob_vix_atr_length",
+    "knob_vix_pressure_band", "knob_xa_min_agreement",
+    "knob_zn_gate_direction",
+    "knob_use_footprint", "knob_fp_ticks_per_row", "knob_fp_va_pct",
+    "knob_fp_imbalance_pct", "knob_fp_absorption_delta_pct",
+    "knob_fp_flush_delta_pct", "knob_fp_event_vol_spike",
+    "knob_fp_compressed_range_atr",
+    # single-source trade trigger and entry context
+    "ml_entry_long_trigger", "ml_entry_short_trigger",
+    "ml_trade_entry", "ml_trade_stop", "ml_trade_tp",
+    "ml_fib_touch_level_code",
+    "ml_fib_touch_500_long", "ml_fib_touch_618_long",
+    "ml_fib_touch_786_long",
+    "ml_fib_touch_500_short", "ml_fib_touch_618_short",
+    "ml_fib_touch_786_short",
+    "ml_fib_entry_dist_atr", "ml_fib_pierce_atr",
+    "ml_fib_close_reclaim_atr", "ml_fib_reaction_body_ratio",
+    "ml_fib_reaction_upper_wick_ratio",
+    "ml_fib_reaction_lower_wick_ratio", "ml_fib_reaction_code",
     # structural / regime
     "ml_atr14", "ml_dir", "ml_fib_range",
     "ml_pivot_dist_atr", "ml_p618_dist_atr",
@@ -78,6 +112,8 @@ ML_FEATURES = [
     "ml_bsl_dist_atr", "ml_ssl_dist_atr",
     "ml_swept_bsl", "ml_swept_ssl",
     "ml_reclaimed_bsl", "ml_reclaimed_ssl",
+    "ml_recent_liq_bull", "ml_recent_liq_bear",
+    "ml_liq_bars_since_bull", "ml_liq_bars_since_bear",
     # liquidity expansions (equal H/L pools, VWAP, volume z-score)
     "ml_liq_eqh_dist_atr", "ml_liq_eql_dist_atr",
     "ml_liq_vwap_dist_atr", "ml_liq_vol_zscore",
@@ -87,6 +123,7 @@ ML_FEATURES = [
     "ml_xa_nq_code", "ml_xa_zn_code", "ml_xa_dxy_code",
     # cross-asset advanced (VIX movement pressure, ES↔NQ correlation, DXY divergence)
     "ml_xa_vix_pressure", "ml_xa_corr_nq", "ml_xa_dxy_diverge",
+    "ml_xa_long_agreement", "ml_xa_short_agreement",
     # HTF confluence
     "ml_htf_conf_total",
     # daily/weekly S/R distances
@@ -99,6 +136,17 @@ ML_FEATURES = [
     "ml_flush_candidate", "ml_volume_spike_ratio", "ml_poc_shift",
 ]
 LABEL_COL = "winner_10pt_24bar"
+TP_LABEL_COL = "tp_hit"
+STOP_LABEL_COL = "stop_hit"
+MFE_LABEL_COL = "mfe_points"
+MAE_LABEL_COL = "mae_points"
+MODEL_SPECS = {
+    "entry": {"label": LABEL_COL, "problem_type": "binary", "eval_metric": "log_loss"},
+    "tp": {"label": TP_LABEL_COL, "problem_type": "binary", "eval_metric": "log_loss"},
+    "stop": {"label": STOP_LABEL_COL, "problem_type": "binary", "eval_metric": "log_loss"},
+    "mfe": {"label": MFE_LABEL_COL, "problem_type": "regression", "eval_metric": "root_mean_squared_error"},
+    "mae": {"label": MAE_LABEL_COL, "problem_type": "regression", "eval_metric": "root_mean_squared_error"},
+}
 
 REQUIRED_INPUT_COLUMNS = [
     "ts",
@@ -157,14 +205,24 @@ def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFra
     entry_idx = np.where(entry_mask)[0]
     print(f"  entry candidates: {len(entry_idx):,}", flush=True)
 
-    highs = df["high"].to_numpy()
-    lows = df["low"].to_numpy()
+    highs = df["high"].to_numpy(dtype=float)
+    lows = df["low"].to_numpy(dtype=float)
     entries = (
-        df["ml_trade_entry"].to_numpy()
+        df["ml_trade_entry"].to_numpy(dtype=float)
         if "ml_trade_entry" in df.columns
         else np.full(len(df), np.nan)
     )
-    closes = df["close"].to_numpy()
+    targets = (
+        df["ml_trade_tp"].to_numpy(dtype=float)
+        if "ml_trade_tp" in df.columns
+        else np.full(len(df), np.nan)
+    )
+    stops = (
+        df["ml_trade_stop"].to_numpy(dtype=float)
+        if "ml_trade_stop" in df.columns
+        else np.full(len(df), np.nan)
+    )
+    closes = df["close"].to_numpy(dtype=float)
 
     rows = []
     dropped_neither = 0
@@ -176,14 +234,25 @@ def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFra
         target_hit_idx = -1
         stop_hit_idx = -1
 
-        tp_dist = 10.0
-        sl_dist = 5.0
-        tp_price = entry_price + tp_dist if is_long else entry_price - tp_dist
-        sl_price = entry_price - sl_dist if is_long else entry_price + sl_dist
+        tp_price = targets[i] if pd.notna(targets[i]) and targets[i] > 0 else entry_price + 10.0 if is_long else entry_price - 10.0
+        sl_price = stops[i] if pd.notna(stops[i]) and stops[i] > 0 else entry_price - 5.0 if is_long else entry_price + 5.0
         resolution_bar = -1
         outcome = 0
+        mfe_points = 0.0
+        mae_points = 0.0
 
         end_idx = min(i + max_hold_bars + 1, len(df))
+        if end_idx > i + 1:
+            future_high = highs[i + 1:end_idx]
+            future_low = lows[i + 1:end_idx]
+            if is_long:
+                mfe_points = float(np.nanmax(future_high - entry_price))
+                mae_points = float(np.nanmax(entry_price - future_low))
+            else:
+                mfe_points = float(np.nanmax(entry_price - future_low))
+                mae_points = float(np.nanmax(future_high - entry_price))
+            mfe_points = max(mfe_points, 0.0)
+            mae_points = max(mae_points, 0.0)
         for j in range(i + 1, end_idx):
             h = highs[j]
             l = lows[j]
@@ -222,6 +291,14 @@ def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFra
         rec["target_price"] = float(tp_price)
         rec["stop_price"] = float(sl_price)
         rec[LABEL_COL] = outcome
+        rec[TP_LABEL_COL] = 1 if target_hit_idx != -1 else 0
+        rec[STOP_LABEL_COL] = 1 if stop_hit_idx != -1 else 0
+        rec["time_to_tp_bars"] = target_hit_idx - i if target_hit_idx != -1 else max_hold_bars + 1
+        rec["time_to_stop_bars"] = stop_hit_idx - i if stop_hit_idx != -1 else max_hold_bars + 1
+        rec[MFE_LABEL_COL] = mfe_points
+        rec[MAE_LABEL_COL] = mae_points
+        atr = pd.to_numeric(pd.Series([df["ml_atr14"].iloc[i]]), errors="coerce").iloc[0] if "ml_atr14" in df.columns else np.nan
+        rec["stop_required_atr"] = float(mae_points / atr) if pd.notna(atr) and abs(float(atr)) > 1e-12 else 0.0
         rec["_outcome_code"] = 1 if outcome == 1 else -1
         rec["_bars_to_resolution"] = resolution_bar - i
         rows.append(rec)
@@ -235,6 +312,13 @@ def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFra
             "target_price",
             "stop_price",
             LABEL_COL,
+            TP_LABEL_COL,
+            STOP_LABEL_COL,
+            "time_to_tp_bars",
+            "time_to_stop_bars",
+            MFE_LABEL_COL,
+            MAE_LABEL_COL,
+            "stop_required_atr",
             "_outcome_code",
             "_bars_to_resolution",
         ]
@@ -251,6 +335,114 @@ def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFra
     return out
 
 
+def split_trade_positions(
+    trades: pd.DataFrame,
+    train_frac: float,
+    val_frac: float,
+    embargo_bars: int,
+    label_horizon_bars: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if "profile_id" not in trades.columns:
+        train_end_idx = int(len(trades) * train_frac)
+        val_end_idx = int(len(trades) * (train_frac + val_frac))
+        return embargoed_chronological_split(
+            n_samples=len(trades),
+            train_end_idx=train_end_idx,
+            val_end_idx=val_end_idx,
+            embargo_bars=embargo_bars,
+            label_horizon_bars=label_horizon_bars,
+        )
+
+    unique_ts = pd.Series(pd.to_datetime(trades["ts"], utc=True).drop_duplicates().to_numpy())
+    train_end_idx = int(len(unique_ts) * train_frac)
+    val_end_idx = int(len(unique_ts) * (train_frac + val_frac))
+    train_ts_pos, val_ts_pos, test_ts_pos = embargoed_chronological_split(
+        n_samples=len(unique_ts),
+        train_end_idx=train_end_idx,
+        val_end_idx=val_end_idx,
+        embargo_bars=embargo_bars,
+        label_horizon_bars=label_horizon_bars,
+    )
+    train_ts = set(unique_ts.iloc[train_ts_pos])
+    val_ts = set(unique_ts.iloc[val_ts_pos])
+    test_ts = set(unique_ts.iloc[test_ts_pos])
+    ts_values = pd.to_datetime(trades["ts"], utc=True)
+    train_pos = np.flatnonzero(ts_values.isin(train_ts).to_numpy())
+    val_pos = np.flatnonzero(ts_values.isin(val_ts).to_numpy())
+    test_pos = np.flatnonzero(ts_values.isin(test_ts).to_numpy())
+    return train_pos, val_pos, test_pos
+
+
+def _fit_locked_predictor(
+    *,
+    train: pd.DataFrame,
+    val: pd.DataFrame,
+    test: pd.DataFrame,
+    label: str,
+    spec: dict[str, str],
+    out_dir: Path,
+    time_limit: int,
+    feature_cols: list[str],
+) -> dict[str, Any]:
+    from autogluon.tabular import TabularPredictor
+
+    out_dir.mkdir(parents=True, exist_ok=False)
+    problem_type = spec["problem_type"]
+    pred = TabularPredictor(
+        label=label,
+        path=str(out_dir),
+        eval_metric=spec["eval_metric"],
+        problem_type=problem_type,
+    ).fit(
+        train_data=train[feature_cols + [label]],
+        tuning_data=val[feature_cols + [label]],
+        use_bag_holdout=False,
+        time_limit=time_limit,
+        presets="best_quality",
+        calibrate=problem_type == "binary",
+        num_bag_folds=0,
+        num_stack_levels=0,
+        dynamic_stacking=False,
+        ag_args_ensemble={"fold_fitting_strategy": "sequential_local"},
+        hyperparameter_tune_kwargs={
+            "searcher": "random",
+            "scheduler": "local",
+            "num_trials": 20,
+        },
+        hyperparameters={
+            "GBM": [{"num_threads": 1}, {"num_threads": 1, "extra_trees": True}],
+            "CAT": {"thread_count": 1},
+            "XGB": {"n_jobs": 1},
+            "RF":  [{"criterion": "gini"}, {"criterion": "entropy"}],
+            "XT":  [{"criterion": "gini"}, {"criterion": "entropy"}],
+            "NN_TORCH": {},
+            "FASTAI":   {},
+        },
+        verbosity=2,
+        num_gpus=0,
+    )
+    pred.persist()
+    test_data = test[feature_cols + [label]]
+    lb = pred.leaderboard(test_data, extra_info=True, silent=True)
+    lb.to_csv(out_dir / "leaderboard.csv", index=False)
+    fi = pred.feature_importance(test_data, num_shuffle_sets=5)
+    fi.to_csv(out_dir / "feature_importance.csv")
+    return {
+        "label": label,
+        "problem_type": problem_type,
+        "eval_metric": spec["eval_metric"],
+        "rows": {
+            "train": int(len(train)),
+            "val": int(len(val)),
+            "test": int(len(test)),
+        },
+        "leaderboard_top_model": str(lb.iloc[0]["model"]) if len(lb) else None,
+        "leaderboard_top_score_test": float(lb.iloc[0]["score_test"]) if len(lb) else None,
+        "leaderboard_top_score_val": float(lb.iloc[0]["score_val"]) if len(lb) else None,
+        "feature_importance_top10": fi.head(10).to_dict(orient="index"),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", type=Path, default=CSV_PATH)
@@ -263,6 +455,8 @@ def main() -> int:
                     help="Build labels/splits and run hard schema gates without fitting AutoGluon.")
     ap.add_argument("--smoke-ok", action="store_true",
                     help="With --validate-only, accept a small smoke CSV below full-training trade/split floors.")
+    ap.add_argument("--model-suite", action="store_true",
+                    help="Fit entry, TP, stop, MFE, and MAE predictors instead of only the entry classifier.")
     args = ap.parse_args()
     if args.smoke_ok and not args.validate_only:
         raise SystemExit("--smoke-ok is only valid with --validate-only")
@@ -305,13 +499,10 @@ def main() -> int:
     # train/val/test. Enforced by cpcv._enforce_embargo_floor().
     embargo_bars = args.max_hold_bars + 1
 
-    train_end_idx = int(len(trades) * args.train_frac)
-    val_end_idx = int(len(trades) * (args.train_frac + args.val_frac))
-
-    train_pos, val_pos, test_pos = embargoed_chronological_split(
-        n_samples=len(trades),
-        train_end_idx=train_end_idx,
-        val_end_idx=val_end_idx,
+    train_pos, val_pos, test_pos = split_trade_positions(
+        trades,
+        train_frac=args.train_frac,
+        val_frac=args.val_frac,
         embargo_bars=embargo_bars,
         label_horizon_bars=args.max_hold_bars,
     )
@@ -329,22 +520,16 @@ def main() -> int:
         if slice_df[LABEL_COL].nunique() != 2:
             raise RuntimeError(f"{name} split missing one label class")
 
-    train = train_df[feature_cols + [LABEL_COL]].copy()
-    val = val_df[feature_cols + [LABEL_COL]].copy()
-    test = test_df[feature_cols + [LABEL_COL]].copy()
-
     if args.validate_only:
         print("\nvalidate-only PASS")
         print(f"  features: {len(feature_cols)}")
-        print(f"  label: {LABEL_COL}")
+        print(f"  labels: {', '.join(spec['label'] for spec in MODEL_SPECS.values())}")
         print(f"  max_hold_bars: {args.max_hold_bars}")
         return 0
 
-    from autogluon.tabular import TabularPredictor
-
     ts_tag = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
     out_dir = args.output_root / f"locked_{ts_tag}"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=False)
 
     print(f"\nLOCKED AG full-zoo run", flush=True)
     print(f"  output dir:    {out_dir}", flush=True)
@@ -360,50 +545,26 @@ def main() -> int:
     print(f"  eval_metric:   log_loss (probability scoring for EV rule)", flush=True)
     print(f"  OMP_NUM_THREADS={os.environ.get('OMP_NUM_THREADS')} KMP_DUPLICATE_LIB_OK={os.environ.get('KMP_DUPLICATE_LIB_OK')}", flush=True)
 
-    pred = TabularPredictor(
-        label=LABEL_COL,
-        path=str(out_dir),
-        eval_metric="log_loss",
-        problem_type="binary",
-    ).fit(
-        train_data=train,
-        tuning_data=val,
-        use_bag_holdout=False,
-        time_limit=args.time_limit,
-        presets="best_quality",
-        calibrate=True,
-        num_bag_folds=0,
-        num_stack_levels=0,
-        dynamic_stacking=False,
-        ag_args_ensemble={"fold_fitting_strategy": "sequential_local"},
-        hyperparameter_tune_kwargs={
-            "searcher": "random",
-            "scheduler": "local",
-            "num_trials": 20,
-        },
-        hyperparameters={
-            "GBM": [{"num_threads": 1}, {"num_threads": 1, "extra_trees": True}],
-            "CAT": {"thread_count": 1},
-            "XGB": {"n_jobs": 1},
-            "RF":  [{"criterion": "gini"}, {"criterion": "entropy"}],
-            "XT":  [{"criterion": "gini"}, {"criterion": "entropy"}],
-            "NN_TORCH": {},
-            "FASTAI":   {},
-        },
-        verbosity=2,
-        num_gpus=0,
-    )
-    pred.persist()
-
-    print("\n=== leaderboard (OOS test set) ===", flush=True)
-    lb = pred.leaderboard(test, extra_info=True, silent=True)
-    print(lb.to_string(), flush=True)
-    lb.to_csv(out_dir / "leaderboard.csv", index=False)
-
-    print("\n=== feature importance (test set, 5 shuffle sets) ===", flush=True)
-    fi = pred.feature_importance(test, num_shuffle_sets=5)
-    print(fi.to_string(), flush=True)
-    fi.to_csv(out_dir / "feature_importance.csv")
+    selected_specs = MODEL_SPECS if args.model_suite else {"entry": MODEL_SPECS["entry"]}
+    model_summaries: dict[str, Any] = {}
+    for model_key, spec in selected_specs.items():
+        label = spec["label"]
+        if label not in train_df.columns:
+            raise RuntimeError(f"Requested model {model_key!r} but label column is missing: {label}")
+        model_dir = out_dir / model_key if args.model_suite else out_dir / "entry"
+        print(f"\n=== fitting {model_key} model ({label}) ===", flush=True)
+        summary = _fit_locked_predictor(
+            train=train_df,
+            val=val_df,
+            test=test_df,
+            label=label,
+            spec=spec,
+            out_dir=model_dir,
+            time_limit=args.time_limit,
+            feature_cols=feature_cols,
+        )
+        model_summaries[model_key] = summary
+        print(f"  top model: {summary['leaderboard_top_model']} score_test={summary['leaderboard_top_score_test']}", flush=True)
 
     summary = {
         "trained_at": ts_tag,
@@ -412,15 +573,13 @@ def main() -> int:
         "is_rows": int(len(train)),
         "val_rows": int(len(val)),
         "oos_rows": int(len(test)),
-        "is_winrate": float(train[LABEL_COL].mean()),
-        "val_winrate": float(val[LABEL_COL].mean()),
-        "oos_winrate": float(test[LABEL_COL].mean()),
+        "is_winrate": float(train_df[LABEL_COL].mean()),
+        "val_winrate": float(val_df[LABEL_COL].mean()),
+        "oos_winrate": float(test_df[LABEL_COL].mean()),
         "feature_count": len(feature_cols),
         "time_limit_sec": args.time_limit,
-        "leaderboard_top_model": str(lb.iloc[0]["model"]),
-        "leaderboard_top_score_test": float(lb.iloc[0]["score_test"]),
-        "leaderboard_top_score_val": float(lb.iloc[0]["score_val"]),
-        "feature_importance_top10": fi.head(10).to_dict(orient="index"),
+        "model_suite": bool(args.model_suite),
+        "models": model_summaries,
     }
     summary_path = out_dir / "v9_winner_clf_summary.json"
     summary_path.write_text(json.dumps(summary, default=str, indent=2))

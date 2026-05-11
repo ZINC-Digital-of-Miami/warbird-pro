@@ -68,7 +68,7 @@ def test_v9_contract_keeps_fib_visuals_and_ma_setup_frozen() -> None:
     assert profile.FROZEN_PINE_PARAMS.isdisjoint(tunables)
 
 
-def test_v9_loader_accepts_mes_only_and_ignores_es_nq(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_v9_loader_accepts_es_only_and_ignores_mes_nq(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     export_dir = tmp_path / "exports"
     export_dir.mkdir()
     _write_export(export_dir / "mes.csv", symbol="CME_MINI:MES1!")
@@ -79,18 +79,18 @@ def test_v9_loader_accepts_mes_only_and_ignores_es_nq(tmp_path: Path, monkeypatc
 
     frame = profile.load_data()
 
-    assert set(frame["symbol_root"]) == {"MES"}
+    assert set(frame["symbol_root"]) == {"ES"}
     used_filenames = {Path(source).name for source in frame["_source_csv"].unique()}
-    assert "es.csv" not in used_filenames
+    assert "es.csv" in used_filenames
     assert "nq.csv" not in used_filenames
-    assert "mes.csv" in used_filenames
+    assert "mes.csv" not in used_filenames
     assert len(frame.attrs["ignored_exports"]) == 2
 
 
 def test_v9_loader_keeps_neg236_as_context_not_stop(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     export_dir = tmp_path / "exports"
     export_dir.mkdir()
-    _write_export(export_dir / "mes.csv", symbol="MES1!")
+    _write_export(export_dir / "es.csv", symbol="ES1!")
     monkeypatch.setattr(profile, "OPTUNA_DIR", tmp_path)
 
     frame = profile.load_data()
@@ -106,8 +106,8 @@ def test_v9_loader_accepts_databento_training_data_without_indicator_source(
     export_dir = tmp_path / "exports"
     export_dir.mkdir()
     _write_export(
-        export_dir / "mes_databento.csv",
-        symbol="MES1!",
+        export_dir / "es_databento.csv",
+        symbol="ES1!",
         capture_method="DATABENTO_OHLCV_CSV",
         indicator_file=None,
     )
@@ -115,7 +115,7 @@ def test_v9_loader_accepts_databento_training_data_without_indicator_source(
 
     frame = profile.load_data()
 
-    assert set(frame["symbol_root"]) == {"MES"}
+    assert set(frame["symbol_root"]) == {"ES"}
     assert frame["_source_kind"].eq("DATABENTO_OHLCV_CSV").all()
 
 
@@ -126,7 +126,7 @@ def test_v9_loader_rejects_tradingview_csv_capture_method(
     export_dir.mkdir()
     _write_export(
         export_dir / "tv.csv",
-        symbol="MES1!",
+        symbol="ES1!",
         capture_method="TRADINGVIEW_INDICATOR_CSV",
         indicator_file=profile.PINE_FILE,
     )

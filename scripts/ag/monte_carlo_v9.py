@@ -79,6 +79,20 @@ def _predictor_feature_columns(predictor: Any, trades: pd.DataFrame) -> list[str
     return expected
 
 
+def _resolve_predictor_path(path: Path) -> Path:
+    # Supports both layouts:
+    # 1) locked_<tag>/predictor.pkl
+    # 2) locked_<tag>/entry/predictor.pkl
+    if (path / "predictor.pkl").exists():
+        return path
+    entry = path / "entry"
+    if (entry / "predictor.pkl").exists():
+        return entry
+    raise SystemExit(
+        f"Unable to locate predictor.pkl in {path} or {entry}"
+    )
+
+
 def _resolve_payoff_arrays(
     trades: pd.DataFrame,
     fallback_sl_pts: float,
@@ -327,7 +341,8 @@ def main() -> int:
     args = ap.parse_args()
 
     from autogluon.tabular import TabularPredictor
-    pred = TabularPredictor.load(str(args.predictor_path), require_py_version_match=False)
+    predictor_path = _resolve_predictor_path(args.predictor_path)
+    pred = TabularPredictor.load(str(predictor_path), require_py_version_match=False)
     pred.persist_models()
 
     tag = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -426,7 +441,8 @@ def main() -> int:
 
     full_output = {
         "generated_at": tag,
-        "predictor_path": str(args.predictor_path),
+        "predictor_path_input": str(args.predictor_path),
+        "predictor_path": str(predictor_path),
         "csv": str(args.csv),
         "split": args.split,
         "n_paths": args.n_paths,

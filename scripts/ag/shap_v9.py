@@ -117,6 +117,20 @@ def _predictor_feature_columns(predictor: Any, trades: pd.DataFrame) -> list[str
     return expected
 
 
+def _resolve_predictor_dir(path: Path) -> Path:
+    # Supports both layouts:
+    # 1) locked_<tag>/predictor.pkl
+    # 2) locked_<tag>/entry/predictor.pkl
+    if (path / "predictor.pkl").exists():
+        return path
+    entry = path / "entry"
+    if (entry / "predictor.pkl").exists():
+        return entry
+    raise SystemExit(
+        f"Unable to locate predictor.pkl in {path} or {entry}"
+    )
+
+
 def _explain_model(
     predictor: Any,
     model_name: str,
@@ -501,8 +515,9 @@ def main() -> int:
 
     from autogluon.tabular import TabularPredictor
 
-    print(f"\nloading predictor from {args.predictor_dir}", flush=True)
-    predictor = TabularPredictor.load(str(args.predictor_dir))
+    predictor_dir = _resolve_predictor_dir(args.predictor_dir)
+    print(f"\nloading predictor from {predictor_dir}", flush=True)
+    predictor = TabularPredictor.load(str(predictor_dir))
     predictor.persist_models()
     feature_cols = _predictor_feature_columns(predictor, trades)
 
@@ -556,7 +571,8 @@ def main() -> int:
 
     manifest = {
         "generated_at": tag,
-        "predictor_dir": str(args.predictor_dir),
+        "predictor_dir_input": str(args.predictor_dir),
+        "predictor_dir": str(predictor_dir),
         "csv": str(args.csv),
         "label_col": label_col,
         "model_name": model_name,

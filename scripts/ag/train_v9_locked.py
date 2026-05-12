@@ -90,9 +90,14 @@ ML_FEATURES = [
     "knob_fp_imbalance_pct", "knob_fp_absorption_delta_pct",
     "knob_fp_flush_delta_pct", "knob_fp_event_vol_spike",
     "knob_fp_compressed_range_atr",
-    # single-source trade trigger and entry context
+    # single-source trade trigger and entry context. `ml_trade_tp` (single
+    # live TP) was retired 2026-05-12 — Pine now emits the full fib ladder
+    # via `ml_trade_tp1` / `ml_trade_tp2` / `ml_trade_tp3`, which are
+    # required label-construction inputs (see REQUIRED_INPUT_COLUMNS) but
+    # NOT model features (AG already sees fib geometry via ml_fib_* +
+    # ml_atr14; adding the prices would be redundant).
     "ml_entry_long_trigger", "ml_entry_short_trigger",
-    "ml_trade_entry", "ml_trade_stop", "ml_trade_tp",
+    "ml_trade_entry", "ml_trade_stop",
     "ml_fib_touch_level_code",
     "ml_fib_touch_500_long", "ml_fib_touch_618_long",
     "ml_fib_touch_786_long",
@@ -154,7 +159,16 @@ ML_FEATURES = [
 # TP families use fib ladder ratios relative to entry anchor.
 DISCOVERABLE_SL_ATR_MULTS: tuple[float, ...] = (0.75, 1.0, 1.5, 2.0)
 DISCOVERABLE_TP_RATIOS: tuple[float, ...] = (1.0, 1.236, 1.618)
-ENTRY_RATIO_BY_TOUCH_CODE: dict[int, float] = {500: 0.5, 618: 0.618, 786: 0.786}
+
+# Per-combo TP price source columns (emitted by Pine 2026-05-12). One-to-one
+# with DISCOVERABLE_TP_RATIOS by index: tp_family_code 1 -> ml_trade_tp1
+# (fib 1.000), 2 -> ml_trade_tp2 (fib 1.236), 3 -> ml_trade_tp3 (fib 1.618).
+# These are label-construction inputs only (see REQUIRED_INPUT_COLUMNS).
+LABEL_INPUT_TP_COLUMNS: tuple[str, ...] = (
+    "ml_trade_tp1",
+    "ml_trade_tp2",
+    "ml_trade_tp3",
+)
 
 # 24-bar forward-scan contract (ES 15m entry-precision priority, 2026-05-12).
 # Every triple-barrier label is computed over the same 24-bar window:
@@ -199,6 +213,8 @@ REQUIRED_INPUT_COLUMNS = [
     "close",
     "ml_entry_long_trigger",
     "ml_entry_short_trigger",
+    # Label-construction inputs (not model features) — Pine ladder TPs.
+    *LABEL_INPUT_TP_COLUMNS,
     *ML_FEATURES,
 ]
 
@@ -234,36 +250,19 @@ def validate_trade_features(trades: pd.DataFrame) -> None:
 
 
 
-def _entry_ratio_from_touch_code(touch_code: float) -> float:
-    code = int(round(float(touch_code))) if pd.notna(touch_code) else 618
-    return ENTRY_RATIO_BY_TOUCH_CODE.get(code, 0.618)
-
-
-def _tp_price_from_ratio(entry_price: float, tp1_price: float, touch_code: float, tp_ratio: float, is_long: bool) -> float:
-    tp1_dist = abs(float(tp1_price) - float(entry_price))
-    if tp1_dist <= 1e-9:
-        fallback = 10.0 * (tp_ratio / 1.236)
-        return float(entry_price + fallback if is_long else entry_price - fallback)
-    entry_ratio = _entry_ratio_from_touch_code(touch_code)
-    denom = (1.236 - entry_ratio)
-    if denom <= 1e-9:
-        scale = 1.0
-    else:
-        scale = (tp_ratio - entry_ratio) / denom
-    target_dist = max(tp1_dist * float(scale), 0.25)
-    return float(entry_price + target_dist if is_long else entry_price - target_dist)
-
-
 def build_trade_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """Build TP×SL discoverable triple-barrier labels at entry bars.
 
     Each entry candidate expands into a 4×3 grid:
       - SL ATR multiples: {0.75, 1.0, 1.5, 2.0}   ATR-based stop, multiples of
                                                   the entry-bar `ml_atr14`.
-      - TP ratios:        {1.000, 1.236, 1.618}   fib-ladder extensions, scaled
-                                                  from Pine's per-row
-                                                  `ml_trade_tp` via
-                                                  `_tp_price_from_ratio`.
+      - TP ratios:        {1.000, 1.236, 1.618}   fib-ladder extensions read
+                                                  directly from Pine's per-row
+                                                  `ml_trade_tp1` /
+                                                  `ml_trade_tp2` /
+                                                  `ml_trade_tp3` (one column
+                                                  per ratio, same index order
+                                                  as DISCOVERABLE_TP_RATIOS).
 
     Forward-scan window is fixed at `FORWARD_SCAN_BARS = 24` bars (the ES 15m
     entry-precision contract). Every label is computed over that same 24-bar
@@ -316,22 +315,19 @@ def build_trade_dataset(df: pd.DataFrame) -> pd.DataFrame:
         if "ml_trade_entry" in df.columns
         else np.full(len(df), np.nan)
     )
-    targets = (
-        df["ml_trade_tp"].to_numpy(dtype=float)
-        if "ml_trade_tp" in df.columns
-        else np.full(len(df), np.nan)
-    )
+    # Per-combo TP price columns, indexed by tp_family_code (1/2/3).
+    # Required-input contract — Pine emits these from current fib geometry
+    # on every bar; missing-column at this stage is a fatal validation error.
+    tp_arrays_by_code: dict[int, np.ndarray] = {
+        idx + 1: df[col].to_numpy(dtype=float)
+        for idx, col in enumerate(LABEL_INPUT_TP_COLUMNS)
+    }
     stops = (
         df["ml_trade_stop"].to_numpy(dtype=float)
         if "ml_trade_stop" in df.columns
         else np.full(len(df), np.nan)
     )
     closes = df["close"].to_numpy(dtype=float)
-    touch_codes = (
-        df["ml_fib_touch_level_code"].to_numpy(dtype=float)
-        if "ml_fib_touch_level_code" in df.columns
-        else np.full(len(df), 618.0)
-    )
     atr_vals = (
         pd.to_numeric(df["ml_atr14"], errors="coerce").to_numpy(dtype=float)
         if "ml_atr14" in df.columns
@@ -350,17 +346,6 @@ def build_trade_dataset(df: pd.DataFrame) -> pd.DataFrame:
             continue
         entry_price = entries[i] if pd.notna(entries[i]) and entries[i] > 0 else closes[i]
         is_long = bool(long_mask.iloc[i])
-        touch_code = touch_codes[i]
-
-        tp1_price = (
-            targets[i]
-            if pd.notna(targets[i]) and targets[i] > 0
-            else (entry_price + 10.0 if is_long else entry_price - 10.0)
-        )
-        tp_prices_by_ratio = {
-            float(tp_ratio): _tp_price_from_ratio(entry_price, tp1_price, touch_code, float(tp_ratio), is_long)
-            for tp_ratio in DISCOVERABLE_TP_RATIOS
-        }
 
         atr_i = atr_vals[i]
         if not pd.notna(atr_i) or float(atr_i) <= 1e-9:
@@ -393,7 +378,15 @@ def build_trade_dataset(df: pd.DataFrame) -> pd.DataFrame:
             sl_price = float(entry_price - stop_dist if is_long else entry_price + stop_dist)
 
             for tp_family_code, tp_ratio in enumerate(DISCOVERABLE_TP_RATIOS, start=1):
-                tp_price = float(tp_prices_by_ratio[float(tp_ratio)])
+                # Pine-emitted TP for this fib-ratio family (no Python-side
+                # reconstruction — the price comes straight from the ladder
+                # plot in indicators/warbird-pro-v9.pine).
+                tp_raw = tp_arrays_by_code[tp_family_code][i]
+                if not pd.notna(tp_raw) or float(tp_raw) <= 0:
+                    # Pine couldn't emit a ladder price for this bar (fib
+                    # range invalid). Skip the combo — it's not a fair label.
+                    continue
+                tp_price = float(tp_raw)
                 target_dist = abs(tp_price - entry_price)
 
                 target_hit_idx = -1

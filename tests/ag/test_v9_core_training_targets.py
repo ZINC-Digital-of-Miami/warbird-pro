@@ -58,7 +58,13 @@ def test_trade_dataset_uses_emitted_entry_tp_stop_and_adds_tp_sl_sidecar_labels(
                 "ml_entry_long_trigger": 1.0 if i == 0 else 0.0,
                 "ml_entry_short_trigger": 0.0,
                 "ml_trade_entry": 100.0 if i == 0 else 0.0,
-                "ml_trade_tp": 108.0 if i == 0 else 0.0,
+                # Pine-emitted fib-ladder TPs (label-construction inputs only):
+                # 1.000 / 1.236 / 1.618 extensions. Sized so bar 1 (high=108.5)
+                # hits TP1 + TP2 and bar 2 (high=113.5) hits TP3 — giving the
+                # full 4x3 grid of winning combos for the assertion below.
+                "ml_trade_tp1": 104.0 if i == 0 else 0.0,
+                "ml_trade_tp2": 108.0 if i == 0 else 0.0,
+                "ml_trade_tp3": 112.0 if i == 0 else 0.0,
                 "ml_trade_stop": 97.0 if i == 0 else 0.0,
             }
         )

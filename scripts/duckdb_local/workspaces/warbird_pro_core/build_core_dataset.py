@@ -65,7 +65,9 @@ FIB_382 = 0.382
 FIB_PIVOT = 0.5
 FIB_618 = 0.618
 FIB_786 = 0.786
+FIB_ONE = 1.0
 FIB_T1 = 1.236
+FIB_T2 = 1.618
 
 FIB_DEVIATION = 3.0
 FIB_DEPTH = 10
@@ -113,7 +115,9 @@ DEFAULT_INDICATOR_KNOBS: dict[str, Any] = {
     "knob_use_liq_gate": False,  # locked 2026-05-11: gate-as-feature pivot; liquidity is ML features only
     "knob_liq_recency_bars": LIQ_RECENCY_BARS,
     "knob_trade_stop_atr_mult": 1.50,
-    "knob_trade_max_hold_bars": 72,
+    # Pinned to 24 bars 2026-05-12 to mirror Pine's `tradeMaxHoldBars` and the
+    # trainer's FORWARD_SCAN_BARS contract (ES 15m entry-precision).
+    "knob_trade_max_hold_bars": 24,
     "knob_use_ma_gate": True,
     "knob_length_ema": MA_FAST_BASE,
     "knob_length_ma": MA_SLOW_BASE,
@@ -687,7 +691,12 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
     p_pivot = fib_price(FIB_PIVOT)
     p_618 = fib_price(FIB_618)
     p_786 = fib_price(FIB_786)
+    # Full ladder TPs at fib 1.000 / 1.236 / 1.618 — emitted as
+    # ml_trade_tp1 / ml_trade_tp2 / ml_trade_tp3 (label-construction inputs
+    # mirroring indicators/warbird-pro-v9.pine's pOne/pT1/pT2 plots).
+    p_one = fib_price(FIB_ONE)
     p_t1 = fib_price(FIB_T1)
+    p_t2 = fib_price(FIB_T2)
 
     zone_upper = np.maximum(p_618, p_786)
     zone_lower = np.minimum(p_618, p_786)
@@ -813,7 +822,11 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
             "ml_lvl_pwl_dist_atr": safe_div(close - levels["pwl"].to_numpy(dtype=float), atr14),
             "ml_trade_entry": entry_level,
             "ml_trade_stop": trade_stop,
-            "ml_trade_tp": p_t1,
+            # Fib-ladder TPs (always emitted from current geometry; required
+            # label-construction inputs for train_v9_locked.build_trade_dataset).
+            "ml_trade_tp1": p_one,
+            "ml_trade_tp2": p_t1,
+            "ml_trade_tp3": p_t2,
             "ml_fib_touch_level_code": fib_touch_level_code,
             "ml_fib_touch_500_long": touched500_long.astype(float),
             "ml_fib_touch_618_long": touched618_long.astype(float),
@@ -1373,9 +1386,12 @@ def finalize_entries(df: pd.DataFrame, knobs: dict[str, Any] | None = None) -> p
     out = df.copy()
     ma_long_ok = (out["ml_ma_bias"] > 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
     ma_short_ok = (out["ml_ma_bias"] < 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
-    zn_same_direction = str(_knob(knobs, "knob_zn_gate_direction")) == "Same Direction"
-    zn_long_vote = out["ml_xa_zn_code"] > 0 if zn_same_direction else out["ml_xa_zn_code"] < 0
-    zn_short_vote = out["ml_xa_zn_code"] < 0 if zn_same_direction else out["ml_xa_zn_code"] > 0
+    # ZN reversal toggle removed from Pine 2026-05-12; ETL mirrors raw direction.
+    # The `knob_zn_gate_direction` column is still emitted as a constant for
+    # schema-compat, but the reversal branch is gone — AG learns the
+    # regime-dependent ZN/ES relationship directly from `ml_xa_zn_code`.
+    zn_long_vote = out["ml_xa_zn_code"] > 0
+    zn_short_vote = out["ml_xa_zn_code"] < 0
     vix_band = float(_knob(knobs, "knob_vix_pressure_band"))
     # xa_*_agreement are still emitted as features (0..4 ints reflecting how many
     # of the four cross-asset votes agree with direction). They are inputs to
@@ -1448,7 +1464,12 @@ def validate_core_frame(df: pd.DataFrame, gate_mode: str) -> None:
 
 
 def validate_export_with_pandera(df: pd.DataFrame) -> None:
-    required_cols = ["ts", "open", "high", "low", "close", "volume", *ML_FEATURES]
+    # Label-construction inputs (not ML_FEATURES, per the Option-B contract
+    # locked 2026-05-12). The three fib-ladder TPs are required in the export
+    # CSV so train_v9_locked.build_trade_dataset can size combos directly.
+    label_input_cols = ["ml_trade_tp1", "ml_trade_tp2", "ml_trade_tp3"]
+    required_cols = ["ts", "open", "high", "low", "close", "volume",
+                     *label_input_cols, *ML_FEATURES]
     missing = [col for col in required_cols if col not in df.columns]
     if missing:
         raise RuntimeError(f"pandera export schema missing columns: {missing}")
@@ -1507,7 +1528,9 @@ def validate_export_with_pandera(df: pd.DataFrame) -> None:
         "ml_entry_short_trigger",
         "ml_trade_entry",
         "ml_trade_stop",
-        "ml_trade_tp",
+        "ml_trade_tp1",
+        "ml_trade_tp2",
+        "ml_trade_tp3",
     ]
     missing_policy = [col for col in required_label_policy if col not in validated.columns]
     if missing_policy:
@@ -1758,7 +1781,9 @@ def main() -> int:
                 "ml_fib_reaction_code",
                 "ml_trade_entry",
                 "ml_trade_stop",
-                "ml_trade_tp",
+                "ml_trade_tp1",
+                "ml_trade_tp2",
+                "ml_trade_tp3",
             ],
         },
     )

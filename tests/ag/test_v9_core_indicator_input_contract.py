@@ -54,7 +54,8 @@ REQUIRED_FEATURES = {
     "ml_entry_short_trigger",
     "ml_trade_entry",
     "ml_trade_stop",
-    "ml_trade_tp",
+    # `ml_trade_tp` retired 2026-05-12 — Pine emits the fib ladder via
+    # ml_trade_tp1/2/3 which are label-construction inputs (not ML_FEATURES).
     "ml_fib_touch_level_code",
     "ml_fib_touch_500_long",
     "ml_fib_touch_618_long",

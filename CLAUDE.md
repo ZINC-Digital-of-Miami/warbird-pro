@@ -151,8 +151,10 @@ and trains AFTER Core lands.
 **Label (locked):** triple-barrier `winner_tp_before_sl`. Each entry expands
 into a 4×3 grid of (SL ATR multiple × TP ratio) combos: SL multiples
 {0.75, 1.0, 1.5, 2.0} multiply the entry-bar `ml_atr14`; TP ratios
-{1.000, 1.236, 1.618} are fib-ladder extensions scaled from Pine's per-row
-`ml_trade_tp`. For each combo row, label = `1` if THIS combo's TP price
+{1.000, 1.236, 1.618} are fib-ladder extensions read directly from Pine's
+per-row `ml_trade_tp1` / `ml_trade_tp2` / `ml_trade_tp3` plots (one column
+per ratio; label-construction inputs only, not `ML_FEATURES`).
+For each combo row, label = `1` if THIS combo's TP price
 touches strictly before its SL price within `FORWARD_SCAN_BARS = 24`
 (6h on 15m, 2h on 5m); `0` if SL touches first OR both touch on the same
 bar (pessimistic — intrabar sequencing unobservable) OR neither barrier

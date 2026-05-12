@@ -521,10 +521,11 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
   the same bar (pessimistic same-bar policy — intrabar sequencing is
   unobservable) OR neither barrier touches within the 24-bar window
   (sideways → avoid). Entries closer than `MIN_FUTURE_BARS = 24` bars to
-  end-of-data are DROPPED. TP price is derived from the 3-TP fib ladder
-  (1.000, 1.236, 1.618) scaled from Pine's per-row `ml_trade_tp` via
-  `_tp_price_from_ratio`; SL price is `entry ± ml_atr14 × sl_mult`. The
-  split embargo is `EMBARGO_BARS = 25`.
+  end-of-data are DROPPED. TP price is read directly from Pine's per-row
+  fib-ladder plots `ml_trade_tp1` (fib 1.000), `ml_trade_tp2` (fib 1.236),
+  and `ml_trade_tp3` (fib 1.618) — label-construction inputs only, NOT
+  `ML_FEATURES`. SL price is `entry ± ml_atr14 × sl_mult`. The split
+  embargo is `EMBARGO_BARS = 25`.
 - **Discoverable trade grid:** Each admitted entry expands into 12 rows —
   4 SL ATR multiples {0.75, 1.0, 1.5, 2.0} × 3 TP ratios
   {1.000, 1.236, 1.618}.

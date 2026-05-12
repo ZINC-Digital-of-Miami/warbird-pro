@@ -188,28 +188,29 @@ coverage). Footprint reconstruction from Databento ES Trades 365d. The newer
 OHLCV-1s 2315d (~6.3y) Databento download is reserved for a future v10
 long-horizon ensemble card, NOT Core (would NaN out 2/3 of feature surface).
 
-**Feature surface:** V9 Pine ml_* + ETL-derived `ml_cvd_div_bull/bear` (CVD
-divergence, Python-only, no Pine cost) + microstructure (1m sub-bar) + IB +
-volume profile HVN/LVN + UTC-anchored economic-event features.
+**Feature surface:** `ML_FEATURES=120` locked input features. `MODEL_FEATURES=126`
+after the six trade-discoverable combo fields
+(`sl_atr_mult`, `tp_ratio`, `tp_family_code`, `target_distance_points`,
+`stop_distance_points`, `rr_ratio`) are added by `build_trade_dataset`.
 
 **V9 Pine pattern set:** 4 curated patterns —
 Bull: `patRisingWindow`. Bear: `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`.
 Dropped 2026-05-09: `patBullEngulf`, `patPiercing`, `patHaramiBull`, `patHaramiBear`.
 
-**DXY source:** ICE futures are not allowed for the operator account. V9 Pine
-uses TradingView `TVC:DXY`; AG/ETL must use Yahoo `DX-Y.NYB` for DXY parity.
-Feature lists expect `ml_xa_dxy_code` and `ml_xa_dxy_diverge`.
+**DXY status:** DXY was removed from the V9 Core feature set on the 2026-05-11
+gate-as-feature pivot. Do not expect `ml_xa_dxy_code` or
+`ml_xa_dxy_diverge` in the active V9 Core trainer.
 
 **Three Line Strike pattern:** HELD for v10. 84% citation is unverified vendor
 claim — validate in Python first before reserving Pine plot budget.
 
 ### Current Blocker
 
-V9 Core training surface is ready as of 2026-05-12. `scripts/ag/train_v9_locked.py`
-now defaults to the 15m Core export and passes validate-only smoke + parity
-checks across `train_v9_locked` / `monte_carlo_v9` / `shap_v9` (19,850 resolved
-trades, WR 0.4265, IS/VAL/OOS 13,895 / 2,952 / 2,953). Pending: full 1y entry-only
-AG training run, then SHAP + Monte Carlo gates before promoting any TV alert.
+V9 Core has one completed full `--model-suite` artifact as of 2026-05-12:
+`models/warbird_pro_v9/locked_20260512_083803/`. Treat it as a completed
+training artifact, not promotion proof. Current blockers are the SHAP gate,
+Monte Carlo gate, and provenance review tied to that exact run before promoting
+any TV alert.
 The smoke-validation card at
 `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`
 records local validation evidence only and does not launch AG; it is not on the
@@ -230,15 +231,15 @@ Smoke verification evidence is recorded in
 | Min Fib Range ATR | **0.5** |
 | Midpoint Hysteresis % | **2.0** |
 | Use EMA/MA Gate | **true** |
-| MA Length (SMA, slow) | **100** |
-| EMA Length (close, fast) | **50** |
+| MA Length (SMA, slow) | **50** |
+| EMA Length (close, fast) | **21** |
 
 `build_v9_dataset.py` must match these exactly. The contamination incident
 (2026-05-05) used dev=4.0, depth=20, floor=0.50 — all wrong. Always verify
 live TV settings before building a new dataset.
 
 Entry-filter HPO may search only +/-10 around those MA lengths: `lengthMA`
-90-110 and `lengthEMA` 40-60. The live Pine gate is fixed SMA(close) slow vs
+40-60 and `lengthEMA` 11-31. The live Pine gate is fixed SMA(close) slow vs
 EMA(close) fast.
 
 ### Kirk's Exit Preferences (operator-stated targets — not in training objective)

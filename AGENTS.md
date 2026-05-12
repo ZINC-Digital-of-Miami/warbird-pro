@@ -140,11 +140,11 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - `local_warehouse/`, local `warbird`, and `scripts/ag/train_ag_baseline.py`:
   legacy/reference unless explicitly reopened.
 
-## Live Pine Settings (Authoritative — 2026-05-09)
+## Live Pine Settings (Authoritative — 2026-05-12)
 
 These are the LIVE values from the TradingView indicator inputs panel.
 The Pine code `input.float(default, ...)` values are NOT authoritative.
-`build_v9_dataset.py` constants must match these exactly before every dataset build.
+Core dataset-builder constants must match these exactly before every dataset build.
 
 | Setting | Live Value |
 |---------|-----------|
@@ -155,8 +155,11 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 | Min Fib Range ATR (minFibRangeAtr) | **0.5** |
 | Midpoint Hysteresis % (fibHysteresisPct) | **2.0** |
 | Use EMA/MA Gate (useMaGate) | **true** |
-| MA Length SMA (lengthMA) | **100** |
-| EMA Length (lengthEMA) | **50** |
+| MA Length SMA (lengthMA) | **50** |
+| EMA Length (lengthEMA) | **21** |
+
+Entry-filter MA training may search only +/-10 around those canonical values:
+`lengthMA` 40-60 and `lengthEMA` 11-31.
 
 ## Kirk's Exit Trade Preferences (operator-stated targets — not in training objective)
 

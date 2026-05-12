@@ -399,10 +399,10 @@ budgets must be repriced before any Nexus edit.
 
 ## Current State (2026-05-12)
 
-**The V9 Core training surface is ready to launch.** Open blockers below are
-operator-gated only.
+**V9 Core has one completed full `--model-suite` artifact.** It is not
+promotion-ready until validation/provenance gates are tied to that exact run.
 
-Recently landed (commit `5e5e6f3`):
+Recent local state (through commit `1747194`):
 
 - V9 Core file pipeline is under `scripts/duckdb_local/` and
   `tests/duckdb_local/`. Nexus footprint research and legacy v7 profile
@@ -411,40 +411,39 @@ Recently landed (commit `5e5e6f3`):
   fixed (5m → 15m, pointing at the locked 1y Core export). `--model-suite`
   flag adds the optional TP/SL touch + MFE/MAE side models. Docstring no
   longer points at the smoke card or `train_hard_gate.py`.
-- `build_trade_dataset` semantics canonicalized in the docstring: 3×3
+- `build_trade_dataset` semantics canonicalized in the docstring: 4×3
   TP/SL grid, touch-event labels for `tp_hit`/`stop_hit`, pessimistic
   same-bar collision for `winner_tp_before_sl`. `monte_carlo_v9.py` and
   `shap_v9.py` both import this function — single source of truth.
-- Core ETL/Pandera/fg-data-profiling stack wired. DXY parity (Yahoo
-  `DX-Y.NYB`), Databento trade-side CVD/order-flow features, May 2026
+- Core ETL/Pandera/fg-data-profiling stack wired. DXY was removed from active
+  V9 Core features on the 2026-05-11 gate-as-feature pivot; Databento
+  trade-side CVD/order-flow features, May 2026
   order-flow threshold review (35% absorption/flush delta, 1.5x volume
   spike, 0.75 ATR range split) are in code. Smoke verification recorded
   in `docs/audits/2026-05-10-v9-core-smoke-verification.md`.
 - The locked 15m export exists and validates: 23,513 bars (2025-05-11
   22:00 UTC → 2026-05-10 23:45 UTC), 1,414 long triggers, 1,284 short
-  triggers, 19,850 resolved trades after the 3×3 grid expansion, WR
-  0.4265, chronological IS/VAL/OOS split 13,895 / 2,952 / 2,953 with
-  25-bar embargo (WR 41.67% / 43.60% / 46.90%).
+  triggers. Latest full model-suite run
+  `models/warbird_pro_v9/locked_20260512_083803/` used chronological
+  IS/VAL/OOS splits of 22,654 / 4,830 / 4,830 model rows after the current
+  4×3 trade grid and 25-bar embargo (WR 33.07% / 34.02% / 35.13%).
 - Auxiliary smoke-validation card defaults updated to point at the same
   15m export — passes end-to-end against the new schema.
 
 **Open work, in order:**
 
-1. Launch the entry-only AG training run:
-   `python3 scripts/ag/train_v9_locked.py` (≈2h with the locked 7200s
-   time budget; produces predictor + leaderboard + feature_importance
-   under `models/warbird_pro_v9/locked_<tag>/entry/`).
-2. Run the SHAP gate (Phase 4.5, Gate 1) against the 15m export. See the
+1. Verify the completed full-suite artifact provenance against the exact
+   manifest, repo commit, and run command.
+2. Run the SHAP gate (Phase 4.5, Gate 1) against the same 15m export/run. See the
    *Validation Gating Before Live Trade Routing* section for what
    counts as a pass.
-3. Run the Monte Carlo gate (Phase 4.5, Gate 2) against the OOS split.
+3. Run the Monte Carlo gate (Phase 4.5, Gate 2) against the same OOS split.
 4. Only after both gates clear, enable any TradingView alert that filters
    on `model_proba >= 0.75`.
-5. After the entry classifier is in production, schedule a `--model-suite`
-   run to add the auxiliary TP-touch / SL-touch / MFE / MAE side models
-   for the downstream EV/policy layer.
+5. Use the already-trained `--model-suite` side models only after the same
+   validation/provenance gates clear.
 
-Owner/next trigger: Kirk's go for step 1.
+Owner/next trigger: validation/provenance pass for `locked_20260512_083803`.
 
 The previous "Hybrid+ 4-card" tuning chain
 (`warbird_pro_v9_exit_cpcv`, `warbird_pro_v9_entry_filter_cpcv`,
@@ -455,7 +454,7 @@ only; do not invoke them as a chain.
 
 ---
 
-## V9 Core AutoGluon — Active Plan (2026-05-09)
+## V9 Core AutoGluon — Active Plan (2026-05-12)
 
 The earlier Hybrid+ 4-card system (`warbird_pro_v9_exit_cpcv`,
 `warbird_pro_v9_entry_filter_cpcv`, `warbird_pro_v9_ag_meta_cpcv`,
@@ -473,8 +472,8 @@ Core card. The Core card supersedes all four.
 | Min Fib Range (ATR) | **0.5** | `minFibRangeAtr` |
 | Midpoint Hysteresis % | **2.0** | `fibHysteresisPct` |
 | Use EMA/MA Gate | **true** | `useMaGate` |
-| MA Length (SMA, slow) | **100** | `lengthMA` |
-| EMA Length (close, fast) | **50** | `lengthEMA` |
+| MA Length (SMA, slow) | **50** | `lengthMA` |
+| EMA Length (close, fast) | **21** | `lengthEMA` |
 
 **Rule:** Before every dataset build, read the live TradingView indicator
 inputs panel and verify the dataset-builder constants match exactly. Pine code
@@ -482,8 +481,8 @@ inputs panel and verify the dataset-builder constants match exactly. Pine code
 TV settings are. Contamination incident (2026-05-05) used dev=4.0, depth=20,
 floor=0.50 — all wrong; do not repeat.
 
-**MA training rule:** entry-filter HPO may search `lengthMA` from 90-110 and
-`lengthEMA` from 40-60 around the live 100/50 defaults. The Pine gate itself is
+**MA training rule:** entry-filter HPO may search `lengthMA` from 40-60 and
+`lengthEMA` from 11-31 around the live 50/21 defaults. The Pine gate itself is
 fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 
 ### V9 Pine Pattern Set (post-2026-05-09 trim)
@@ -499,22 +498,19 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 
 - **Source:** Databento ES — Trades 365d (footprint reconstruction) + OHLCV
   bars 15m (training resolution; ES 5m only after 15m success per locked
-  sequence) + OHLCV 1m (microstructure features only). DXY parity uses
-  Yahoo `DX-Y.NYB` for AG/ETL; ICE futures DXY is not licensed to the
-  operator account, so the V9 Pine reads `TVC:DXY` instead. DXY was
-  subsequently removed from the V9 feature set on the 2026-05-11
-  gate-as-feature pivot and replaced by 6E momentum z-score and 6E trend
-  code as continuous cross-asset signals.
+  sequence) + OHLCV 1m (microstructure features only). DXY was removed from
+  the V9 feature set on the 2026-05-11 gate-as-feature pivot and replaced by
+  6E momentum z-score and 6E trend code as continuous cross-asset signals.
 - **Window:** 2025-05-11 → 2026-05-10 (1y, dense feature coverage; the actual
   built export covers that range). The newer Databento OHLCV-1s 2315d
   download is reserved for a future v10 long-horizon ensemble card, NOT
   Core (would NaN 2/3 of feature surface).
-- **Feature surface (123 ml_\* + 6 trade-discoverable = 129 total):**
-  V9 Pine ml_* + ETL-derived `ml_cvd_div_bull/bear` (CVD divergence,
-  Python-only, zero Pine cost) + 1m microstructure features + Initial
-  Balance + volume profile HVN/LVN + UTC-anchored economic-event features
-  (CPI/NFP/PPI=13:30 UTC, FOMC=19:00/18:00 UTC seasonal) + Pine input
-  knobs (43 of them, e.g. `knob_fib_deviation_manual`, `knob_length_ma`).
+- **Feature surface (`ML_FEATURES=120`, `MODEL_FEATURES=126`):**
+  locked V9 Core input features plus the six trade-discoverable combo fields
+  added by `build_trade_dataset` (`sl_atr_mult`, `tp_ratio`,
+  `tp_family_code`, `target_distance_points`, `stop_distance_points`,
+  `rr_ratio`). DXY fields are not part of the active V9 Core trainer after
+  the 2026-05-11 gate-as-feature pivot.
 - **Label (triple barrier):** `winner_tp_before_sl` = 1 if **this combo's**
   TP price touched before its SL price within `FORWARD_SCAN_BARS = 24`
   (6h on 15m, 2h on 5m); 0 if SL touched first OR if TP and SL touched on

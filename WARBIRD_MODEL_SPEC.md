@@ -110,8 +110,8 @@ Primary metrics:
     DXY is inverse-risk, VIX is ATR-normalized movement pressure, and ZN uses
     the explicit Pine setting `ZN Gate Direction`
   - EMA/MA gate is fixed to slow SMA(close) vs fast EMA(close), live defaults
-    `lengthMA=100` and `lengthEMA=50`; entry-filter HPO may search only
-    `lengthMA` 90-110 and `lengthEMA` 40-60
+    `lengthMA=50` and `lengthEMA=21`; entry-filter HPO may search only
+    `lengthMA` 40-60 and `lengthEMA` 11-31
   - footprint/order-flow hidden exports now include Pine-native delta
     imbalance, delta acceleration, aggressor pulse, volume-spike ratio, POC
     shift, absorption candidate, and flush candidate fields for Core parity and

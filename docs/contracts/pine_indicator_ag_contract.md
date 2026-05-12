@@ -142,8 +142,8 @@ Frozen during V9:
 - Pine source code until promotion approval
 
 The V9 EMA/MA gate is fixed as slow SMA(close) vs fast EMA(close), with live
-defaults `lengthMA=100` and `lengthEMA=50`. Entry-filter HPO may tune only
-within +/-10 of those defaults (`lengthMA` 90-110, `lengthEMA` 40-60); do not
+defaults `lengthMA=50` and `lengthEMA=21`. Entry-filter HPO may tune only
+within +/-10 of those defaults (`lengthMA` 40-60, `lengthEMA` 11-31); do not
 reintroduce smaller-timeframe MA defaults or MA type-selection params.
 
 ## Explicit Exclusions

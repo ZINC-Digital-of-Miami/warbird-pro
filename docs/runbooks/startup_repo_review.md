@@ -114,7 +114,7 @@ rg -n "TODO|FIXME|INCOMPLETE|superseded|legacy|deprecated|locked|guardrail" AGEN
 At minimum, understand:
 
 - Pine surfaces under `indicators/`
-- active tuning and automation scripts under `scripts/optuna/` and `scripts/ag/`
+- active tuning and automation scripts under `scripts/duckdb_local/` and `scripts/ag/`
 - contract and runbook authority under `docs/`
 - runtime/dashboard support under `app/`, `components/`, `lib/`, and `supabase/`
 - memory pointers in `MEMORY.md`

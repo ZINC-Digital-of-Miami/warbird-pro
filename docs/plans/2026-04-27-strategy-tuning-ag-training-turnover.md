@@ -93,17 +93,17 @@ python scripts/ag/tune_strategy_params.py leaderboard --top 20
 Use AG/Optuna as offline analyzers of Pine behavior, not a separate decision engine.
 
 Reference surfaces:
-- `scripts/optuna/`
+- `scripts/duckdb_local/`
 - `scripts/ag/tune_strategy_params.py`
 - `scripts/ag/tv_auto_tune.py`
-- `scripts/optuna/workspaces/<indicator_key>/`
+- `scripts/duckdb_local/workspaces/<indicator_key>/`
 - `artifacts/tuning/`
 
 Example institutional Optuna lane:
 ```bash
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
   --indicator-key v7_warbird_institutional \
-  --profile-module scripts.optuna.v7_warbird_institutional_profile \
+  --profile-module scripts.duckdb_local.v7_warbird_institutional_profile \
   --study-name v7_warbird_institutional_wr_pf \
   --n-trials 1000 \
   --start 2020-01-01

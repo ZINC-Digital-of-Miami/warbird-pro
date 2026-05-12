@@ -25,8 +25,10 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.ag.train_v9_locked import LABEL_COL, ML_FEATURES, build_trade_dataset
 
 COUNT_COLUMNS = [
-    "ml_xa_dxy_code",
-    "ml_xa_dxy_diverge",
+    # cross-asset (DXY removed 2026-05-11; 6E momentum z-score is the
+    # canonical replacement under the gate-as-feature pivot)
+    "ml_xa_6e_code",
+    "ml_xa_6e_momentum_zscore",
     "ml_xa_corr_nq",
     "ml_fp_delta_pct",
     "ml_cvd_div_bull",

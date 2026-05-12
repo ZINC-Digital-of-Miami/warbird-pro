@@ -137,7 +137,7 @@ Required source for V9 historical training (pending Kirk choice):
 
 > "rebuild so all this is in the fucking training and tuning"
 
-- New module: `scripts/optuna/v9_trigger.py` re-implements Pine
+- New module: `scripts/duckdb_local/v9_trigger.py` re-implements Pine
   `entryLongTrigger` / `entryShortTrigger` from raw OHLCV + raw fib levels
   + raw HTF pivots + raw BSL/SSL pivots + raw aggressor volume. Parameterized
   on every currently-baked Pine input.
@@ -182,7 +182,7 @@ Required source for V9 historical training (pending Kirk choice):
 ## State at Lock
 
 - **Card 1 stopped:** 399 COMPLETE + 54 PRUNED + 1 cleaned-to-FAIL trials in
-  `scripts/optuna/workspaces/warbird_pro_v9_exit_cpcv/study.db`. Last trial
+  `scripts/duckdb_local/workspaces/warbird_pro_v9_exit_cpcv/study.db`. Last trial
   completed 13:04 2026-05-05. No runner process active. Hub on :8090 + child
   dashboard on :8105 still running.
 - **Card 1 results:** unreliable. CSV had baked-in

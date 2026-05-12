@@ -208,7 +208,7 @@ folder. New ruling:
 ### D3. Card 1 Existing Trials — Keep as Labeled Baseline
 
 454 trials in
-`scripts/optuna/workspaces/warbird_pro_v9_exit_cpcv/study.db` (399
+`scripts/duckdb_local/workspaces/warbird_pro_v9_exit_cpcv/study.db` (399
 COMPLETE + 54 PRUNED + 1 cleaned-to-FAIL) are preserved as a
 contaminated baseline. Tagged in run manifest as
 `baseline_contaminated_baked_csv — DO NOT USE FOR PROMOTION`.
@@ -504,7 +504,7 @@ Trades data (IS + OOS both real):**
 
 **Full Python re-trigger of Pine entry/exit logic.**
 
-- New module: `scripts/optuna/v9_trigger.py` re-implements the trigger
+- New module: `scripts/duckdb_local/v9_trigger.py` re-implements the trigger
   ("touched any of 3 fib levels?") + exit-bar bookkeeping (TP1, TP2,
   BE, trail) from raw OHLCV + raw fib levels + raw HTF pivots + raw
   BSL/SSL pivots + raw aggressor volume (tick-rule, IS+OOS) + ADX
@@ -692,7 +692,7 @@ pipeline.**
 - Tick-rule sanity gate: correlation check on the deterministic
   10,000-bar window from 2024-07-01 (per Data Pipeline section).
 
-**Phase 2 — `scripts/optuna/v9_trigger.py` Python re-trigger module.**
+**Phase 2 — `scripts/duckdb_local/v9_trigger.py` Python re-trigger module.**
 - Implement the trigger ("touched any of 3 fib levels?") + exit
   bookkeeping from raw inputs.
 - Bar-by-bar parity test against current Pine V9 output on ≥10,000

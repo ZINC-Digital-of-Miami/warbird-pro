@@ -1,6 +1,6 @@
-# Warbird Indicator-Only Optuna Plan v6
+# Warbird Indicator-Only DuckDB Local Modeling Plan v6
 
-**Date:** 2026-05-05
+**Date:** 2026-05-05 (renamed 2026-05-12 — Optuna workspace path retired)
 **Status:** Active architecture plan
 
 ## Summary
@@ -9,9 +9,10 @@ Warbird training is a pure PineScript indicator modeling program.
 
 The active goal is to perfect the TradingView indicator itself: settings, state
 machine, entries, exits, filters, hidden exports, and visual/operator build.
-Optuna and supporting scripts may be used offline, but only to model and rank
-PineScript indicator behavior. They do not create a separate data-stack
-decision engine.
+The local DuckDB / Pandera / AutoGluon stack at `scripts/duckdb_local/`
+(renamed from `scripts/optuna/` on 2026-05-12) is used offline to model and
+rank PineScript indicator behavior. It does not create a separate data-stack
+decision engine. Optuna is not a runtime dependency of the V9 Core path.
 
 Single-surface update (2026-05-02): the only active main chart indicator is
 **Warbird Pro V9** at `indicators/warbird-pro-v9.pine`. Nexus remains as the only retained
@@ -22,13 +23,15 @@ support/research Pine lane:
 All other Pine indicator, strategy, backtest, and fib-only variants are retired
 from the active `indicators/` surface.
 
-V9 lane update (2026-05-02): `warbird_pro_v9` is a separate Optuna lane over the
-same active Warbird Pro V9 indicator. It models ATR/risk exits from
-manifest-backed ES training rows (15m and 5m) from TradingView exports or
-Databento market data, ignores MES/NQ/MNQ rows,
-excludes `-.236` and other negative fib extensions as stop candidates, keeps
-`-.236` only as optional context/export data, and freezes fib anchors, fib
-visuals, and EMA/MA setup until a champion is approved for Pine promotion.
+V9 lane update (2026-05-02, refined 2026-05-12): `warbird_pro_v9` is the
+active modeling lane over the live Warbird Pro V9 indicator. It models ATR/risk
+exits from manifest-backed ES training rows (15m and 5m) from TradingView
+exports or Databento market data, ignores MES/NQ/MNQ rows, excludes `-.236` and
+other negative fib extensions as stop candidates, keeps `-.236` only as
+optional context/export data, and freezes fib anchors, fib visuals, and EMA/MA
+setup until a champion is approved for Pine promotion. The production trainer
+is `scripts/ag/train_v9_locked.py` (AutoGluon full-zoo, calibrated log_loss,
+chronological IS/VAL/OOS with embargo). No Optuna search wraps the V9 path.
 
 Data-layer + sequencing update (locked 2026-05-11):
 
@@ -71,21 +74,21 @@ Data-layer + sequencing update (locked 2026-05-11):
 - Retained Nexus support/research lane:
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
 - Optimization and modeling tools:
-  - `scripts/optuna/`
-  - `scripts/optuna/warbird_pro_v9_profile.py`
-  - `scripts/optuna/workspaces/warbird_pro_v9/`
+  - `scripts/duckdb_local/`
+  - `scripts/duckdb_local/warbird_pro_v9_profile.py`
+  - `scripts/duckdb_local/workspaces/warbird_pro_v9/`
   - `scripts/ag/tv_auto_tune.py`
   - `scripts/ag/tune_strategy_params.py`
   - `scripts/ag/tv_connection_doctor.py`
 - Artifacts:
   - `artifacts/tuning/`
-  - `scripts/optuna/workspaces/<indicator_key>/`
+  - `scripts/duckdb_local/workspaces/<indicator_key>/`
 
 ## Research Reference Surface
 
-- `docs/research/2026-05-02-optuna-unified-platform.md` is the current
-  long-form Optuna platform research report for ecosystem-level guidance
-  (samplers, pruners, storage, orchestration, walk-forward design patterns).
+- `docs/research/2026-05-02-optuna-unified-platform.md` is a long-form Optuna
+  ecosystem research report retained for historical guidance only. The V9
+  Core path does not use Optuna; this document is reference-only.
 - This file is reference-only and does not supersede active contract rules:
   Pine/TradingView-only modeling rows, explicit trigger-family declaration,
   and no out-of-scope feature stacking without an architecture reopen.
@@ -96,9 +99,9 @@ Data-layer + sequencing update (locked 2026-05-11):
   [`get_range`](https://databento.com/docs/api-reference-historical/timeseries/timeseries-get-range?historical=python&live=python&reference=python),
   [programmatic batch downloads](https://databento.com/docs/examples/basics-historical/programmatic-batch-download),
   [OHLCV resampling](https://databento.com/docs/examples/basics-historical/ohlcv-resampling?historical=python&live=python&reference=python),
-  [continuous contracts](https://databento.com/docs/examples/symbology/continuous?historical=python&live=python&reference=python),
-  Optuna [`create_study`](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.create_study.html),
-  and Optuna [`TPESampler`](https://optuna.readthedocs.io/en/stable/reference/samplers/generated/optuna.samplers.TPESampler.html).
+  and [continuous contracts](https://databento.com/docs/examples/symbology/continuous?historical=python&live=python&reference=python)
+  for the Databento ingest side. The downstream modeling stack is AutoGluon
+  Tabular + DuckDB; no Optuna search is wired into the V9 Core path.
 
 ## Non-Goals
 
@@ -194,7 +197,8 @@ Required manifest fields:
 
 ### Phase 3 - Settings And Build Modeling
 
-Run Optuna modeling only against approved manifest-backed trial data.
+Run local DuckDB-backed AutoGluon modeling only against approved
+manifest-backed trial data.
 
 Permitted modeling questions:
 
@@ -217,8 +221,8 @@ Prohibited modeling questions:
 
 ### Phase 4 - Explainability And Recommendation
 
-Use feature-importance analysis from Optuna results to convert model outputs
-into actionable Pine settings/build recommendations.
+Use feature-importance analysis (SHAP, AG leaderboard, Monte Carlo) to convert
+model outputs into actionable Pine settings/build recommendations.
 
 The output is a settings/build brief:
 
@@ -304,15 +308,16 @@ budgets must be repriced before any Nexus edit.
 
 ## Current Blocker
 
-Core ETL/trainer partial — DXY parity, fixed 10/-5/24 labels, strict feature
-schema, Yahoo `DX-Y.NYB`, and Databento trade-side CVD/order-flow features are
-wired in code. The May smoke order-flow threshold review lowered
-absorption/flush candidate delta thresholds to `35%` with the existing `1.5x`
-volume-spike and `0.75 ATR` range split, producing nonzero smoke candidates.
-Pending: full 1y Core build, 1y order-flow distribution confirmation, Core card
-body + hard-gate launch wiring, Optuna hub wiring, and pre-launch gate report.
-Owner/next trigger: Codex resumes when Kirk approves the full 1y Core
-build/training path.
+V9 Core training surface is ready as of 2026-05-12. DXY parity, fixed 10/-5/24
+labels, strict feature schema, Yahoo `DX-Y.NYB`, and Databento trade-side
+CVD/order-flow features are wired in code. The May smoke order-flow threshold
+review lowered absorption/flush candidate delta thresholds to `35%` with the
+existing `1.5x` volume-spike and `0.75 ATR` range split, producing nonzero
+smoke candidates. The 15m export is built (23,513 bars, 19,850 resolved trades,
+WR 0.4265) and `scripts/ag/train_v9_locked.py` is the production trainer.
+Pending: full 1y entry-only AG run, then SHAP + Monte Carlo gates before
+promoting any TV alert. Owner/next trigger: Kirk's go for the live training
+launch.
 
 Smoke verification evidence is recorded in
 `docs/audits/2026-05-10-v9-core-smoke-verification.md`; use
@@ -385,11 +390,12 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 - **Session filter:** feature only (`ml_session_ny/london/asia`,
   `ml_minutes_from_open`), NOT a pre-filter — let AG learn the regime.
 
-### Single Core Training Card
+### V9 Core Training Surface
 
-| Card | Profile | Status |
-|------|---------|--------|
-| Core | `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | AG modeling/results card in Optuna (alongside tuning cards); full 1y AG launch pending |
+| File | Role | Status |
+|------|------|--------|
+| `scripts/ag/train_v9_locked.py` | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
+| `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records validation report to local study DB; does NOT invoke AG) | Live |
 
 **AG config (locked):**
 
@@ -404,7 +410,7 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 - `ag_args_ensemble={'fold_fitting_strategy': 'sequential_local'}`
 - All OpenMP families single-threaded; `OMP_NUM_THREADS=1` env guard at top
 
-**Side card (post-Core):** `scripts/optuna/cards/side_models/` will hold a MAE
+**Side card (post-Core):** `scripts/duckdb_local/cards/side_models/` will hold a MAE
 regression model that predicts maximum adverse excursion per trade. Used for
 SL sizing AFTER the Core binary classifier ranks setups. Trained separately;
 NOT grafted into Core.

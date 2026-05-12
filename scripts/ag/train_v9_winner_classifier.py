@@ -3,7 +3,7 @@
 
 This standalone AG winner classifier was a precursor to the Hybrid+ Card 3
 AG meta-labeler. Both are retired in favor of the single Core AutoGluon card
-(scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py),
+(scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py),
 which uses the canonical Core training script scripts/ag/train_v9_locked.py.
 
 Retained for git history only. Not runnable.
@@ -37,9 +37,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.optuna.cpcv import _enforce_embargo_floor  # noqa: PLC2701  (intentional internal use)
+from scripts.duckdb_local.cpcv import _enforce_embargo_floor  # noqa: PLC2701  (intentional internal use)
 
-CSV_PATH = REPO_ROOT / "scripts/optuna/workspaces/warbird_pro/exports/databento_mes_5m_2020-2026_strict.csv"
+CSV_PATH = REPO_ROOT / "scripts/duckdb_local/workspaces/warbird_pro/exports/databento_mes_5m_2020-2026_strict.csv"
 OUTPUT_ROOT = REPO_ROOT / "models/warbird_pro_v9"
 
 # V9 canonical feature surface — kept in sync with scripts/ag/train_v9_locked.py

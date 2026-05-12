@@ -56,7 +56,7 @@ Each phase has a closed parameter set. **No parameter is tuned in more than one 
 1. The winning parameter set is **frozen** — it becomes a fixed input to all downstream phases.
 2. The strategy_tuning_space.json (or successor config) is updated to drop the just-frozen knobs and add the next phase's knobs.
 3. A walk-forward validation gate is passed before the phase is marked complete.
-4. The Optuna study DB for that phase is archived under `scripts/optuna/workspaces/<phase_name>/`.
+4. The Optuna study DB for that phase is archived under `scripts/duckdb_local/workspaces/<phase_name>/`.
 
 **Phase order (each builds on the previous):**
 
@@ -258,7 +258,7 @@ Acceptance: each annotated bar in the fakeouts/sweeps research doc must classify
 
 Each phase strictly observes:
 
-1. **One Optuna study DB per phase**, archived under `scripts/optuna/workspaces/<phase_name>/study.db`.
+1. **One Optuna study DB per phase**, archived under `scripts/duckdb_local/workspaces/<phase_name>/study.db`.
 2. **Search space lock at phase start**: knobs not in this phase are FIXED (frozen winners from upstream phases or defaults for downstream phases). No exploratory tuning of unrelated parameters.
 3. **Walk-forward only** — no static train/test splits per `MEMORY.md` and AGENTS.md backtest discipline.
 4. **Backtest discipline preserved**: `slippage=1`, `commission_value=1.00`, `use_bar_magnifier=true`, `process_orders_on_close=false` — already in main, not tunable.

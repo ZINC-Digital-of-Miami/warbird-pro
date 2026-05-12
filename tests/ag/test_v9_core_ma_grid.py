@@ -1,4 +1,4 @@
-from scripts.optuna.workspaces.warbird_pro_core import build_core_dataset as core
+from scripts.duckdb_local.workspaces.warbird_pro_core import build_core_dataset as core
 
 
 def test_ma_grid_matches_user_contract():

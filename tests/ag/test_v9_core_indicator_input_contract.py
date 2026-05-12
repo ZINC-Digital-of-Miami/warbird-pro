@@ -1,5 +1,5 @@
 from scripts.ag.train_v9_locked import ML_FEATURES, MODEL_FEATURES, TRADE_DISCOVERABLE_FEATURES
-from scripts.optuna.workspaces.warbird_pro_core import build_core_dataset as core
+from scripts.duckdb_local.workspaces.warbird_pro_core import build_core_dataset as core
 
 
 REQUIRED_KNOBS = {

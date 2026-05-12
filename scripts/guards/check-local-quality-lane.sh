@@ -201,7 +201,7 @@ run_full_checks() {
   npm run build
 
   echo "CHECK: Warbird V9 contract tests"
-  python3 -m pytest tests/optuna/test_warbird_pro_v9_contract.py -q
+  python3 -m pytest tests/duckdb_local/test_warbird_pro_v9_contract.py -q
 
   echo "CHECK: tuner jsonl safety tests"
   python3 -m pytest scripts/ag/test_tuner.py -k "load_trials_jsonl_csv_full_includes_tv_mcp_strict or load_history_jsonl_filters_by_profile" -q

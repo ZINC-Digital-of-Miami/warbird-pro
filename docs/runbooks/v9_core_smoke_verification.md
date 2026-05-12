@@ -8,7 +8,7 @@ gate.
 
 ```bash
 rm -rf artifacts/v9_core_smoke_may2025
-python3 scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py \
+python3 scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py \
   --symbol MES \
   --source data/mes_1m.parquet \
   --start 2025-05-01 \

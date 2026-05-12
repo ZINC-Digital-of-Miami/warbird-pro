@@ -74,7 +74,7 @@ The initialization record is
   - `indicators/v7-warbird-strategy.pine`
   - `indicators/v7-warbird-institutional-backtest-strategy.pine`
   - `indicators/fibs-only.pine`
-- Optimizer workspace: `scripts/optuna/`.
+- Optimizer workspace: `scripts/duckdb_local/`.
 - TradingView tuning helpers:
   - `scripts/ag/tv_auto_tune.py`
   - `scripts/ag/tune_strategy_params.py`

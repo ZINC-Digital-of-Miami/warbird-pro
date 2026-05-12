@@ -19,7 +19,7 @@
 ### Task 1: Add TV footprint delta contract and helpers to profile
 
 **Files:**
-- Modify: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` (after line ~217, before `class NexusMLRSIProfile`)
+- Modify: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` (after line ~217, before `class NexusMLRSIProfile`)
 
 **Step 1: Add the TradingView footprint input contract and delta helpers**
 
@@ -53,7 +53,7 @@ def _delta_slope(cumulative_delta: np.ndarray, slope_len: float) -> np.ndarray:
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-ruff check scripts/optuna/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/optuna/warbird_nexus_ml_rsi_profile.py && echo "PASS"
+ruff check scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && echo "PASS"
 ```
 
 Expected: `PASS` with no errors
@@ -61,7 +61,7 @@ Expected: `PASS` with no errors
 **Step 3: Commit**
 
 ```bash
-git add scripts/optuna/warbird_nexus_ml_rsi_profile.py
+git add scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py
 git commit -m "optuna: add delta helper functions to nexus profile"
 ```
 
@@ -70,7 +70,7 @@ git commit -m "optuna: add delta helper functions to nexus profile"
 ### Task 2: Add tunable delta + evaluation parameters
 
 **Files:**
-- Modify: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` — `suggest_params()` method
+- Modify: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` — `suggest_params()` method
 
 **Step 1: Replace the hardcoded evaluation constants and add delta params**
 
@@ -103,13 +103,13 @@ CONTEXT_RESPONSE_BARS = 3
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-ruff check scripts/optuna/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/optuna/warbird_nexus_ml_rsi_profile.py && echo "PASS"
+ruff check scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && echo "PASS"
 ```
 
 **Step 3: Commit**
 
 ```bash
-git add scripts/optuna/warbird_nexus_ml_rsi_profile.py
+git add scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py
 git commit -m "optuna: make evaluation horizon + delta params tunable"
 ```
 
@@ -118,7 +118,7 @@ git commit -m "optuna: make evaluation horizon + delta params tunable"
 ### Task 3: Wire TradingView footprint delta features into `_compute_features()`
 
 **Files:**
-- Modify: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` — `_compute_features()` / `_compute_core()` methods
+- Modify: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` — `_compute_features()` / `_compute_core()` methods
 
 **Step 1: Add delta computation from `nexus_fp_*` fields at the top of `_compute_features()`**
 
@@ -161,13 +161,13 @@ df["_dlt_slope"] = dlt_slope
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-ruff check scripts/optuna/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/optuna/warbird_nexus_ml_rsi_profile.py && echo "PASS"
+ruff check scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && echo "PASS"
 ```
 
 **Step 3: Commit**
 
 ```bash
-git add scripts/optuna/warbird_nexus_ml_rsi_profile.py
+git add scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py
 git commit -m "optuna: wire delta features into _compute_features"
 ```
 
@@ -176,7 +176,7 @@ git commit -m "optuna: wire delta features into _compute_features"
 ### Task 4: Add `_label_setups()` — success/failure pre-move labeling
 
 **Files:**
-- Modify: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` — add new method to profile class
+- Modify: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` — add new method to profile class
 
 **Step 1: Add the labeling method**
 
@@ -234,13 +234,13 @@ def _label_setups(
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-ruff check scripts/optuna/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/optuna/warbird_nexus_ml_rsi_profile.py && echo "PASS"
+ruff check scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && echo "PASS"
 ```
 
 **Step 3: Commit**
 
 ```bash
-git add scripts/optuna/warbird_nexus_ml_rsi_profile.py
+git add scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py
 git commit -m "optuna: add _label_setups success/failure pre-move labeler"
 ```
 
@@ -249,7 +249,7 @@ git commit -m "optuna: add _label_setups success/failure pre-move labeler"
 ### Task 5: Rewrite `run_backtest()` with delta-first objective
 
 **Files:**
-- Modify: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` — `run_backtest()` method
+- Modify: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` — `run_backtest()` method
 
 **Step 1: Replace objective scoring with delta-first formula**
 
@@ -344,13 +344,13 @@ def run_backtest(self, df: pd.DataFrame, params: dict) -> float:
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-ruff check scripts/optuna/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/optuna/warbird_nexus_ml_rsi_profile.py && echo "PASS"
+ruff check scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && python3 -m py_compile scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py && echo "PASS"
 ```
 
 **Step 3: Commit**
 
 ```bash
-git add scripts/optuna/warbird_nexus_ml_rsi_profile.py
+git add scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py
 git commit -m "optuna: rewrite run_backtest with delta-first 5-component objective"
 ```
 
@@ -359,13 +359,13 @@ git commit -m "optuna: rewrite run_backtest with delta-first 5-component objecti
 ### Task 6: Smoke test the rebuilt profile (1 trial)
 
 **Files:**
-- Read: `scripts/optuna/runner.py` — verify it imports and calls the profile correctly
+- Read: `scripts/duckdb_local/runner.py` — verify it imports and calls the profile correctly
 
 **Step 1: Run a single-trial smoke test**
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
     --profile warbird_nexus_ml_rsi \
     --study-name "nexus-delta-smoke" \
     --n-trials 1 \
@@ -389,13 +389,13 @@ Edit this plan doc's Progress table to update Task 6 status to DONE once smoke p
 ### Task 7: Launch Study A — 5m, 500 trials
 
 **Files:**
-- Run: `scripts/optuna/runner.py`
+- Run: `scripts/duckdb_local/runner.py`
 
 **Step 1: Launch Study A**
 
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
     --profile warbird_nexus_ml_rsi \
     --study-name "nexus-5m-delta-first-v1" \
     --n-trials 500 \
@@ -418,7 +418,7 @@ Expected: 500 trials, best score > 0.55 (meaningfully above the prior 0.402 base
 ```bash
 python3 -c "
 import optuna
-study = optuna.load_study(study_name='nexus-5m-delta-first-v1', storage='sqlite:///scripts/optuna/optuna.db')
+study = optuna.load_study(study_name='nexus-5m-delta-first-v1', storage='sqlite:///scripts/duckdb_local/optuna.db')
 t = study.best_trial
 print(f'Best trial: #{t.number}  score={t.value:.6f}')
 for k, v in sorted(t.params.items()):
@@ -714,7 +714,7 @@ git commit -m "Pine: add delta-fade bar coloring (teal/red/gray by conviction)"
 ### Task 14: Create 15m Optuna profile and run Study B
 
 **Files:**
-- Create: `scripts/optuna/warbird_nexus_ml_rsi_15m_profile.py` (copy + adjust ranges for 15m)
+- Create: `scripts/duckdb_local/warbird_nexus_ml_rsi_15m_profile.py` (copy + adjust ranges for 15m)
 
 **Step 1: Copy 5m profile and adjust parameter ranges for 15m**
 
@@ -727,7 +727,7 @@ git commit -m "Pine: add delta-fade bar coloring (teal/red/gray by conviction)"
 **Step 2: Launch Study B**
 
 ```bash
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
     --profile warbird_nexus_ml_rsi_15m \
     --study-name "nexus-15m-delta-first-v1" \
     --n-trials 500 \
@@ -744,7 +744,7 @@ Update Task 8's `i_enginePeriod` / `i_knnWindow` etc. for `modeInput == "15m"` w
 ### Task 15: Create 1H Optuna profile and run Study C
 
 **Files:**
-- Create: `scripts/optuna/warbird_nexus_ml_rsi_1h_profile.py`
+- Create: `scripts/duckdb_local/warbird_nexus_ml_rsi_1h_profile.py`
 
 **Step 1: Copy and adjust for 1H**
 
@@ -756,7 +756,7 @@ Update Task 8's `i_enginePeriod` / `i_knnWindow` etc. for `modeInput == "15m"` w
 **Step 2: Launch Study C**
 
 ```bash
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
     --profile warbird_nexus_ml_rsi_1h \
     --study-name "nexus-1h-delta-first-v1" \
     --n-trials 500 \
@@ -771,7 +771,7 @@ python3 scripts/optuna/runner.py \
 ### Task 16: Create 4H Optuna profile and run Study D + finalize Pine mode presets
 
 **Files:**
-- Create: `scripts/optuna/warbird_nexus_ml_rsi_4h_profile.py`
+- Create: `scripts/duckdb_local/warbird_nexus_ml_rsi_4h_profile.py`
 - Modify: `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` — wire all four champion sets
 
 **Step 1: Copy and adjust for 4H**
@@ -784,7 +784,7 @@ python3 scripts/optuna/runner.py \
 **Step 2: Launch Study D**
 
 ```bash
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
     --profile warbird_nexus_ml_rsi_4h \
     --study-name "nexus-4h-delta-first-v1" \
     --n-trials 500 \
@@ -809,7 +809,7 @@ npm run build
 
 ```bash
 git add indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine \
-        scripts/optuna/warbird_nexus_ml_rsi_4h_profile.py
+        scripts/duckdb_local/warbird_nexus_ml_rsi_4h_profile.py
 git commit -m "Pine+optuna: wire all four mode champion defaults — delta-first redesign complete"
 ```
 

@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.optuna.workspaces.warbird_pro_core.build_core_dataset import (
+from scripts.duckdb_local.workspaces.warbird_pro_core.build_core_dataset import (
     ORDERFLOW_ABSORPTION_DELTA_PCT,
     ORDERFLOW_COMPRESSED_RANGE_ATR,
     ORDERFLOW_EVENT_VOLUME_SPIKE,

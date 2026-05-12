@@ -161,7 +161,7 @@ Documentation pages consulted:
 
 Empirical evidence inspected:
 
-- `scripts/optuna/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.manifest.json` — manifest from a prior successful Nexus capture; contains the one-line `notes` field that I had over-interpreted.
+- `scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.manifest.json` — manifest from a prior successful Nexus capture; contains the one-line `notes` field that I had over-interpreted.
 - `/Users/zincdigital/Downloads/CME_MINI_MES1!, 5_d8a2c.csv` — Kirk's first V1 attempt; provides the failure-mode evidence that drove this research.
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` lines 745–757 — the plot definitions that need to be flipped.
 - TV MCP `tv_health_check`, `chart_get_state`, `data_get_study_values` — attempted; CDP not connected to TV right now (Kirk's normal state per memory `feedback_cdp_handshake_unreliable.md`); did NOT call `tv_launch` per memory rule.

@@ -53,6 +53,9 @@ OOS_START = pd.Timestamp("2025-01-01", tz="UTC")
 IS_END = pd.Timestamp("2024-12-31T23:59:59", tz="UTC")
 
 
+# Trade dataset semantics (3 TP × 3 SL grid, touch-event labels, same-bar
+# collision = pessimistic loss) are defined in
+# scripts.ag.train_v9_locked.build_trade_dataset — do not reimplement.
 def _build_trades(
     df: pd.DataFrame, max_hold_bars: int
 ) -> pd.DataFrame:

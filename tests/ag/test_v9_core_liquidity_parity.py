@@ -1,6 +1,6 @@
 import numpy as np
 
-from scripts.optuna.workspaces.warbird_pro_core import build_core_dataset as core
+from scripts.duckdb_local.workspaces.warbird_pro_core import build_core_dataset as core
 
 
 def test_liquidity_state_matches_pine_sweep_and_reclaim_semantics():

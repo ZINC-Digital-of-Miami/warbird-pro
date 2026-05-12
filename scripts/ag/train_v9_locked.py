@@ -15,19 +15,26 @@ training-ag-feature-finder):
   - dynamic_stacking=False (explicit, reproducible)
   - time_limit=7200s (2 hours so NN_TORCH/FASTAI fully converge)
   - chronological train/val/test split with embargo = max_hold_bars + 1 bars
-    (label-horizon-aware; enforced by scripts/optuna/cpcv.py)
+    (label-horizon-aware; enforced by scripts/duckdb_local/cpcv.py)
   - predictor.persist_models() after fit for fast repeated predic
   - leaderboard(extra_info=True) for hyperparameter visibility
   - Apple Silicon OpenMP guards set BEFORE any AG/lightgbm impor
   - Drop AG-flagged useless features (ml_in_zone constant=1, stale dx_code,
     ml_entry_route_code constant)
 
-Note: this standalone trainer fits a single predictor on an embargoed
-chronological split for fast iteration. The Core AutoGluon card
-(scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py)
-is the production training surface and goes through scripts/ag/train_hard_gate.py.
-The earlier Hybrid+ Card 3 (warbird_pro_v9_ag_meta_cpcv) that wrapped this
-trainer in CPCV was deprecated 2026-05-09.
+Note: this IS the production V9 trainer. It fits the entry classifier (and
+optionally the auxiliary TP/SL/MFE/MAE side models under --model-suite) on the
+locked DuckDB-backed Core export at
+scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv.
+The smoke-validation card at
+scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py
+only records validation reports to a local study DB — it does not invoke
+AutoGluon. scripts/ag/train_hard_gate.py is the legacy Postgres-backed gate
+(ag_training_runs table, baseline.DEFAULT_DSN) and is not on the V9 path.
+The earlier Hybrid+ 4-card Optuna chain (warbird_pro_v9_exit_cpcv,
+warbird_pro_v9_entry_filter_cpcv, warbird_pro_v9_ag_meta_cpcv,
+warbird_pro_v9_joint_challenger) was deprecated 2026-05-09 and superseded by
+this single trainer.
 """
 from __future__ import annotations
 
@@ -53,9 +60,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.optuna.cpcv import embargoed_chronological_split
+from scripts.duckdb_local.cpcv import embargoed_chronological_split
 
-CSV_PATH = REPO_ROOT / "scripts/optuna/workspaces/warbird_pro_core/exports/es_5m_core.csv"
+CSV_PATH = REPO_ROOT / "scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv"
 OUTPUT_ROOT = REPO_ROOT / "models/warbird_pro_v9"
 
 # Features matching the locked Warbird Pro V9 Core surface.
@@ -238,13 +245,42 @@ def _tp_price_from_ratio(entry_price: float, tp1_price: float, touch_code: float
 def build_trade_dataset(df: pd.DataFrame, max_hold_bars: int = 24) -> pd.DataFrame:
     """Build TP×SL discoverable triple-barrier labels at entry bars.
 
-    For each entry candidate, the trainer expands six combinations:
-      - TP ratios: {1.000, 1.236, 1.618}
-      - SL ATR multipliers: {1.0, 1.5, 2.0}
+    Each entry candidate expands into a 3×3 grid:
+      - TP ratios:        {1.000, 1.236, 1.618}   (higher is preferred)
+      - SL ATR multiples: {1.0,   1.5,   2.0}     (tighter is preferred)
 
-    Outcome is winner_10pt_24bar-style binary resolution (target hit before
-    stop within max_hold_bars). Same-bar TP/SL conflict is pessimistically
-    treated as loss.
+    Three label columns are emitted per combo row:
+
+      winner_10pt_24bar (LABEL_COL):
+        Pessimistic resolution outcome FOR THE SPECIFIC (tp_ratio, sl_mult)
+        COMBO ENCODED IN THIS ROW. The "10pt" in the column name is historical
+        — it denotes the operator's minimum-acceptable winner ("I'd like to
+        hit at least 10pt") and is used only as the fallback TP1 distance
+        when no per-trade ml_trade_tp is supplied. The actual TP price each
+        row evaluates against is derived from the 3-TP fib ladder
+        (1.000, 1.236, 1.618) scaled from the entry's fib touch code via
+        _tp_price_from_ratio — NOT a literal +10pt offset. 1 iff this combo's
+        TP touched strictly before its SL within max_hold_bars; 0 if SL
+        touched first OR both touched on the same bar (same-bar collision is
+        intentionally treated as loss because intrabar sequencing is
+        unobservable). Rows where neither barrier resolves within the window
+        are DROPPED, not relabeled. This is the entry classifier's
+        supervision target.
+
+      tp_hit (TP_LABEL_COL), stop_hit (STOP_LABEL_COL):
+        TOUCH EVENTS at the resolution bar — NOT resolution outcomes. tp_hit=1
+        means the TP price was crossed on the bar where the trade resolved.
+        On same-bar collisions both flags are 1 (TP was touched, SL was touched)
+        even though winner_10pt_24bar=0. These are the supervision targets for
+        the auxiliary --model-suite predictors, which estimate "P(TP touched
+        at resolution)" and "P(SL touched at resolution)" — physically valid
+        probabilities the downstream EV/policy layer combines with the entry
+        probability. Do not interpret tp_hit=1 as 'trade won'.
+
+    Same-bar conflict handling: pessimistic loss for winner_10pt_24bar; raw
+    touch flags preserved for tp_hit/stop_hit. This is the canonical contract
+    consumed by scripts.ag.monte_carlo_v9 and scripts.ag.shap_v9 via shared
+    import — do not reimplement.
     """
     df = df.sort_values("ts").reset_index(drop=True)
     long_mask = df["ml_entry_long_trigger"].astype(float) > 0
@@ -617,9 +653,10 @@ def main() -> int:
             raise RuntimeError(f"{name} split missing one label class")
 
     if args.validate_only:
+        selected_specs_for_log = MODEL_SPECS if args.model_suite else {"entry": MODEL_SPECS["entry"]}
         print("\nvalidate-only PASS")
         print(f"  features: {len(feature_cols)}")
-        print(f"  labels: {', '.join(spec['label'] for spec in MODEL_SPECS.values())}")
+        print(f"  labels: {', '.join(spec['label'] for spec in selected_specs_for_log.values())}")
         print(f"  max_hold_bars: {args.max_hold_bars}")
         return 0
 

@@ -5,8 +5,8 @@ surface. This file is historical lineage only. Do not use it for active tuning
 unless Kirk explicitly reopens the old v7 institutional indicator.
 
 **Indicator:** `indicators/v7-warbird-institutional.pine`
-**Profile:** `scripts/optuna/v7_warbird_institutional_profile.py`
-**Study DB:** `scripts/optuna/workspaces/v7_warbird_institutional/study.db`
+**Profile:** `scripts/duckdb_local/v7_warbird_institutional_profile.py`
+**Study DB:** `scripts/duckdb_local/workspaces/v7_warbird_institutional/study.db`
 **Symbol/TF:** MES1! 15m
 **Data floor:** 2020-01-01
 
@@ -29,7 +29,7 @@ indicator version.
    Strategy Tester → Export if you have a strategy version).
 3. Save the file to:
    ```
-   scripts/optuna/workspaces/v7_warbird_institutional/export.csv
+   scripts/duckdb_local/workspaces/v7_warbird_institutional/export.csv
    ```
 4. Verify the file has columns including `time`, `open`, `high`, `low`,
    `close`, `volume`, `trade_state`, `ml_last_exit_outcome`, `fib_range`,
@@ -43,7 +43,7 @@ indicator version.
 cd "/Volumes/Satechi Hub/warbird-pro"
 
 python3 -c "
-from scripts.optuna.v7_warbird_institutional_profile import (
+from scripts.duckdb_local.v7_warbird_institutional_profile import (
     BOOL_PARAMS, NUMERIC_RANGES, INT_PARAMS, CATEGORICAL_PARAMS,
     INPUT_DEFAULTS, load_data, run_backtest,
 )
@@ -65,9 +65,9 @@ print('OK')
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
 
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
   --indicator-key v7_warbird_institutional \
-  --profile-module scripts.optuna.v7_warbird_institutional_profile \
+  --profile-module scripts.duckdb_local.v7_warbird_institutional_profile \
   --study-name v7_warbird_institutional_wr_pf \
   --n-trials 200 \
   --start 2020-01-01
@@ -79,9 +79,9 @@ Typical runtime: 2–8 min per trial (stop re-simulation is O(n_trades × max_ba
 ### Resume an existing study
 
 ```bash
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
   --indicator-key v7_warbird_institutional \
-  --profile-module scripts.optuna.v7_warbird_institutional_profile \
+  --profile-module scripts.duckdb_local.v7_warbird_institutional_profile \
   --study-name v7_warbird_institutional_wr_pf \
   --n-trials 100 \
   --start 2020-01-01 \
@@ -90,14 +90,14 @@ python3 scripts/optuna/runner.py \
 
 ### View top-5 results
 
-After the run, `scripts/optuna/workspaces/v7_warbird_institutional/top5.json` is written
+After the run, `scripts/duckdb_local/workspaces/v7_warbird_institutional/top5.json` is written
 automatically.  To view:
 
 ```bash
 python3 -c "
 import json
 from pathlib import Path
-top5 = json.loads(Path('scripts/optuna/workspaces/v7_warbird_institutional/top5.json').read_text())
+top5 = json.loads(Path('scripts/duckdb_local/workspaces/v7_warbird_institutional/top5.json').read_text())
 for t in top5:
     print(f'#{t[\"rank\"]}  score={t[\"objective_score\"]:.4f}  '
           f'WR={t[\"win_rate\"]:.2%}  PF={t[\"pf\"]:.4f}  trades={t[\"trades\"]}')
@@ -247,11 +247,11 @@ sanity checks (run `--start 2025-01-01` as OOS verification):
 
 | Path | Purpose |
 |---|---|
-| `scripts/optuna/v7_warbird_institutional_profile.py` | Optuna profile (this study) |
-| `scripts/optuna/runner.py` | Shared Optuna runner |
-| `scripts/optuna/indicator_registry.json` | Registry entry for v7_warbird_institutional |
-| `scripts/optuna/workspaces/v7_warbird_institutional/study.db` | SQLite study DB |
-| `scripts/optuna/workspaces/v7_warbird_institutional/export.csv` | TV CSV export (manual, one-time) |
-| `scripts/optuna/workspaces/v7_warbird_institutional/top5.json` | Auto-written after each run |
+| `scripts/duckdb_local/v7_warbird_institutional_profile.py` | Optuna profile (this study) |
+| `scripts/duckdb_local/runner.py` | Shared Optuna runner |
+| `scripts/duckdb_local/indicator_registry.json` | Registry entry for v7_warbird_institutional |
+| `scripts/duckdb_local/workspaces/v7_warbird_institutional/study.db` | SQLite study DB |
+| `scripts/duckdb_local/workspaces/v7_warbird_institutional/export.csv` | TV CSV export (manual, one-time) |
+| `scripts/duckdb_local/workspaces/v7_warbird_institutional/top5.json` | Auto-written after each run |
 | `indicators/v7-warbird-institutional.pine` | Source indicator (DO NOT EDIT without approval) |
 | `docs/contracts/ag_local_training_schema.md` | Legacy warehouse feature contract |

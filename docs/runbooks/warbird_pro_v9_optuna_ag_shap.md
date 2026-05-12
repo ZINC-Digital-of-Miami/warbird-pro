@@ -7,7 +7,7 @@
 > is now:
 >
 > - `docs/MASTER_PLAN.md` "V9 Core AutoGluon" section (current plan)
-> - `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` (under construction)
+> - `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` (under construction)
 > - `scripts/ag/train_hard_gate.py` (production gate)
 > - `.claude/skills/training-hard-gate` (gate doctrine)
 >
@@ -39,10 +39,10 @@ bounded joint challenger.
 
 | # | Hub card key | Profile module | Purpose |
 |---|--------------|----------------|---------|
-| 1 | `warbird_pro_v9_exit_cpcv` | `scripts.optuna.warbird_pro_v9_exit_cpcv_profile` | Exit policy under Combinatorial Purged CV (n_splits=6, n_test=2, embargo=label_horizon+1 bars) |
-| 2 | `warbird_pro_v9_entry_filter_cpcv` | `scripts.optuna.warbird_pro_v9_entry_filter_cpcv_profile` | Entry filter under CPCV; seed Trial #0 with Card 1 champion |
-| 3 | `warbird_pro_v9_ag_meta_cpcv` | `scripts.optuna.warbird_pro_v9_ag_meta_cpcv_profile` | AG meta-labeler INSIDE Optuna with top-K strategy coupling (each trial fits AG on a candidate's labeled trades, returns `ag_gating_lift`) |
-| 4 | `warbird_pro_v9_joint_challenger` | `scripts.optuna.warbird_pro_v9_joint_challenger_profile` | Bounded challenger searching strategy + AG hyperparams jointly. Promotes only if strictly beats Cards 1+2+3 winner on locked OOS. |
+| 1 | `warbird_pro_v9_exit_cpcv` | `scripts.duckdb_local.warbird_pro_v9_exit_cpcv_profile` | Exit policy under Combinatorial Purged CV (n_splits=6, n_test=2, embargo=label_horizon+1 bars) |
+| 2 | `warbird_pro_v9_entry_filter_cpcv` | `scripts.duckdb_local.warbird_pro_v9_entry_filter_cpcv_profile` | Entry filter under CPCV; seed Trial #0 with Card 1 champion |
+| 3 | `warbird_pro_v9_ag_meta_cpcv` | `scripts.duckdb_local.warbird_pro_v9_ag_meta_cpcv_profile` | AG meta-labeler INSIDE Optuna with top-K strategy coupling (each trial fits AG on a candidate's labeled trades, returns `ag_gating_lift`) |
+| 4 | `warbird_pro_v9_joint_challenger` | `scripts.duckdb_local.warbird_pro_v9_joint_challenger_profile` | Bounded challenger searching strategy + AG hyperparams jointly. Promotes only if strictly beats Cards 1+2+3 winner on locked OOS. |
 
 Hub URLs (auto-spawned child dashboards on `:8100+`):
 
@@ -54,19 +54,19 @@ Hub URLs (auto-spawned child dashboards on `:8100+`):
 Orchestration:
 
 ```bash
-python scripts/optuna/orchestrate_v9_run.py \
+python scripts/duckdb_local/orchestrate_v9_run.py \
   --n-trials-exit 500 --n-trials-filter 1500 --n-trials-ag 1000 \
   [--include-joint --n-trials-joint 500] [--top-k 5]
 ```
 
-That writes `scripts/optuna/workspaces/warbird_pro_v9_ag_meta_cpcv/run.json`
+That writes `scripts/duckdb_local/workspaces/warbird_pro_v9_ag_meta_cpcv/run.json`
 and `strategy_candidates.json` (the cross-product of Cards 1+2 top-K
 champions, consumed by Card 3 via the `WARBIRD_V9_AG_CANDIDATES` env var).
 
 Champion selection (locked OOS replay):
 
 ```bash
-python scripts/optuna/promote_v9_champion.py --run-id <id> [--allow-challenger]
+python scripts/duckdb_local/promote_v9_champion.py --run-id <id> [--allow-challenger]
 ```
 
 Card-3 user_attrs every dashboard trial logs (so leakage and calibration
@@ -91,8 +91,8 @@ feature schema. They optimize different layers.
 
 | Lane key | Profile | What it tunes | Objective |
 |---|---|---|---|
-| `warbird_pro` | `scripts.optuna.warbird_pro_profile` | Post-trigger filter (which V9 candidates to TAKE) + exit policy | `v9_entry_filter_score` |
-| `warbird_pro_v9` | `scripts.optuna.warbird_pro_v9_profile` | Exit policy (ATR bracket / RR / breakeven / ATR trail) on all triggers | `v9_risk_exit_score` |
+| `warbird_pro` | `scripts.duckdb_local.warbird_pro_profile` | Post-trigger filter (which V9 candidates to TAKE) + exit policy | `v9_entry_filter_score` |
+| `warbird_pro_v9` | `scripts.duckdb_local.warbird_pro_v9_profile` | Exit policy (ATR bracket / RR / breakeven / ATR trail) on all triggers | `v9_risk_exit_score` |
 
 Hub URLs:
 
@@ -152,14 +152,14 @@ Use the project's Databento client to fetch MES continuous-front 5m bars from
 Run a Python harness that mirrors the Pine V9 indicator's emitted ml_* columns
 bar-by-bar, OR (preferred) cross-check Pine vs replay output before promoting
 this lane. Output must include all `REQUIRED_FEATURE_COLS` listed in
-`scripts/optuna/warbird_pro_profile.py`.
+`scripts/duckdb_local/warbird_pro_profile.py`.
 
 ### Step 3 — Save with manifest
 
 Save each derived export to:
 
 ```
-scripts/optuna/workspaces/warbird_pro/exports/databento_mes_5m_<from>-<to>.csv
+scripts/duckdb_local/workspaces/warbird_pro/exports/databento_mes_5m_<from>-<to>.csv
 ```
 
 Sibling manifest `databento_mes_5m_<from>-<to>.csv.manifest.json`:
@@ -206,16 +206,16 @@ ceiling of the V9 trigger universe under each exit family.
 
 ```bash
 source .venv/bin/activate
-python scripts/optuna/runner.py \
+python scripts/duckdb_local/runner.py \
   --indicator-key warbird_pro_v9 \
-  --profile-module scripts.optuna.warbird_pro_v9_profile \
+  --profile-module scripts.duckdb_local.warbird_pro_v9_profile \
   --n-trials 500 \
   --start 2020-01-01 \
   --end 2024-12-31 \
   --top-n 10
 ```
 
-Champion artefact: `scripts/optuna/workspaces/warbird_pro_v9/champion.json`.
+Champion artefact: `scripts/duckdb_local/workspaces/warbird_pro_v9/champion.json`.
 
 ### Step B — Entry filter on top of the exit champion
 
@@ -223,10 +223,10 @@ Seed the filter HPO with the Step A exit champion, then explore the filter
 space.
 
 ```bash
-python scripts/optuna/runner.py \
+python scripts/duckdb_local/runner.py \
   --indicator-key warbird_pro \
-  --profile-module scripts.optuna.warbird_pro_profile \
-  --champion-path scripts/optuna/workspaces/warbird_pro_v9/champion.json \
+  --profile-module scripts.duckdb_local.warbird_pro_profile \
+  --champion-path scripts/duckdb_local/workspaces/warbird_pro_v9/champion.json \
   --n-trials 1000 \
   --start 2020-01-01 \
   --end 2024-12-31 \
@@ -249,7 +249,7 @@ feature surface.
 ```bash
 source .venv/bin/activate
 python scripts/ag/train_ag_baseline.py \
-  --workspace scripts/optuna/workspaces/warbird_pro \
+  --workspace scripts/duckdb_local/workspaces/warbird_pro \
   --label ml_last_exit_outcome \
   --presets best_quality \
   --hyperparameters '{"GBM":{},"CAT":{},"XGB":{},"RF":{},"XT":{},"NN_TORCH":{},"FASTAI":{}}' \
@@ -321,4 +321,4 @@ This pipeline informs the operator. It does not auto-trade.
 - `CLAUDE.md`
 - `docs/MASTER_PLAN.md`
 - `docs/contracts/pine_indicator_ag_contract.md`
-- `scripts/optuna/README.md`
+- `scripts/duckdb_local/README.md`

@@ -12,14 +12,14 @@ dedicated sidecar launch pattern as the default for new studies.
 
 Use the registry-backed workflow instead:
 
-- Workspace contract: `scripts/optuna/README.md`
+- Workspace contract: `scripts/duckdb_local/README.md`
 - Hub: `http://localhost:8090/` (sole surface — 8080 compat redirect retired 2026-04-23)
 - VS Code surface: `.vscode/OPTUNA_WORKSPACE.md`
 
 Canonical Optuna state now lives under:
 
 ```text
-scripts/optuna/workspaces/<indicator_key>/
+scripts/duckdb_local/workspaces/<indicator_key>/
 ```
 
 Each active lane owns its own workspace, study DB, and exports under that

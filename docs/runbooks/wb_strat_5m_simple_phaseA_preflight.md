@@ -4,17 +4,17 @@
 
 **Goal:** Stand up a slow-and-precise Optuna tuning workflow for `v7-warbird-institutional-backtest-strategy.pine` running in Simple Mode only on MES1! 5m, against 2025-04-28 → 2026-04-01 IS data, with results visible at `http://localhost:8101/dashboard?studies_order_by=desc` (the Optuna Dashboard child of the hub at 8090).
 
-**Architecture:** Strip the strategy to a single entry/exit contract (Simple Mode + ATR Bracket + T2-locked target). Build a Python profile that reproduces Pine entry/exit semantics on a TradingView-exported OHLCV + footprint + Nexus parquet. Run 1000-trial-per-phase tuning via `scripts/optuna/runner.py` writing to `study.db` SQLite. The existing hub at port 8090 already auto-launches an `optuna-dashboard` child at port 8101 for this workspace — same dashboard look as the Nexus study at port 8102.
+**Architecture:** Strip the strategy to a single entry/exit contract (Simple Mode + ATR Bracket + T2-locked target). Build a Python profile that reproduces Pine entry/exit semantics on a TradingView-exported OHLCV + footprint + Nexus parquet. Run 1000-trial-per-phase tuning via `scripts/duckdb_local/runner.py` writing to `study.db` SQLite. The existing hub at port 8090 already auto-launches an `optuna-dashboard` child at port 8101 for this workspace — same dashboard look as the Nexus study at port 8102.
 
 **Tech Stack:**
 - Pine v6 strategy: `indicators/v7-warbird-institutional-backtest-strategy.pine`
 - Nexus indicator: `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` (`nexus_signal_tier` plot, line 757)
-- Optuna runner: `scripts/optuna/runner.py` (existing, profile-module driven)
-- Reference profile: `scripts/optuna/warbird_nexus_ml_rsi_profile.py` (the pattern to mirror)
-- New profile (to build): `scripts/optuna/v7_warbird_strategy_5m_profile.py`
-- New footprint parquet (to capture): `scripts/optuna/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.parquet` + manifest
-- Existing workspace: `scripts/optuna/workspaces/v7_warbird_strategy_5m/study.db`
-- Hub launcher: `scripts/optuna/warbird_optuna_hub.py` running at `localhost:8090`, child dashboard already up at `localhost:8101`
+- Optuna runner: `scripts/duckdb_local/runner.py` (existing, profile-module driven)
+- Reference profile: `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` (the pattern to mirror)
+- New profile (to build): `scripts/duckdb_local/v7_warbird_strategy_5m_profile.py`
+- New footprint parquet (to capture): `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.parquet` + manifest
+- Existing workspace: `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/study.db`
+- Hub launcher: `scripts/duckdb_local/warbird_optuna_hub.py` running at `localhost:8090`, child dashboard already up at `localhost:8101`
 
 ---
 
@@ -25,18 +25,18 @@
 | Strategy file | `indicators/v7-warbird-institutional-backtest-strategy.pine` | 1852 lines, **110 inputs**, 51/64 plot budget |
 | Nexus indicator | `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` | 921 lines, exports `nexus_signal_tier` (1.0 / -1.0 / 0.5 / 0) |
 | 5m OHLCV data | `data/mes_5m.parquet` | EXISTS |
-| Optuna runner | `scripts/optuna/runner.py` | EXISTS, accepts `--profile-module scripts.optuna.<key>_profile` |
-| Nexus profile | `scripts/optuna/warbird_nexus_ml_rsi_profile.py` | EXISTS, full pattern reference |
-| Strategy 5m profile | `scripts/optuna/v7_warbird_strategy_5m_profile.py` | **DOES NOT EXIST — Stage 4 deliverable** |
-| Hub launcher | `scripts/optuna/warbird_optuna_hub.py` running at `localhost:8090` | RUNNING, PID 46540, child dashboards at 8100/8101/8102 |
-| Strategy 5m optuna-dashboard | `localhost:8101/dashboard` | RUNNING NOW, PID 42453, points at `scripts/optuna/workspaces/v7_warbird_strategy_5m/study.db` |
-| Workspace dir | `scripts/optuna/workspaces/v7_warbird_strategy_5m/` | Contains `study.db` only (1 dead trial) |
-| Nexus footprint parquet | `scripts/optuna/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.parquet` | EXISTS, manifest covers 2026-01-11 → 2026-04-27 (20765 rows). **Insufficient for our IS window 2025-04-28 → 2026-04-01.** Must re-capture. |
+| Optuna runner | `scripts/duckdb_local/runner.py` | EXISTS, accepts `--profile-module scripts.duckdb_local.<key>_profile` |
+| Nexus profile | `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py` | EXISTS, full pattern reference |
+| Strategy 5m profile | `scripts/duckdb_local/v7_warbird_strategy_5m_profile.py` | **DOES NOT EXIST — Stage 4 deliverable** |
+| Hub launcher | `scripts/duckdb_local/warbird_optuna_hub.py` running at `localhost:8090` | RUNNING, PID 46540, child dashboards at 8100/8101/8102 |
+| Strategy 5m optuna-dashboard | `localhost:8101/dashboard` | RUNNING NOW, PID 42453, points at `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/study.db` |
+| Workspace dir | `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/` | Contains `study.db` only (1 dead trial) |
+| Nexus footprint parquet | `scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.parquet` | EXISTS, manifest covers 2026-01-11 → 2026-04-27 (20765 rows). **Insufficient for our IS window 2025-04-28 → 2026-04-01.** Must re-capture. |
 | MES 5m OHLCV parquet | `data/mes_5m.parquet` | 441,852 rows, **2020-01-01 → 2026-04-03 verified**. Sufficient for full window. Bottleneck is footprint, not OHLCV. |
 
 ### §1.1 Hub architecture clarification
 
-`warbird_optuna_hub.py` is a **launcher and index**, not a database. For each workspace under `scripts/optuna/workspaces/<key>/`, it auto-spawns one `optuna-dashboard` child process bound to that workspace's `study.db`, on incremental ports starting at 8100. Verified live:
+`warbird_optuna_hub.py` is a **launcher and index**, not a database. For each workspace under `scripts/duckdb_local/workspaces/<key>/`, it auto-spawns one `optuna-dashboard` child process bound to that workspace's `study.db`, on incremental ports starting at 8100. Verified live:
 
 ```
 PID 46540 → warbird_optuna_hub.py (port 8090, launcher)
@@ -251,7 +251,7 @@ The champion params are baked into the Nexus pine `input.float(...)` defaults. F
 **Implication:** if Kirk re-tunes the Nexus indicator later, the strategy profile's parquet must be re-captured to pick up the new Nexus signal. Documented in the manifest.
 
 ```python
-# scripts/optuna/v7_warbird_strategy_5m_profile.py — Nexus is just a column read
+# scripts/duckdb_local/v7_warbird_strategy_5m_profile.py — Nexus is just a column read
 
 def _nexus_tier_at_bar(df_row):
     return df_row["nexus_signal_tier"]
@@ -315,7 +315,7 @@ Manifest schema (matches Nexus pattern):
 ### §6.1 Required interface (per `runner.py`)
 
 ```python
-# scripts/optuna/v7_warbird_strategy_5m_profile.py
+# scripts/duckdb_local/v7_warbird_strategy_5m_profile.py
 
 BOOL_PARAMS:        list[str]                         # bool inputs
 NUMERIC_RANGES:     dict[str, tuple[float, float]]    # float/int inputs
@@ -527,13 +527,13 @@ Tasks:
    - On TV chart with Nexus indicator loaded, MES1! 5m, date range **2025-04-28 → 2026-04-28** (covers IS + embargo + OOS).
    - **All Nexus `display=display.none` plots must be temporarily set to `display.all` in the Nexus pine file before exporting CSV** — TV's "Export chart data" only includes visible plots. After export, revert. (Nexus manifest notes this trick: "Converted from TradingView chart export containing nexus_fp_* columns after temporary display enablement for footprint export.")
    - Required columns per §5.3 — verify CSV header includes all 14 columns before conversion.
-   - Convert CSV → parquet at `scripts/optuna/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.parquet`.
-   - Author manifest at `scripts/optuna/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.manifest.json`.
+   - Convert CSV → parquet at `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.parquet`.
+   - Author manifest at `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/tv_footprint_5m.manifest.json`.
    - Verify SHA-256 of parquet and manifest's `nexus_pine_sha256` matches `sha256sum indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`.
    - Verify row count: ~75k 5m bars expected (1 year × 252 trading days × ~290 bars/day).
 
 2. **Author profile module.**
-   - File: `scripts/optuna/v7_warbird_strategy_5m_profile.py`.
+   - File: `scripts/duckdb_local/v7_warbird_strategy_5m_profile.py`.
    - Module-level constants:
      ```python
      EMBARGO_START = "2026-04-01"
@@ -551,7 +551,7 @@ Tasks:
    ```bash
    cd "/Volumes/Satechi Hub/warbird-pro"
    python3 -c "
-   from scripts.optuna.v7_warbird_strategy_5m_profile import (
+   from scripts.duckdb_local.v7_warbird_strategy_5m_profile import (
        BOOL_PARAMS, NUMERIC_RANGES, INT_PARAMS, CATEGORICAL_PARAMS,
        INPUT_DEFAULTS, load_data, run_backtest, EMBARGO_START,
    )
@@ -568,7 +568,7 @@ Tasks:
 
 4. **Pine ↔ Python parity unit test (CRITICAL — catches profile drift before tuning starts).**
    - On TV chart with Strategy in default Simple Mode, run Strategy Tester 2025-04-28 → 2026-04-01.
-   - Export trades CSV to `scripts/optuna/workspaces/v7_warbird_strategy_5m/tv_baseline_trades.csv`.
+   - Export trades CSV to `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/tv_baseline_trades.csv`.
    - Run profile's default `run_backtest(INPUT_DEFAULTS, start_date='2025-04-28')`.
    - Compare first 20 trades:
      - **Entry bar timestamp:** ≤ 1-bar tolerance (Pine fills next bar; Python should match)
@@ -586,9 +586,9 @@ Tasks:
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
 
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
   --indicator-key v7_warbird_strategy_5m \
-  --profile-module scripts.optuna.v7_warbird_strategy_5m_profile \
+  --profile-module scripts.duckdb_local.v7_warbird_strategy_5m_profile \
   --study-name "Warbird Strategy 5m Simple Mode Dry Run" \
   --n-trials 10 \
   --start 2025-04-28
@@ -596,7 +596,7 @@ python3 scripts/optuna/runner.py \
 
 Verify:
 - 10 trials complete in < 5 minutes
-- Each trial writes to `study.db` at `scripts/optuna/workspaces/v7_warbird_strategy_5m/`
+- Each trial writes to `study.db` at `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/`
 - Hub at `localhost:8090` shows the study card
 - Optuna Dashboard at `localhost:8101/dashboard` shows the 10 trials with all swept params and scores
 
@@ -607,9 +607,9 @@ Verify:
 ```bash
 cd "/Volumes/Satechi Hub/warbird-pro"
 
-python3 scripts/optuna/runner.py \
+python3 scripts/duckdb_local/runner.py \
   --indicator-key v7_warbird_strategy_5m \
-  --profile-module scripts.optuna.v7_warbird_strategy_5m_profile \
+  --profile-module scripts.duckdb_local.v7_warbird_strategy_5m_profile \
   --study-name "Warbird Strategy 5m Full Surface Discovery" \
   --n-trials 1000 \
   --n-jobs 2 \
@@ -655,7 +655,7 @@ Output: `docs/runbooks/wb_strat_5m_oos_validation.md` with go/no-go.
 
 ### A1 — Optuna-native Python re-simulation (replaces previous CDP proposal)
 
-**Path:** Same as Nexus tune. Build `scripts/optuna/v7_warbird_strategy_5m_profile.py`. `runner.py` writes trials to `study.db`. Hub at 8090 already routes to `optuna-dashboard` at 8101 — same dashboard look as Nexus at 8102.
+**Path:** Same as Nexus tune. Build `scripts/duckdb_local/v7_warbird_strategy_5m_profile.py`. `runner.py` writes trials to `study.db`. Hub at 8090 already routes to `optuna-dashboard` at 8101 — same dashboard look as Nexus at 8102.
 
 **Why this beats CDP-per-trial:**
 - 1000 trials in 30–60 minutes vs 17h CDP
@@ -749,12 +749,12 @@ When all approved, Kirk replies `GO STAGE 1` and Stage 1 begins.
 - READ ONLY:
   - `indicators/v7-warbird-institutional-backtest-strategy.pine`
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
-  - `scripts/optuna/runner.py`
-  - `scripts/optuna/warbird_optuna_hub.py`
-  - `scripts/optuna/warbird_nexus_ml_rsi_profile.py`
-  - `scripts/optuna/v7_warbird_institutional_profile.py`
-  - `scripts/optuna/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.manifest.json`
-  - `scripts/optuna/workspaces/v7_warbird_strategy_5m/study.db` (sqlite read)
+  - `scripts/duckdb_local/runner.py`
+  - `scripts/duckdb_local/warbird_optuna_hub.py`
+  - `scripts/duckdb_local/warbird_nexus_ml_rsi_profile.py`
+  - `scripts/duckdb_local/v7_warbird_institutional_profile.py`
+  - `scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi/tv_footprint_5m.manifest.json`
+  - `scripts/duckdb_local/workspaces/v7_warbird_strategy_5m/study.db` (sqlite read)
   - `docs/runbooks/wbv7_institutional_optuna.md`
   - `scripts/ag/tv_auto_tune.py` (verified NOT used in this path)
   - `scripts/ag/tune_strategy_params.py` (verified NOT used in this path)

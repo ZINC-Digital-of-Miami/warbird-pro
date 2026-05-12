@@ -24,7 +24,7 @@ Active surfaces:
 - `indicators/v7-warbird-institutional.pine` - live indicator surface
 - `indicators/v7-warbird-strategy.pine` - Strategy Tester/export-compatible surface
 - `indicators/v7-warbird-institutional-backtest-strategy.pine` - Optuna/backtest wrapper
-- `scripts/optuna/` - local optimization workspace
+- `scripts/duckdb_local/` - local optimization workspace
 - `scripts/ag/tv_auto_tune.py` and `scripts/ag/tune_strategy_params.py` - TradingView settings-trial helpers
 - `docs/` plus `AGENTS.md`, `CLAUDE.md`, `README.md`, and `WARBIRD_MODEL_SPEC.md` - active authority stack
 
@@ -89,7 +89,7 @@ Active branch/worktree signals:
   even though active exhaustion logic removed Z-score use.
 - `scripts/ag/tv_auto_tune.py` still contains 15m-oriented text while active
   5m runbooks are in flight.
-- `scripts/optuna/runner.py` tags non-Nexus studies as `MES_15m`, which may be
+- `scripts/duckdb_local/runner.py` tags non-Nexus studies as `MES_15m`, which may be
   misleading for new 5m registry keys.
 - `indicator_registry.json` still contains historical entries for retired or
   ignored Pine files.

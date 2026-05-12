@@ -66,19 +66,24 @@ the review.
 
 ## Active Plan
 
-The active architecture is **Warbird Indicator-Only Optuna Plan v6**, narrowed on
-2026-04-30 to one main chart indicator plus the Nexus support/research lane.
+The active architecture is **Warbird Indicator-Only DuckDB Local Modeling Plan v6**,
+narrowed on 2026-04-30 to one main chart indicator plus the Nexus
+support/research lane. The data layer was renamed from `scripts/optuna/` to
+`scripts/duckdb_local/` on 2026-05-12; Optuna is no longer a runtime
+dependency of the V9 Core path.
 
 The goal is pure PineScript trading-indicator modeling:
 
 - perfect the TradingView indicator settings
 - improve the indicator build and state machine
-- use Optuna only as the offline analysis tool over Pine outputs
+- use the local DuckDB / Pandera / AutoGluon stack as the offline analysis layer
+  over approved Pine + Databento source rows
 - promote settings/build changes back into Pine after approval
 - keep `indicators/warbird-pro-v9.pine` as the only active main chart
   indicator, named **Warbird Pro V9** in TradingView
-- keep `warbird_pro_v9` as a separate Optuna lane for ES-only (5m/15m) ATR/risk exit
-  modeling over active Warbird Pro V9 training rows
+- keep `scripts/ag/train_v9_locked.py` as the production V9 trainer; entry
+  classifier first, optional `--model-suite` for TP/SL touch + MFE/MAE side
+  models
 - keep the Nexus Pine files as the only active support/research indicator lane
 - retire and remove all other Pine indicator/strategy variants from the active
   `indicators/` surface
@@ -90,8 +95,8 @@ The old warehouse/FRED/macro `ag_training` plan is superseded and reference-only
 Warbird is actively tuning and training the Pine indicator. Current trigger
 families, settings, thresholds, search spaces, and build recommendations are
 evidence snapshots, not frozen production truth. Agents must expect these
-details to change as TradingView exports and Optuna trials produce stronger
-results.
+details to change as TradingView exports and local DuckDB-backed trials
+produce stronger results.
 
 When evidence changes the contract, update the active Markdown in the same
 change as the code/settings/artifacts. Do not leave stale plans, runbooks, skill
@@ -112,8 +117,12 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - `indicators/`: active Pine sources:
   - `indicators/warbird-pro-v9.pine` — only main chart indicator
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
-    Nexus Optuna/footprint evidence lane (retained support/research lane)
-- `scripts/optuna/`: active local optimization workspaces and runner.
+    Nexus footprint evidence lane (retained support/research lane; the
+    "optuna" suffix in the filename is historical, not a current dependency —
+    Pine filenames are not renamed per Locked Rules)
+- `scripts/duckdb_local/`: active local DuckDB-backed modeling workspace and
+  runner (renamed from `scripts/optuna/` on 2026-05-12 — Optuna is no longer
+  the V9 Core data layer).
   - `warbird_pro_v9` is isolated from `warbird_pro`; it admits ES 5m/15m
     training rows from TradingView exports or Databento market data, ignores
     MES/NQ/MNQ rows, and models ATR/risk exits without Pine edits.
@@ -154,7 +163,9 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 - **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. Search range: `stopAtrMult` (0.75, 2.0).
 - **Target breakeven:** 1–3R. `targetRiskMultiple` range: (1.0, 3.0).
 - Objective scores `target_hit_rate` (fraction of trades exiting at TARGET) at weight 0.14.
-- Never freeze SL or target — Optuna searches the range; the goal values are the reward center.
+- Never freeze SL or target — the local search/training surface explores the
+  range (the discoverable 3 TP × 3 SL grid in `build_trade_dataset`); the goal
+  values above are the reward center.
 
 ## Contract First
 
@@ -190,9 +201,9 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 ## Stack
 
 - TradingView + Pine Script — canonical live and modeling surface
-- Optuna — local offline analysis over approved manifest-backed source rows
-- **Data layer (V9/Core, locked 2026-05-11):** DuckDB 1.5.2 (sort/filter/build over parquet+CSV), Pandera 0.31.1 (schema/contract validation), fg-data-profiling 4.19.1 (`data_profiling` module — profiling/report output). The deprecated `ydata-profiling` package is uninstalled.
-- Next.js + Supabase — runtime/dashboard/support only
+- **Data layer (V9/Core, locked 2026-05-11, dir renamed 2026-05-12):** DuckDB 1.5.2 (sort/filter/build over parquet+CSV), Pandera 0.31.1 (schema/contract validation), fg-data-profiling 4.19.1 (`data_profiling` module — profiling/report output). The deprecated `ydata-profiling` package is uninstalled. The workspace lives at `scripts/duckdb_local/` (renamed from `scripts/optuna/` on 2026-05-12).
+- AutoGluon Tabular 1.5 — training engine for the entry classifier and the optional `--model-suite` TP/SL touch + MFE/MAE side models. Invoked directly by `scripts/ag/train_v9_locked.py`; no Optuna search wraps the V9 Core path.
+- Next.js + Supabase — runtime/dashboard/support only (no raw training trials or labels in cloud Supabase per Locked Rules)
 - Local PG17 `warbird` — legacy/reference for this plan unless explicitly reopened; the V9/Core trainer/ETL does not import psycopg2 and has no Postgres dependency
 
 ## Hard Rules
@@ -301,7 +312,7 @@ If any `.pine` file is touched, run:
   PF 1.143 while 5m had −2.55% / PF 0.91 — 15m is the cleaner baseline to tune
   mechanics on before moving to the noisier surface.
 - Do not start training/modeling unless explicitly asked.
-- Nexus ML RSI Optuna must use TradingView/Pine `request.footprint()`
+- Nexus ML RSI tuning must use TradingView/Pine `request.footprint()`
   `nexus_fp_*` evidence only. Do not tune Nexus from CSV exports, local OHLCV
   parquet, Databento bars, or synthetic body/wick delta.
 

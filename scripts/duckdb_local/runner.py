@@ -1,0 +1,843 @@
+#!/usr/bin/env python3
+"""
+Warbird Optuna runner — shared Bayesian TPE optimizer for all indicators.
+
+Accepts a --profile-module argument pointing to any indicator's profile.py.
+Stores studies in scripts/duckdb_local/workspaces/<indicator_key>/study.db.
+
+Usage:
+  python scripts/duckdb_local/runner.py --indicator-key <key> \
+    --profile-module scripts.duckdb_local.<key>_profile \
+    --n-trials 300 --study-name "Purpose-Named Study Title"
+
+Dashboard (pick any free local port, e.g. 8180):
+  optuna-dashboard sqlite:///scripts/duckdb_local/workspaces/<indicator_key>/study.db --port 8180
+"""
+
+import sys
+import json
+import argparse
+import time
+import importlib
+import math
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from collections.abc import Callable
+
+import pandas as pd
+import optuna
+from optuna.exceptions import TrialPruned
+from optuna.samplers import TPESampler
+
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.duckdb_local.paths import workspace_dir
+
+MIN_TRADES = 20  # prune configs that produce fewer trades
+SL_FLOOR = 0.618  # hard constraint: structural stop floor
+START_DATE_IS = "2025-01-01"  # IS window default (Trump regime structural break Jan 2025)
+END_DATE_IS = "2026-12-31"  # IS end — OOS defined per config lock date
+RECOMMENDED_LOCAL_DASHBOARD_PORT = 8180
+
+# Indicator-key prefixes whose HPO must NEVER see 2025-01-01+; that window is
+# locked as the structural-break OOS (Trump regime) and reserved for final
+# champion selection only. Bug 2 was an HPO run that ignored this; the guard
+# below in main() raises if --start or --end leak into the locked window for
+# matching keys.
+V9_OOS_LOCKED_KEY_PREFIXES = ("warbird_pro_v9",)
+V9_OOS_LOCK_START = pd.Timestamp("2025-01-01", tz="UTC")
+
+# Ranking policies — opt-in per --ranking-policy CLI flag.
+# win_rate_first_pf_second: legacy default, preserved for backward compat.
+# dsr_composite: Deflated-Sharpe composite per Bailey & López de Prado
+#   (SSRN 2460551) × trade-count saturation × stability factor. Penalizes the
+#   2-trade-100%-WR overfit trap; required for durable champions.
+RANKING_POLICY_WR = "win_rate_first_pf_second"
+RANKING_POLICY_DSR = "dsr_composite"
+DEFAULT_RANKING_POLICY = RANKING_POLICY_DSR
+# Legacy alias — pre-refactor code/tests may import this.
+RANKING_POLICY = RANKING_POLICY_WR
+
+# Composite objective targets (per research: MIN_TRADES_TARGET for saturation)
+COMPOSITE_TRADES_TARGET = 100
+
+
+@dataclass(frozen=True)
+class ProfileAdapter:
+    name: str
+    bool_params: list[str]
+    numeric_ranges: dict[str, tuple[float, float]]
+    int_params: set[str]
+    categorical_params: dict[str, list[Any]]
+    input_defaults: dict[str, Any]
+    load_data_fn: Callable[[], pd.DataFrame]
+    run_backtest_fn: Callable[[pd.DataFrame, dict[str, Any], str], dict[str, Any]]
+    objective_score_fn: Callable[[dict[str, Any]], float] | None = None
+    objective_metric_name: str | None = None
+    contract_label: str | None = None
+    # Optional: {parent_categorical: {value: [dependent_param_name, ...]}}.
+    # When present, dependent params are ONLY suggested for their activating
+    # parent value, avoiding wasted trials on irrelevant dimensions.
+    conditional_params: dict[str, dict[str, list[str]]] | None = None
+
+
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def assert_v9_oos_lock(indicator_key: str, start: str, end: str | None) -> None:
+    """Refuse to run if a V9 lane is configured to see the locked OOS window.
+
+    Raises SystemExit on violation so the offending command never proceeds to
+    a real HPO trial. The lock is enforced by --indicator-key prefix
+    (`warbird_pro_v9*`) so any V9-keyed card inherits the protection without
+    further wiring. (The Hybrid+ 4-card chain that originally drove this
+    prefix was deprecated 2026-05-09; the prefix lock remains for any future
+    V9-keyed card such as `warbird_pro_core`.)
+    """
+    if not any(indicator_key.startswith(p) for p in V9_OOS_LOCKED_KEY_PREFIXES):
+        return
+    start_ts = pd.Timestamp(start)
+    if start_ts.tzinfo is None:
+        start_ts = start_ts.tz_localize("UTC")
+    if start_ts >= V9_OOS_LOCK_START:
+        raise SystemExit(
+            f"V9 OOS lock violated: --start {start} is at or after the locked "
+            f"OOS boundary {V9_OOS_LOCK_START.date()}. The 2025+ window is "
+            f"reserved for champion selection; HPO must use 2020-01-01 → "
+            f"2024-12-31. Pass --end 2024-12-31 explicitly."
+        )
+    if end is None:
+        raise SystemExit(
+            f"V9 OOS lock requires --end on indicator-key '{indicator_key}'. "
+            f"Pass --end 2024-12-31 to clamp HPO data to the IS window."
+        )
+    end_ts = pd.Timestamp(end)
+    if end_ts.tzinfo is None:
+        end_ts = end_ts.tz_localize("UTC")
+    if end_ts >= V9_OOS_LOCK_START:
+        raise SystemExit(
+            f"V9 OOS lock violated: --end {end} reaches into the locked OOS "
+            f"window (>= {V9_OOS_LOCK_START.date()}). HPO must end 2024-12-31 "
+            f"or earlier."
+        )
+
+
+def resolve_optuna_dir(indicator_key: str, optuna_dir: str | None) -> Path:
+    if optuna_dir:
+        return Path(optuna_dir)
+    return workspace_dir(indicator_key)
+
+
+def resolve_champion_path(indicator_key: str, champion_path: str | None) -> Path | None:
+    if champion_path:
+        return Path(champion_path)
+    default = workspace_dir(indicator_key) / "champion.json"
+    return default if default.exists() else None
+
+
+def default_study_title(indicator_key: str) -> str:
+    """Fallback study name for manual runner use.
+
+    Registry-driven runs should pass an explicit, purpose-named --study-name.
+    This fallback prevents accidental snake_case dashboard cards.
+    """
+    title = indicator_key.replace("_", " ")
+    title = re.sub(r"\bv\d+\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(r"\bwr\b", "Win Rate", title, flags=re.IGNORECASE)
+    title = re.sub(r"\bpf\b", "Profit Factor", title, flags=re.IGNORECASE)
+    title = re.sub(r"\bml rsi\b", "ML RSI", title, flags=re.IGNORECASE)
+    title = re.sub(r"\s+", " ", title).strip()
+    acronyms = {
+        "ml": "ML",
+        "rsi": "RSI",
+        "nfe": "NFE",
+        "qfp": "QFP",
+        "mes": "MES",
+    }
+    title = " ".join(acronyms.get(token.lower(), token.capitalize()) for token in title.split())
+    return f"{title} Study" if title else "Warbird Study"
+
+
+def load_custom_profile(module_name: str) -> ProfileAdapter:
+    module = importlib.import_module(module_name)
+
+    required = [
+        "BOOL_PARAMS",
+        "NUMERIC_RANGES",
+        "INT_PARAMS",
+        "CATEGORICAL_PARAMS",
+        "INPUT_DEFAULTS",
+        "load_data",
+        "run_backtest",
+    ]
+    missing = [name for name in required if not hasattr(module, name)]
+    if missing:
+        raise SystemExit(
+            f"Custom profile module '{module_name}' missing required attributes: {', '.join(missing)}"
+        )
+
+    conditional = getattr(module, "CONDITIONAL_PARAMS", None)
+    objective_score_fn = getattr(module, "objective_score", None)
+    objective_metric_name = getattr(module, "OBJECTIVE_METRIC", None)
+    allowed_roots = sorted(str(v).upper() for v in getattr(module, "ALLOWED_SYMBOL_ROOTS", []))
+    allowed_timeframes = sorted(
+        {
+            f"{str(v).lower().removesuffix('m')}m"
+            for v in getattr(module, "ALLOWED_TIMEFRAMES", [])
+        }
+    )
+    contract_label = None
+    if allowed_roots and allowed_timeframes:
+        contract_label = f"{'+'.join(allowed_roots)}_{'_'.join(allowed_timeframes)}"
+    return ProfileAdapter(
+        name=module_name,
+        bool_params=list(getattr(module, "BOOL_PARAMS")),
+        numeric_ranges=dict(getattr(module, "NUMERIC_RANGES")),
+        int_params=set(getattr(module, "INT_PARAMS")),
+        categorical_params=dict(getattr(module, "CATEGORICAL_PARAMS")),
+        input_defaults=dict(getattr(module, "INPUT_DEFAULTS")),
+        load_data_fn=getattr(module, "load_data"),
+        run_backtest_fn=getattr(module, "run_backtest"),
+        objective_score_fn=objective_score_fn if callable(objective_score_fn) else None,
+        objective_metric_name=str(objective_metric_name).strip() if objective_metric_name else None,
+        contract_label=contract_label,
+        conditional_params=dict(conditional) if conditional else None,
+    )
+
+
+def load_profile_adapter(profile: str, profile_module: str | None) -> ProfileAdapter:
+    if profile_module:
+        return load_custom_profile(profile_module)
+
+    raise SystemExit(
+        "No profile loaded. Pass --profile-module <python.module> pointing to your indicator's "
+        "profile adapter (e.g. scripts.duckdb_local.my_indicator_profile)."
+    )
+
+
+# ── Parameter suggestion ─────────────────────────────────────────────────────
+
+def suggest_params(trial: optuna.Trial, profile: ProfileAdapter) -> dict:
+    """Map Optuna trial → strategy params dict (same keys as profile.input_defaults).
+
+    Respects CONDITIONAL_PARAMS: dependent params are only suggested when their
+    parent categorical has the activating value. Inactive dependents fall back to
+    profile INPUT_DEFAULTS, so the backtest always receives a complete param set.
+    """
+    params = {}
+
+    # Build a flat set of ALL params that are conditional on something.
+    all_deps: set[str] = set()
+    if profile.conditional_params:
+        for val_map in profile.conditional_params.values():
+            for dep_list in val_map.values():
+                all_deps.update(dep_list)
+
+    # Categoricals are always suggested (they act as mode selectors).
+    for name, choices in profile.categorical_params.items():
+        params[name] = trial.suggest_categorical(name, choices)
+
+    # Determine which conditional deps are ACTIVE given the chosen categoricals.
+    active_deps: set[str] = set()
+    if profile.conditional_params:
+        for parent, val_map in profile.conditional_params.items():
+            chosen = params.get(parent)
+            if chosen in val_map:
+                active_deps.update(val_map[chosen])
+
+    # Bool params — unconditional unless listed as a dep.
+    for name in profile.bool_params:
+        if name in all_deps:
+            if name in active_deps:
+                params[name] = trial.suggest_categorical(name, [False, True])
+            else:
+                params[name] = profile.input_defaults.get(name, False)
+        else:
+            params[name] = trial.suggest_categorical(name, [False, True])
+
+    # Numeric params — unconditional unless listed as a dep.
+    for name, (lo, hi) in profile.numeric_ranges.items():
+        if name in all_deps:
+            if name in active_deps:
+                if name in profile.int_params:
+                    params[name] = trial.suggest_int(name, int(lo), int(hi))
+                else:
+                    params[name] = trial.suggest_float(name, lo, hi)
+            else:
+                params[name] = profile.input_defaults.get(name, (lo + hi) / 2)
+        else:
+            if name in profile.int_params:
+                params[name] = trial.suggest_int(name, int(lo), int(hi))
+            else:
+                params[name] = trial.suggest_float(name, lo, hi)
+
+    # Hard constraint: SL floor (WARBIRD_V8_PLAN HC)
+    if params.get("slAtrMultInput", 1.5) < SL_FLOOR:
+        params["slAtrMultInput"] = SL_FLOOR
+
+    # Carry non-swept params from profile defaults
+    for k, v in profile.input_defaults.items():
+        if k not in params:
+            params[k] = v
+
+    return params
+
+
+# ── Objective ────────────────────────────────────────────────────────────────
+
+def win_rate_primary_score(result: dict[str, Any]) -> float:
+    """Objective score for Optuna: maximize win rate only.
+
+    PF is retained as a deterministic secondary tie-break in leaderboard exports.
+    """
+    return _safe_float(result.get("win_rate"), 0.0)
+
+
+def dsr_composite_score(
+    result: dict[str, Any],
+    trades_target: int = COMPOSITE_TRADES_TARGET,
+) -> float:
+    """DSR-inspired composite: WR × PF × trade-count saturation.
+
+    Saturates at trades_target so a 200-trade run doesn't dominate a 120-trade run
+    once both exceed the target. Caps PF contribution at 3.0 to prevent degenerate
+    configs with infinite PF from drowning WR signal.
+
+    Formula: (0.60 × WR + 0.40 × min(PF, 3.0)/3.0) × min(trades/target, 1.0)
+    """
+    trades = _safe_int(result.get("trades"), 0)
+    wr = _safe_float(result.get("win_rate"), 0.0)
+    pf = _safe_float(result.get("pf"), 0.0)
+
+    if trades < MIN_TRADES:
+        return 0.0
+
+    saturation = min(trades / trades_target, 1.0)
+    pf_norm = min(pf, 3.0) / 3.0
+    return (0.60 * wr + 0.40 * pf_norm) * saturation
+
+
+def make_objective(
+    df: pd.DataFrame,
+    start_date: str,
+    indicator_key: str,
+    profile: ProfileAdapter,
+    ranking_policy: str = DEFAULT_RANKING_POLICY,
+):
+    """Return an Optuna objective closure over pre-loaded data."""
+
+    def objective(trial: optuna.Trial) -> float:
+        params = suggest_params(trial, profile)
+        try:
+            result = profile.run_backtest_fn(df, params, start_date=start_date)
+        except (AssertionError, Exception) as e:
+            # backtesting.py raises AssertionError when TP/SL prices go invalid
+            # (e.g. large R-multiple on short drives TP negative). Skip cleanly.
+            trial.set_user_attr("trades", 0)
+            trial.set_user_attr("win_rate", 0.0)
+            trial.set_user_attr("pf", 0.0)
+            trial.set_user_attr("max_dd", 0.0)
+            trial.set_user_attr("gp", 0.0)
+            trial.set_user_attr("gl", 0.0)
+            trial.set_user_attr("indicator_key", indicator_key)
+            trial.set_user_attr("ranking_policy", ranking_policy)
+            trial.set_user_attr("error", str(e)[:120])
+            raise TrialPruned(f"runtime_error:{str(e)[:80]}")
+
+        # Record auxiliary metrics for dashboard inspection
+        trial.set_user_attr("trades", result["trades"])
+        trial.set_user_attr("win_rate", result["win_rate"])
+        trial.set_user_attr("pf", result["pf"])
+        trial.set_user_attr("max_dd", result["max_dd_abs"])
+        trial.set_user_attr("gp", result["gross_profit"])
+        trial.set_user_attr("gl", result["gross_loss"])
+        trial.set_user_attr("indicator_key", indicator_key)
+        trial.set_user_attr("ranking_policy", ranking_policy)
+        trial.set_user_attr("window_start", start_date)
+        fixed_result_keys = {
+            "trades",
+            "win_rate",
+            "pf",
+            "max_dd_abs",
+            "gross_profit",
+            "gross_loss",
+        }
+        for key, value in result.items():
+            if key in fixed_result_keys:
+                continue
+            if isinstance(value, bool | int | float | str):
+                if isinstance(value, float) and not math.isfinite(value):
+                    continue
+                trial.set_user_attr(key, value)
+
+        if result["trades"] < MIN_TRADES:
+            raise TrialPruned(f"min_trades:{result['trades']}<{MIN_TRADES}")
+
+        if profile.objective_score_fn is not None:
+            objective_score = _safe_float(profile.objective_score_fn(result), 0.0)
+            metric_name = profile.objective_metric_name or "profile_objective"
+        elif ranking_policy == RANKING_POLICY_DSR:
+            objective_score = dsr_composite_score(result)
+            metric_name = "dsr_composite"
+        else:
+            objective_score = win_rate_primary_score(result)
+            metric_name = "win_rate"
+        trial.set_user_attr("objective_score", objective_score)
+        trial.set_user_attr("objective_metric", metric_name)
+        return objective_score
+
+    return objective
+
+
+# ── Study lifecycle ──────────────────────────────────────────────────────────
+
+def create_or_load_study(
+    study_name: str,
+    storage: str,
+    resume: bool,
+    n_startup_trials: int = 50,
+    metric_name: str = "win_rate",
+) -> optuna.Study:
+    if not resume:
+        try:
+            optuna.delete_study(study_name=study_name, storage=storage)
+        except Exception:
+            pass
+
+    study = optuna.create_study(
+        study_name=study_name,
+        storage=storage,
+        direction="maximize",
+        sampler=TPESampler(
+            seed=42,
+            n_startup_trials=n_startup_trials,
+            multivariate=True,
+            group=True,
+            constant_liar=True,
+        ),
+        load_if_exists=resume,
+    )
+    if hasattr(study, "set_metric_names"):
+        try:
+            study.set_metric_names([metric_name])
+        except Exception:
+            pass
+    return study
+
+
+def register_study_metadata(
+    study: optuna.Study,
+    indicator_key: str,
+    start_date: str,
+    profile_name: str,
+    contract_label: str | None,
+    ranking_policy: str = DEFAULT_RANKING_POLICY,
+    objective_primary: str | None = None,
+) -> None:
+    study.set_user_attr("project", "warbird-pro")
+    study.set_user_attr("contract", contract_label or "UNSPECIFIED")
+    study.set_user_attr("indicator_key", indicator_key)
+    study.set_user_attr("profile", profile_name)
+    study.set_user_attr("ranking_policy", ranking_policy)
+    study.set_user_attr(
+        "objective_primary",
+        objective_primary or ("win_rate" if ranking_policy == RANKING_POLICY_WR else "dsr_composite"),
+    )
+    study.set_user_attr("objective_secondary", "pf")
+    study.set_user_attr("is_start", start_date)
+    study.set_user_attr("is_end", END_DATE_IS)
+
+
+def seed_champion(study: optuna.Study, champ_path: Path | None, profile: ProfileAdapter) -> None:
+    """Enqueue the grid-sweep champion as the first trial."""
+    if champ_path is None or not champ_path.exists():
+        return
+    champion = json.loads(champ_path.read_text())
+    cfg = champion.get("config", {})
+    # Only enqueue if study is fresh (no completed trials)
+    completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    if len(completed) == 0:
+        params = {
+            k: v
+            for k, v in cfg.items()
+            if k in profile.numeric_ranges or k in profile.bool_params
+        }
+        study.enqueue_trial(params)
+        print(f'  Seeded champion (PF={champion.get("pf")}) as trial 0')
+
+
+def trial_rank_tuple(trial: Any) -> tuple[float, float, float, float, int]:
+    """Primary objective first, then WR/PF, then lower drawdown, then trades."""
+    objective_score = _safe_float(trial.user_attrs.get("objective_score"), _safe_float(trial.value, 0.0))
+    wr = _safe_float(trial.user_attrs.get("win_rate"), 0.0)
+    pf = _safe_float(trial.user_attrs.get("pf"), _safe_float(trial.value, 0.0))
+    max_dd = _safe_float(trial.user_attrs.get("max_dd"), float("inf"))
+    trades = _safe_int(trial.user_attrs.get("trades"), 0)
+    return (objective_score, wr, pf, -max_dd, trades)
+
+
+def export_top_n(
+    study: optuna.Study,
+    optuna_dir: Path,
+    n: int = 5,
+    min_wr: float = 0.0,
+) -> None:
+    """Write top-N configs by primary objective, then WR/PF ranking.
+
+    min_wr: if > 0, only include trials with win_rate >= min_wr (e.g. 0.75).
+    """
+    completed = [
+        t for t in study.trials
+        if t.state == optuna.trial.TrialState.COMPLETE
+    ]
+    completed = [t for t in completed if _safe_int(t.user_attrs.get("trades"), 0) >= MIN_TRADES]
+    if min_wr > 0:
+        completed = [t for t in completed if _safe_float(t.user_attrs.get("win_rate"), 0.0) >= min_wr]
+
+    trials = sorted(completed, key=trial_rank_tuple, reverse=True)[:n]
+
+    output = []
+    for rank, t in enumerate(trials, 1):
+        wr = _safe_float(t.user_attrs.get("win_rate"), 0.0)
+        pf = _safe_float(t.user_attrs.get("pf"), _safe_float(t.value, 0.0))
+        row = {
+            "rank": rank,
+            "objective_score": round(_safe_float(t.value), 6),
+            "objective_metric": t.user_attrs.get("objective_metric"),
+            "win_rate": round(wr, 6),
+            "pf": round(pf, 4),
+            "trades": _safe_int(t.user_attrs.get("trades"), 0),
+            "max_dd": _safe_float(t.user_attrs.get("max_dd"), 0.0),
+            "params": t.params,
+        }
+        metric_keys = [
+            "signal_quality_score",
+            "primary_signal_quality",
+            "confluence_calibration",
+            "volume_flow_quality",
+            "fatigue_warning_quality",
+            "knn_bias_quality",
+            "noise_control",
+            "quality_events",
+            "primary_signal_count",
+            "primary_signal_precision",
+            "primary_favorable_hit_rate",
+            "primary_fast_hit_rate",
+            "primary_avg_favorable_bars",
+            "primary_adverse_first_rate",
+            "primary_horizon_bars",
+            "primary_fast_bars",
+            "fatigue_signal_count",
+            "fatigue_signal_precision",
+            "fatigue_fast_hit_rate",
+            "fatigue_avg_favorable_bars",
+            "confluence_event_count",
+            "confluence_precision",
+            "confluence_fast_hit_rate",
+            "confluence_avg_favorable_bars",
+            "volume_flow_event_count",
+            "volume_flow_precision",
+            "volume_flow_fast_hit_rate",
+            "volume_flow_avg_favorable_bars",
+            "knn_state_count",
+            "knn_state_precision",
+            "knn_fast_hit_rate",
+            "knn_avg_favorable_bars",
+            "primary_signals_per_day",
+            "fatigue_signals_per_day",
+            "knn_flips_per_day",
+            "confluence_flips_per_day",
+            "volume_flow_flips_per_day",
+        ]
+        metrics = {}
+        for key in metric_keys:
+            if key not in t.user_attrs:
+                continue
+            value = t.user_attrs[key]
+            metrics[key] = round(value, 6) if isinstance(value, float) else value
+        if metrics:
+            row["metrics"] = metrics
+            if "quality_events" in metrics:
+                row["events"] = _safe_int(metrics["quality_events"], row["trades"])
+        output.append(row)
+
+    wr_tag = f'_wr{int(min_wr*100)}' if min_wr > 0 else ''
+    out_path = optuna_dir / f"top{n}{wr_tag}.json"
+    out_path.write_text(json.dumps(output, indent=2))
+    label = f'WR≥{min_wr:.0%} ' if min_wr > 0 else ''
+    print(f'\n{label}Top-{n} configs written to {out_path.relative_to(REPO_ROOT)} ({len(output)} qualifying)')
+    for row in output:
+        metrics = row.get("metrics", {})
+        if "signal_quality_score" in metrics:
+            print(
+                f'  #{row["rank"]}  score={metrics["signal_quality_score"]:.6f}  '
+                f'events={row.get("events", row["trades"])}  '
+                f'primary={metrics.get("primary_signal_quality", 0.0):.4f}  '
+                f'conf={metrics.get("confluence_calibration", 0.0):.4f}  '
+                f'vol={metrics.get("volume_flow_quality", 0.0):.4f}  '
+                f'fatigue={metrics.get("fatigue_warning_quality", 0.0):.4f}  '
+                f'knn={metrics.get("knn_bias_quality", 0.0):.4f}  '
+                f'noise={metrics.get("noise_control", 0.0):.4f}'
+            )
+        else:
+            print(
+                f'  #{row["rank"]}  WR={row["win_rate"]:.2%}  PF={row["pf"]:.4f}  '
+                f'trades={row["trades"]}  maxDD={row["max_dd"]:.0f}'
+            )
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+def main():
+    parser = argparse.ArgumentParser(description="Warbird Optuna TPE study")
+    parser.add_argument(
+        "--n-trials",
+        type=int,
+        default=100,
+        help="Number of trials to run (default: 100)",
+    )
+    parser.add_argument(
+        "--n-jobs",
+        type=int,
+        default=1,
+        help="Parallel workers (default: 1; increase with caution)",
+    )
+    parser.add_argument(
+        "--indicator-key",
+        required=True,
+        help="Indicator key matching the registry entry (e.g. warbird_nexus_ml_rsi)",
+    )
+    parser.add_argument(
+        "--profile",
+        default=None,
+        help="Reserved for future built-in profiles. Use --profile-module instead.",
+    )
+    parser.add_argument(
+        "--profile-module",
+        default=None,
+        help=(
+            "Optional custom profile module path (e.g. scripts.my_strategy.optuna_profile). "
+            "If set, overrides --profile."
+        ),
+    )
+    parser.add_argument(
+        "--study-name",
+        default=None,
+        help="Study title in SQLite DB. Use clear words with spaces; no snake_case.",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume existing study instead of starting fresh",
+    )
+    parser.add_argument(
+        "--start",
+        default=START_DATE_IS,
+        help=f"IS start date (default: {START_DATE_IS})",
+    )
+    parser.add_argument(
+        "--end",
+        default=None,
+        help=(
+            "IS end date (inclusive, ISO yyyy-mm-dd). When set, the data "
+            "frame passed to profile.run_backtest is truncated to ts <= end "
+            "BEFORE the trial. Use to keep an OOS hold-out the tuner cannot "
+            "see (e.g. --start 2020-01-01 --end 2024-12-31 keeps 2025+ for OOS)."
+        ),
+    )
+    parser.add_argument(
+        "--top-n",
+        type=int,
+        default=5,
+        help="Export top-N configs to JSON after run (default: 5)",
+    )
+    parser.add_argument(
+        "--min-wr",
+        type=float,
+        default=0.0,
+        help="Post-filter: only export configs with win_rate >= this (e.g. 0.75)",
+    )
+    parser.add_argument(
+        "--optuna-dir",
+        default=None,
+        help="Optional study artifact directory override",
+    )
+    parser.add_argument(
+        "--db",
+        default=None,
+        help="Optional path to SQLite study DB; overrides --optuna-dir",
+    )
+    parser.add_argument(
+        "--champion-path",
+        default=None,
+        help="Optional champion JSON path to seed trial 0",
+    )
+    parser.add_argument(
+        "--ranking-policy",
+        default=DEFAULT_RANKING_POLICY,
+        choices=[RANKING_POLICY_WR, RANKING_POLICY_DSR],
+        help=(
+            f"Objective metric (default: {DEFAULT_RANKING_POLICY}). "
+            f"'{RANKING_POLICY_DSR}' uses a WR+PF+saturation composite that "
+            "penalizes low-trade overfit."
+        ),
+    )
+    args = parser.parse_args()
+
+    assert_v9_oos_lock(args.indicator_key, args.start, args.end)
+
+    profile = load_profile_adapter(args.profile, args.profile_module)
+    study_name = args.study_name or default_study_title(args.indicator_key)
+    if "_" in study_name:
+        print(
+            "WARNING: study names appear directly in Optuna Dashboard. "
+            "Use a clear title with spaces instead of snake_case."
+        )
+    optuna_dir = resolve_optuna_dir(args.indicator_key, args.optuna_dir)
+    optuna_dir.mkdir(parents=True, exist_ok=True)
+    if args.db and "://" in args.db:
+        # SQLAlchemy URL (e.g. postgresql+psycopg2://user@host:5432/db)
+        storage = args.db
+        db_path = args.db  # for log display only
+    else:
+        db_path = Path(args.db) if args.db else (optuna_dir / "study.db")
+        storage = f"sqlite:///{db_path}"
+
+    # Honour --end if profile.run_backtest accepts it; clamp data window so
+    # IS tuning never sees OOS bars.
+    is_end = getattr(args, "end", None)
+    champ_path = resolve_champion_path(args.indicator_key, args.champion_path)
+
+    ranking_policy = args.ranking_policy
+
+    # n_startup_trials: 10 × param dimensions, floor 50 (TPESampler warm-up)
+    n_dims = (
+        len(profile.bool_params)
+        + len(profile.categorical_params)
+        + len(profile.numeric_ranges)
+    )
+    n_startup_trials = max(50, 10 * n_dims)
+
+    print("=== Warbird Optuna TPE ===")
+    print(f"  Indicator:       {args.indicator_key}")
+    print(f"  Profile:         {profile.name}")
+    print(f"  Study:           {study_name}")
+    print(f"  Storage:         {db_path}")
+    print(f"  IS start:        {args.start}")
+    print(f"  Trials:          {args.n_trials}  (n_jobs={args.n_jobs})")
+    print(f"  Resume:          {args.resume}")
+    print(f"  Ranking:         {ranking_policy}")
+    print(f"  Dims:            {n_dims}  (n_startup_trials={n_startup_trials})")
+    print("  Top-N:           objective metric first, then WR/PF")
+
+    print("\nLoading data...")
+    df = profile.load_data_fn()
+    print(f'  {len(df):,} bars  {df["ts"].min()} → {df["ts"].max()}')
+    if is_end:
+        end_ts = pd.Timestamp(is_end)
+        if end_ts.tzinfo is None:
+            end_ts = end_ts.tz_localize("UTC")
+        else:
+            end_ts = end_ts.tz_convert("UTC")
+        # Inclusive of the entire end day (T23:59:59).
+        end_ts = end_ts + pd.Timedelta("23:59:59.999999")
+        n_before = len(df)
+        df = df.loc[pd.to_datetime(df["ts"], utc=True) <= end_ts].copy()
+        print(f"  --end {is_end}: clamped to {df['ts'].max()} (dropped {n_before - len(df):,} OOS bars)")
+
+    objective_metric_name = profile.objective_metric_name or ("win_rate" if ranking_policy == RANKING_POLICY_WR else "dsr_composite")
+    study = create_or_load_study(
+        study_name,
+        storage,
+        args.resume,
+        n_startup_trials,
+        metric_name=objective_metric_name,
+    )
+    register_study_metadata(
+        study,
+        args.indicator_key,
+        args.start,
+        profile.name,
+        profile.contract_label,
+        ranking_policy,
+        objective_primary=objective_metric_name,
+    )
+    seed_champion(study, champ_path, profile)
+
+    objective = make_objective(df, args.start, args.indicator_key, profile, ranking_policy)
+
+    t0 = time.perf_counter()
+    study.optimize(
+        objective,
+        n_trials=args.n_trials,
+        n_jobs=args.n_jobs,
+        show_progress_bar=True,
+    )
+    elapsed = time.perf_counter() - t0
+
+    completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    print(f'\nDone: {len(completed)} completed trials in {elapsed:.0f}s '
+          f'({elapsed/max(len(completed),1):.1f}s/trial)')
+
+    ranked = sorted(completed, key=trial_rank_tuple, reverse=True)
+    if ranked:
+        best = ranked[0]
+        obj_metric = best.user_attrs.get("objective_metric") or objective_metric_name
+        obj_score = _safe_float(best.user_attrs.get("objective_score"), _safe_float(best.value, 0.0))
+        wr = _safe_float(best.user_attrs.get("win_rate"), 0.0)
+        pf = _safe_float(best.user_attrs.get("pf"), _safe_float(best.value, 0.0))
+        trades = _safe_int(best.user_attrs.get("trades"), 0)
+        quality_events = _safe_int(best.user_attrs.get("quality_events"), 0)
+        if quality_events > 0:
+            print(
+                f"\nBest trial #{best.number}: {obj_metric}={obj_score:.6f}  events={quality_events}  "
+                f"primary={_safe_float(best.user_attrs.get('primary_signal_quality'), 0.0):.4f}  "
+                f"conf={_safe_float(best.user_attrs.get('confluence_calibration'), 0.0):.4f}  "
+                f"vol={_safe_float(best.user_attrs.get('volume_flow_quality'), 0.0):.4f}  "
+                f"fatigue={_safe_float(best.user_attrs.get('fatigue_warning_quality'), 0.0):.4f}  "
+                f"knn={_safe_float(best.user_attrs.get('knn_bias_quality'), 0.0):.4f}  "
+                f"noise={_safe_float(best.user_attrs.get('noise_control'), 0.0):.4f}"
+            )
+        else:
+            print(
+                f"\nBest trial #{best.number}: {obj_metric}={obj_score:.6f}  WR={wr:.2%}  PF={pf:.4f}  trades={trades}"
+            )
+        print(f"  Params: {json.dumps(best.params, indent=4)}")
+    else:
+        print("\nNo completed trials available for ranking.")
+
+    export_top_n(study, optuna_dir=optuna_dir, n=args.top_n)
+    if args.min_wr > 0:
+        export_top_n(study, optuna_dir=optuna_dir, n=args.top_n, min_wr=args.min_wr)
+
+    if isinstance(db_path, Path):
+        print(
+            f"\nDashboard: optuna-dashboard sqlite:///{db_path} "
+            f"--port {RECOMMENDED_LOCAL_DASHBOARD_PORT}"
+        )
+    else:
+        print(
+            f"\nDashboard: optuna-dashboard '{db_path}' "
+            f"--port {RECOMMENDED_LOCAL_DASHBOARD_PORT}"
+        )
+
+
+if __name__ == "__main__":
+    main()

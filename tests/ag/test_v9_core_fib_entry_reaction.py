@@ -1,6 +1,6 @@
 import numpy as np
 
-from scripts.optuna.workspaces.warbird_pro_core import build_core_dataset as core
+from scripts.duckdb_local.workspaces.warbird_pro_core import build_core_dataset as core
 
 
 def test_fib_touch_priority_prefers_786_then_618_then_500_for_long_reaction():

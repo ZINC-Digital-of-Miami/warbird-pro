@@ -51,11 +51,11 @@ The data IS local, including 4.4GB of MES tick-level Trades from Databento (1 ye
 ### What landed in `training-prep` commit
 - New V9 indicator with curated patterns, liquidity package, cross-asset advanced, S/R levels, footprint, FOMC, per-line styles
 - `scripts/ag/train_v9_locked.py` — ML_FEATURES aligned to 45 features (43 Pine features + 2 ETL CVD divergence features), tz-bug fixed, persist() API fixed
-- `scripts/optuna/warbird_pro_profile.py` — MA ranges now track live V9 defaults +/-10: `lengthMA` 90-110 and `lengthEMA` 40-60; MA type categoricals removed
-- `scripts/optuna/cpcv_helpers.py` — eval_metric=log_loss, calibrate=True, persist() fix
+- `scripts/duckdb_local/warbird_pro_profile.py` — MA ranges now track live V9 defaults +/-10: `lengthMA` 90-110 and `lengthEMA` 40-60; MA type categoricals removed
+- `scripts/duckdb_local/cpcv_helpers.py` — eval_metric=log_loss, calibrate=True, persist() fix
 - `scripts/ag/monte_carlo_v9.py` (new) — MC robustness analysis
 - `scripts/ag/shap_v9.py` (new) — SHAP explainability
-- `scripts/optuna/walk_forward.py` (new) — expanding-window validator
+- `scripts/duckdb_local/walk_forward.py` (new) — expanding-window validator
 - `.gitignore` — excludes `models/` (large pkl artifacts)
 
 ### What is unstaged/untouched (NOT to commit with training-prep)
@@ -119,7 +119,7 @@ These were items I previously deferred or skipped. Status after Kirk's review:
 | 11 | Sub-bar features from raw trades schema | **DECISION OWED** | Trade-size distribution, large-print frequency, time-weighted imbalance per bar. Beyond the 7 microstructure features. |
 | 12 | Anti-leakage assertion baked into ETL | **LOCKED IN** | Codify check 8 from pre-audit skill (no IID bag leakage). |
 | 13 | Earnings / CPI / NFP / PPI heads-up labels | **DECISION OWED** | FOMC is in. Kirk said "drop events" earlier but later listed earnings/CPI/NFP as MISSED. Need explicit yes/no per category. |
-| 14 | Optuna directory `scripts/optuna/cards/{baseline,core_training,side_models}/` | **LOCKED IN** | Build before Core card writes. |
+| 14 | Optuna directory `scripts/duckdb_local/cards/{baseline,core_training,side_models}/` | **LOCKED IN** | Build before Core card writes. |
 | 15 | Card filename naming convention | **LOCKED IN** | Filename: underscores (`2026_05_09_warbird_pro_autogluon_core.py`); display title: spelled out (`2026-05-09 - Warbird Pro Autogluon Core`). |
 
 ---
@@ -247,7 +247,7 @@ If ANY assertion fails, log the exact reason and exit nonzero. Don't run trainin
 
 | Aspect | Plan |
 |---|---|
-| **Filename** | `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` |
+| **Filename** | `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` |
 | **Display title** | `2026-05-09 - Warbird Pro Autogluon Core` (literal in Optuna hub UI) |
 | **AG objective** | Binary classification: `winner_10pt_24bar` (1=+10pts before -5pts within 24 bars; neither-hit rows dropped) |
 | **Eval metric** | `log_loss` (proper probability scoring + isotonic calibration) |
@@ -267,7 +267,7 @@ If ANY assertion fails, log the exact reason and exit nonzero. Don't run trainin
 ## Optuna directory structure to create
 
 ```
-scripts/optuna/cards/
+scripts/duckdb_local/cards/
 ├── baseline/
 │   └── (May 8 ruined run — archive existing run dir as reference, no script)
 │
@@ -373,7 +373,7 @@ Untracked (NOT in this handoff's scope):
 7. ✓ Apply Kirk's confirmed answers from open decisions
 8. ✓ Build the ETL script (footprint reconstruction + cross-asset alignment + indicator math replication)
 9. ✓ Run ETL → verify dataset against pre-training hard gates
-10. ✓ Build the Core card script (`scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`)
+10. ✓ Build the Core card script (`scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`)
 11. ✓ Wire Core card into Optuna hub at localhost:8090
 12. ✓ Show Kirk the final scope + dataset gate output
 13. ✓ Get green light

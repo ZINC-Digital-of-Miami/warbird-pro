@@ -100,19 +100,19 @@ indicators/harnesses/
 artifacts/
 
 # Optuna study DB and run artifacts (resume-safe, but not tracked in git)
-scripts/optuna/workspaces/*
-!scripts/optuna/workspaces/warbird_pro_core/
-scripts/optuna/workspaces/warbird_pro_core/*
-!scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py
-!scripts/optuna/workspaces/warbird_pro_core/README.md
-!scripts/optuna/workspaces/sats_ps/
-scripts/optuna/workspaces/sats_ps/*
-!scripts/optuna/workspaces/sats_ps/champion.json
-!scripts/optuna/workspaces/sats_ps/grid_sweep/
-scripts/optuna/workspaces/sats_ps/grid_sweep/*
-!scripts/optuna/workspaces/sats_ps/grid_sweep/all_trials.csv
-!scripts/optuna/workspaces/sats_ps/grid_sweep/input_template.json
-scripts/optuna/archive/
+scripts/duckdb_local/workspaces/*
+!scripts/duckdb_local/workspaces/warbird_pro_core/
+scripts/duckdb_local/workspaces/warbird_pro_core/*
+!scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py
+!scripts/duckdb_local/workspaces/warbird_pro_core/README.md
+!scripts/duckdb_local/workspaces/sats_ps/
+scripts/duckdb_local/workspaces/sats_ps/*
+!scripts/duckdb_local/workspaces/sats_ps/champion.json
+!scripts/duckdb_local/workspaces/sats_ps/grid_sweep/
+scripts/duckdb_local/workspaces/sats_ps/grid_sweep/*
+!scripts/duckdb_local/workspaces/sats_ps/grid_sweep/all_trials.csv
+!scripts/duckdb_local/workspaces/sats_ps/grid_sweep/input_template.json
+scripts/duckdb_local/archive/
 data/sats_ps_optuna/
 data/optuna/
 

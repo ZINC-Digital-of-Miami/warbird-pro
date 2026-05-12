@@ -3,7 +3,7 @@ Read and follow `AGENTS.md` at the repository root.
 ## Quick Reference
 
 - **Canonical docs index:** `/Volumes/Satechi Hub/warbird-pro/docs/INDEX.md`
-- **Active architecture plan:** `/Volumes/Satechi Hub/warbird-pro/docs/MASTER_PLAN.md` — Warbird Indicator-Only Optuna Plan v6, narrowed 2026-04-30 to Warbird Pro + Nexus only
+- **Active architecture plan:** `/Volumes/Satechi Hub/warbird-pro/docs/MASTER_PLAN.md` — Warbird Indicator-Only DuckDB Local Modeling Plan v6, narrowed 2026-04-30 to Warbird Pro + Nexus only; renamed 2026-05-12 (Optuna workspace path retired; DuckDB-backed file pipeline is the data layer)
 - **Indicator contract:** `/Volumes/Satechi Hub/warbird-pro/docs/contracts/pine_indicator_ag_contract.md`
 - **Startup review runbook:** `/Volumes/Satechi Hub/warbird-pro/docs/runbooks/startup_repo_review.md`
 - **TradingView readiness doctor (read-only):**
@@ -27,11 +27,13 @@ Do not run builds/tests/training or modify files during the startup review.
 
 ### Active Contract
 
-Warbird is now an indicator-only PineScript Optuna modeling project.
+Warbird is an indicator-only PineScript modeling project backed by a local
+DuckDB / Pandera / fg-data-profiling file pipeline. Cloud Supabase is
+runtime/support only — no raw training trials or labels (see Locked Rules).
 
 This status is a live tuning snapshot. Trigger families, settings, thresholds,
-search spaces, and build recommendations may change as TradingView exports,
-Optuna trials continue.
+search spaces, and build recommendations may change as TradingView exports and
+local DuckDB-backed trials continue.
 When that happens, update the active docs before treating the new result as
 agent-ready.
 
@@ -83,26 +85,36 @@ Checkpoint summary from 2026-04-27 operator TradingView snapshots:
 
 ### Modeling Surfaces
 
-- `scripts/optuna/` is the active local optimization workspace.
+- `scripts/duckdb_local/` is the active local modeling workspace (renamed from
+  `scripts/optuna/` on 2026-05-12 — the Optuna workspace path is retired and
+  the V9 Core path has no Optuna runtime dependency).
+- `scripts/ag/train_v9_locked.py` is the production V9 trainer. Default CSV is
+  the 15m Core export at
+  `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv`.
 - `scripts/ag/tv_auto_tune.py` and `scripts/ag/tune_strategy_params.py` remain useful
   for TradingView-driven settings trials.
   - `tv_auto_tune.py preflight` expects a strategy harness.
   - For indicator-only V9 charts, use `tv_auto_tune.py preflight --indicator-only`.
-- Nexus ML RSI Optuna must use TradingView/Pine `request.footprint()`
+- Nexus ML RSI tuning must use TradingView/Pine `request.footprint()`
   `nexus_fp_*` evidence. Do not run Nexus tuning from CSV exports, local OHLCV
   parquet, Databento bars, or synthetic body/wick delta.
-- `scripts/ag/train_ag_baseline.py`, local `ag_training`, and FRED-join lineage
-  tables are legacy unless explicitly reopened.
+- `scripts/ag/train_ag_baseline.py`, local `ag_training`, FRED-join lineage
+  tables, and `scripts/ag/train_hard_gate.py` (Postgres `ag_training_runs`
+  gate) are legacy unless explicitly reopened.
 
-### Data Layer (2026-05-11)
+### Data Layer (2026-05-12)
 
-The V9/Core ETL and training pipeline is **file-based, not Postgres-backed**:
+`scripts/optuna/` and `tests/optuna/` were renamed to `scripts/duckdb_local/`
+and `tests/duckdb_local/` on 2026-05-12 — Python imports, path-string literals,
+docs, hooks, gitignore patterns, and skill files all swept. The V9/Core ETL
+and training pipeline is **file-based, not Postgres-backed** and has no
+Optuna runtime dependency:
 
 - **DuckDB 1.5.2** — sort/filter/join/build over parquet + CSV. No server, no daemon, no role/credential setup; reads source parquets in place and emits the export CSVs the Core trainer consumes.
 - **Pandera 0.31.1** — schema/contract validation for every export CSV and manifest. Knob columns, ml_* features, label policy, and dtype enforcement are validated by a Pandera schema; the schema is the test surface, not psql.
 - **fg-data-profiling 4.19.1** (module: `data_profiling`) — required profiling/report output for every Core build. Replaces the deprecated `ydata-profiling` package; the older package is uninstalled.
 
-The local `warbird` Postgres 17 warehouse and the `ag_training` / `ag_fib_*` tables remain on disk for **legacy lineage only** — they back `scripts/ag/train_ag_baseline.py`, which is not the V9/Core trainer. The V9 path (`scripts/ag/train_v9_locked.py`, `scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py`, `scripts/ag/monte_carlo_v9.py`, `scripts/ag/shap_v9.py`) does not import psycopg2 and has no Postgres dependency.
+The local `warbird` Postgres 17 warehouse and the `ag_training` / `ag_fib_*` tables remain on disk for **legacy lineage only** — they back `scripts/ag/train_ag_baseline.py`, which is not the V9/Core trainer. The V9 path (`scripts/ag/train_v9_locked.py`, `scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py`, `scripts/ag/monte_carlo_v9.py`, `scripts/ag/shap_v9.py`) does not import psycopg2 and has no Postgres dependency.
 
 ### Training Sequence (locked 2026-05-11)
 
@@ -117,9 +129,15 @@ The Hybrid+ 4-card system (`warbird_pro_v9_exit_cpcv`,
 `warbird_pro_v9_joint_challenger`) is **deprecated**. Path went 4 cards →
 2 cards → single Core card. The Core card supersedes all four.
 
-**Single active training card:** `scripts/optuna/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`
-(smoke/validation Optuna wrapper wired; full 1y AG launch still pending). MAE-regression side card scaffolds in
-`scripts/optuna/cards/side_models/` and trains AFTER Core lands.
+**Production trainer:** `scripts/ag/train_v9_locked.py` — fits the entry classifier
+(`winner_10pt_24bar`) on the 15m Core export at
+`scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv`.
+`--model-suite` additionally fits TP/SL touch-probability + MFE/MAE regressors
+for downstream EV layer. Auxiliary smoke-validation card at
+`scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`
+(records a validation report to a local study DB; does not invoke AutoGluon).
+MAE-regression side card scaffolds in `scripts/duckdb_local/cards/side_models/`
+and trains AFTER Core lands.
 
 **AG config (locked):**
 
@@ -164,13 +182,15 @@ claim — validate in Python first before reserving Pine plot budget.
 
 ### Current Blocker
 
-Core ETL/trainer partial — DXY parity, fixed 10/-5/24 labels, strict feature
-schema, Yahoo `DX-Y.NYB`, and Databento trade-side CVD/order-flow features are
-wired in code. The Core Optuna card can now record smoke/validation trials into
-`scripts/optuna/workspaces/warbird_pro_core/study.db`. Pending: full 1y Core
-build, hard-gate launch wiring for full AG training, and pre-launch gate report.
-Owner/next trigger: Codex resumes when Kirk approves the full 1y Core
-build/training path.
+V9 Core training surface is ready as of 2026-05-12. `scripts/ag/train_v9_locked.py`
+now defaults to the 15m Core export and passes validate-only smoke + parity
+checks across `train_v9_locked` / `monte_carlo_v9` / `shap_v9` (19,850 resolved
+trades, WR 0.4265, IS/VAL/OOS 13,895 / 2,952 / 2,953). Pending: full 1y entry-only
+AG training run, then SHAP + Monte Carlo gates before promoting any TV alert.
+The smoke-validation card at
+`scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`
+records a validation report to `study.db` but does not launch AG; it is not on
+the live-training path.
 
 Smoke verification evidence is recorded in
 `docs/audits/2026-05-10-v9-core-smoke-verification.md`; use

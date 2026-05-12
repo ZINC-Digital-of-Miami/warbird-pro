@@ -80,7 +80,7 @@ Pine prep steps before the search space is reachable:
 4. Replace the hardcoded `provenBullishPattern` / `provenBearishPattern` expressions with toggle-gated versions.
 5. Replace hardcoded `ema9`, `ema21`, `ema50` literals with the input-driven periods.
 6. Run the Pine verification pipeline (pine-lint, check-fib-scanner-guardrails, check-contamination, npm run build, indicator/strategy parity check).
-7. Update `scripts/optuna/strategy_tuning_space.json` (or equivalent) to expose the new knobs.
+7. Update `scripts/duckdb_local/strategy_tuning_space.json` (or equivalent) to expose the new knobs.
 8. Re-export TV CSV per `docs/runbooks/wbv7_institutional_optuna.md` Section 1 with the new inputs at default values.
 
 These are doc-described, not implemented. **Pine implementation requires per-session explicit approval.**

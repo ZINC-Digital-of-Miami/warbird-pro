@@ -44,7 +44,7 @@ Local PG17 `warbird` and the `ag_training` / `ag_fib_*` warehouse tables remain
 on disk for legacy lineage only — they back `scripts/ag/train_ag_baseline.py`,
 not the active V9/Core trainer. The V9 path
 (`scripts/ag/train_v9_locked.py`,
-`scripts/optuna/workspaces/warbird_pro_core/build_core_dataset.py`,
+`scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py`,
 `scripts/ag/monte_carlo_v9.py`, `scripts/ag/shap_v9.py`) does not import
 psycopg2 and has no Postgres dependency.
 

@@ -30,7 +30,7 @@ Cloud must not receive:
 - raw TradingView exports
 - raw Databento training rows
 - raw Strategy Tester trade lists
-- raw Optuna trial tables
+- raw local tuning/training trial tables
 - raw AutoGluon/SHAP artifacts
 - full research datasets
 - training labels

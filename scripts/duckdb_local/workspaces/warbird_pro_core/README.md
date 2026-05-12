@@ -1,15 +1,16 @@
 # Warbird Pro V9 Core Workspace
 
-Operator-facing workspace for the single Core AutoGluon card:
+Operator-facing workspace for the current V9 Core DuckDB/Pandera/AutoGluon
+training lane:
 
 `2026-05-09 - Warbird Pro Autogluon Core`
 
 Current status:
 
-- Smoke/validation wrapper is wired into Optuna.
-- `study.db` is created by the Core card smoke command.
+- Smoke/validation wrapper is local DuckDB/Core validation only.
+- Full V9 training is launched directly with `scripts/ag/train_v9_locked.py`.
 - Full 1y Core build/training is still approval-gated.
-- Smoke trials are wiring evidence only; they are not model-quality evidence.
+- Smoke runs are wiring evidence only; they are not model-quality evidence.
 
 Smoke card command:
 
@@ -20,16 +21,16 @@ python scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon
   --timeframe 5
 ```
 
-Expected default active study DB:
+Expected default smoke validation artifact area:
 
 ```text
-scripts/duckdb_local/workspaces/warbird_pro_core/experiments/es_5m/study.db
+scripts/duckdb_local/workspaces/warbird_pro_core/experiments/es_5m/
 ```
 
 For the 15m prep lane, use:
 
 ```text
-scripts/duckdb_local/workspaces/warbird_pro_core/experiments/es_15m/study.db
+scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.manifest.json
 ```
 
 Do not run full AutoGluon training from this workspace until the full 1y Core

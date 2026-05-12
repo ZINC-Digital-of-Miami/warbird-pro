@@ -1,4 +1,4 @@
-# Pine Indicator Optuna Contract
+# Pine Indicator Modeling Contract
 
 **Date:** 2026-05-05
 **Status:** Active modeling contract
@@ -13,12 +13,13 @@ PineScript indicator behavior on TradingView.
 The active contract is allowed to evolve as tuning and training continue.
 Trigger families, settings, thresholds, search spaces, and labels are current
 evidence snapshots. They must be versioned through Markdown updates whenever a
-new TradingView export or Optuna trial set changes the accepted understanding.
+new TradingView export, DuckDB/Core training result, or approved tuning batch
+changes the accepted understanding.
 
 Do not reuse an old export or trial without checking that its trigger family and
 settings still match the current contract.
 
-V9 lane contract (2026-05-02): `warbird_pro_v9` is a separate Optuna lane over
+V9 lane contract (2026-05-02): `warbird_pro_v9` is a separate DuckDB local lane over
 the active **Warbird Pro V9** indicator at `indicators/warbird-pro-v9.pine`. It does not create a new Pine source,
 does not authorize Pine edits, and does not mutate the canonical fib anchor,
 fib visual, or EMA/MA setup. It admits manifest-backed ES training rows

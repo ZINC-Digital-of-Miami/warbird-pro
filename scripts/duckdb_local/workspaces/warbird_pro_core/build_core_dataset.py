@@ -157,6 +157,7 @@ FORBIDDEN_LINEAGE_TOKENS = (
     "psycopg2",
     "ag_training",
     "local_warehouse",
+    "optuna",
 )
 
 OUTRIGHT_ROOT_PATTERNS = {
@@ -1367,7 +1368,7 @@ def finalize_entries(df: pd.DataFrame, knobs: dict[str, Any] | None = None) -> p
     #   ml_swept_*, ml_reclaimed_*, ml_xa_nq_rel_strength_atr, etc.). AG learns
     #   how to weight them per bar.
     # - knob_use_xa_gate and knob_use_liq_gate remain in the schema so a future
-    #   Optuna sweep can re-enable them, but their defaults are now False.
+    #   V9 Core profile sweep can re-enable them, but their defaults are now False.
     knobs = dict(DEFAULT_INDICATOR_KNOBS if knobs is None else knobs)
     out = df.copy()
     ma_long_ok = (out["ml_ma_bias"] > 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True

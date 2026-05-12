@@ -68,9 +68,9 @@ the review.
 
 The active architecture is **Warbird Indicator-Only DuckDB Local Modeling Plan v6**,
 narrowed on 2026-04-30 to one main chart indicator plus the Nexus
-support/research lane. The data layer was renamed from `scripts/optuna/` to
-`scripts/duckdb_local/` on 2026-05-12; Optuna is no longer a runtime
-dependency of the V9 Core path.
+support/research lane. V9 Core uses the DuckDB / Pandera / AutoGluon file
+pipeline at `scripts/duckdb_local/`. Nexus and old Warbird tuning work remain
+separate retained surfaces; do not route current V9 Core work through them.
 
 The goal is pure PineScript trading-indicator modeling:
 
@@ -117,17 +117,17 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - `indicators/`: active Pine sources:
   - `indicators/warbird-pro-v9.pine` — only main chart indicator
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
-    Nexus footprint evidence lane (retained support/research lane; the
-    "optuna" suffix in the filename is historical, not a current dependency —
-    Pine filenames are not renamed per Locked Rules)
-- `scripts/duckdb_local/`: active local DuckDB-backed modeling workspace and
-  runner (renamed from `scripts/optuna/` on 2026-05-12 — Optuna is no longer
-  the V9 Core data layer).
+    Nexus footprint evidence lane (retained support/research lane; Pine
+    filenames are not renamed per Locked Rules)
+- `scripts/duckdb_local/`: active local DuckDB-backed modeling workspace for
+  V9 Core. Nexus and legacy v7 lanes retain their own profile adapters under
+  this directory.
   - `warbird_pro_v9` is isolated from `warbird_pro`; it admits ES 5m/15m
     training rows from TradingView exports or Databento market data, ignores
     MES/NQ/MNQ rows, and models ATR/risk exits without Pine edits.
-  - Hybrid+ 4-card chain is deprecated; active direction is the single
-    `warbird_pro_core` training card (Core module scaffold under construction).
+  - V9 Core training launches directly through `scripts/ag/train_v9_locked.py`
+    against the locked 15m export at
+    `workspaces/warbird_pro_core/exports/es_15m_core.csv`.
   - Dataset: `workspaces/warbird_pro_v9/exports/es_5m.csv` (plus ES 15m lane artifacts as built)
   - Build script: `workspaces/warbird_pro_v9/build_v9_dataset.py` — params MUST match live TV settings
 - `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`: TradingView
@@ -201,8 +201,8 @@ The Pine code `input.float(default, ...)` values are NOT authoritative.
 ## Stack
 
 - TradingView + Pine Script — canonical live and modeling surface
-- **Data layer (V9/Core, locked 2026-05-11, dir renamed 2026-05-12):** DuckDB 1.5.2 (sort/filter/build over parquet+CSV), Pandera 0.31.1 (schema/contract validation), fg-data-profiling 4.19.1 (`data_profiling` module — profiling/report output). The deprecated `ydata-profiling` package is uninstalled. The workspace lives at `scripts/duckdb_local/` (renamed from `scripts/optuna/` on 2026-05-12).
-- AutoGluon Tabular 1.5 — training engine for the entry classifier and the optional `--model-suite` TP/SL touch + MFE/MAE side models. Invoked directly by `scripts/ag/train_v9_locked.py`; no Optuna search wraps the V9 Core path.
+- **V9 Core data layer (locked 2026-05-11):** DuckDB 1.5.2 (sort/filter/build over parquet+CSV), Pandera 0.31.1 (schema/contract validation), fg-data-profiling 4.19.1 (`data_profiling` module — profiling/report output). The deprecated `ydata-profiling` package is uninstalled. Workspace at `scripts/duckdb_local/`.
+- AutoGluon Tabular 1.5 — training engine for the entry classifier and the optional `--model-suite` TP/SL touch + MFE/MAE side models. Invoked directly by `scripts/ag/train_v9_locked.py`.
 - Next.js + Supabase — runtime/dashboard/support only (no raw training trials or labels in cloud Supabase per Locked Rules)
 - Local PG17 `warbird` — legacy/reference for this plan unless explicitly reopened; the V9/Core trainer/ETL does not import psycopg2 and has no Postgres dependency
 

@@ -10,7 +10,7 @@ The active runbooks support indicator-only Pine modeling.
 Runbooks are operational snapshots for the current tuning cycle. Trigger
 families, settings spaces, export requirements, and pass/fail gates may change
 as Pine tuning and training continue. When a runbook no longer matches accepted
-TradingView/Optuna evidence, update it before launching the next batch.
+TradingView/DuckDB-Core evidence, update it before launching the next batch.
 
 Current lock state (2026-05-02): use **Warbird Pro V9** at
 `indicators/warbird-pro-v9.pine` as the only active main chart indicator, keep
@@ -45,8 +45,8 @@ strategy-harness sessions.
 - `docs/agent-safety-gates.md`
   - fail-closed verification gates
 - `docs/research/2026-05-02-optuna-unified-platform.md`
-  - Optuna ecosystem reference for tuning/orchestration patterns; reference-only
-    and subordinate to active contract docs
+  - Nexus/legacy Optuna ecosystem reference; reference-only and subordinate to
+    active V9 Core contract docs
 
 ## Legacy
 

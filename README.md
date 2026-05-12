@@ -5,12 +5,14 @@ TradingView indicator development.
 
 The active work is to perfect the TradingView indicator: settings, signal
 logic, stop/target policy, filters, visual/operator state, and exported
-indicator behavior. Optuna and local scripts may be used offline, but only to
-analyze Pine/TradingView outputs and recommend Pine settings/build changes.
+indicator behavior. Current V9 Warbird work uses local
+DuckDB/Pandera/AutoGluon scripts offline to analyze Pine/TradingView outputs
+and recommend Pine settings/build changes. Nexus and old Warbird Optuna work
+remain separate retained surfaces.
 
 This repo is in an active tuning/training phase. Current triggers, settings,
 thresholds, and search spaces are evidence snapshots and may change as new
-TradingView/Optuna results land. Accepted changes must update the active
+TradingView/DuckDB-Core results land. Accepted changes must update the active
 Markdown authority set before another agent treats them as current.
 
 **Repo:** github.com/zincdigitalofmiami/warbird-pro
@@ -60,8 +62,8 @@ The initialization record is
 ## Active Architecture
 
 - Training/modeling source: manifest-backed active-lane data:
-  Pine/TradingView outputs, approved Databento ES/MES market-data training rows,
-  and Nexus footprint snapshots.
+  Pine/TradingView outputs, approved Databento ES market-data training rows for
+  V9, and Nexus footprint snapshots for the retained Nexus lane.
 - Main chart indicator: **Warbird Pro V9** at `indicators/warbird-pro-v9.pine`.
 - Retained Nexus lane:
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`
@@ -74,7 +76,7 @@ The initialization record is
   - `indicators/v7-warbird-strategy.pine`
   - `indicators/v7-warbird-institutional-backtest-strategy.pine`
   - `indicators/fibs-only.pine`
-- Optimizer workspace: `scripts/duckdb_local/`.
+- V9 DuckDB workspace: `scripts/duckdb_local/`.
 - TradingView tuning helpers:
   - `scripts/ag/tv_auto_tune.py`
   - `scripts/ag/tune_strategy_params.py`

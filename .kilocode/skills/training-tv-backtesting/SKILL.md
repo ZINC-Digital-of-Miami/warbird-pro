@@ -6,7 +6,7 @@ description: TradingView Strategy Tester workflow for validating Pine Script str
 > **2026-04-26 indicator-only reset:** This skill remains active only for Pine/TradingView output modeling. Do not join FRED, macro, local `ag_training`, Databento-ingestion, or other external features.
 > **Ongoing tuning note:** Current trigger families, settings, thresholds, and
 > search spaces are evidence snapshots. Re-read the active docs before each run
-> and update Markdown when new TradingView/Optuna/AG/SHAP evidence changes the
+> and update Markdown when new TradingView/AG/SHAP evidence changes the
 > accepted contract.
 
 # Training — TradingView Backtesting
@@ -18,7 +18,8 @@ indicator-only modeling.
 
 - Validating `v7-warbird-strategy.pine` or the backtest wrapper after Pine changes
 - Comparing a new stop/entry/settings policy against the baseline
-- Capturing real Strategy Tester evidence for Optuna/AG settings modeling
+- Capturing real Strategy Tester evidence for AG settings modeling
+  (and legacy Nexus / v7 Optuna lanes when those are explicitly in scope)
 - Reviewing specific trades from exported Pine/TradingView outputs
 
 ## Required Evidence

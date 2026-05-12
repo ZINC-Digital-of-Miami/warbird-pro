@@ -6,7 +6,7 @@ description: Sweep Pine indicator settings from TradingView/Pine outputs under t
 > **2026-04-26 indicator-only reset:** This skill remains active only for Pine/TradingView output modeling. Do not join FRED, macro, local `ag_training`, Databento-ingestion, or other external features.
 > **Ongoing tuning note:** Current trigger families, settings, thresholds, and
 > search spaces are evidence snapshots. Re-read the active docs before each run
-> and update Markdown when new TradingView/Optuna/AG/SHAP evidence changes the
+> and update Markdown when new TradingView/AG/SHAP evidence changes the
 > accepted contract.
 
 # Training — Indicator Optimization
@@ -32,8 +32,9 @@ TradingView/Pine evidence.
 
 1. Lock the Pine source file, commit, symbol, timeframe, and input defaults.
 2. Capture or read the TradingView export/trade evidence.
-3. Run the settings search with `tv_auto_tune.py`, `tune_strategy_params.py`, or
-   the active Optuna profile.
+3. Run the settings search with `tv_auto_tune.py`, `tune_strategy_params.py`,
+   or the active profile adapter (Nexus / legacy v7 lanes only — V9 Core does
+   not use a profile-adapter HPO loop).
 4. Rank settings by PF, expectancy, drawdown, trade count, long/short balance,
    and walk-forward stability.
 5. Emit a settings/build recommendation.

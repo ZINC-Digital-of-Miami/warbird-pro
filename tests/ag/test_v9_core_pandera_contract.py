@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from pandera.config import ValidationDepth, config_context
 
@@ -46,3 +48,21 @@ def test_manifest_contract_forces_schema_and_data_validation_depth() -> None:
     with config_context(validation_depth=ValidationDepth.SCHEMA_ONLY):
         with pytest.raises(Exception):
             core.validate_manifest_contract(manifest)
+
+
+def test_manifest_contract_rejects_optuna_lineage() -> None:
+    manifest = _valid_manifest()
+    manifest["profiling_report_path"] = "/repo/scripts/optuna/workspaces/warbird_pro_core/profile.html"
+
+    with pytest.raises(RuntimeError, match="forbidden lineage tokens"):
+        core.validate_manifest_contract(manifest)
+
+
+def test_committed_core_manifest_profile_path_is_duckdb_local() -> None:
+    manifest_path = core.EXPORTS_DIR / "es_15m_core.manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    profile_path = manifest["profiling_report_path"]
+
+    assert "scripts/optuna" not in profile_path
+    assert "scripts/duckdb_local" in profile_path
+    assert core.Path(profile_path).exists()

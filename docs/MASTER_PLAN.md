@@ -1,6 +1,6 @@
 # Warbird Indicator-Only DuckDB Local Modeling Plan v6
 
-**Date:** 2026-05-05 (renamed 2026-05-12 — Optuna workspace path retired)
+**Date:** 2026-05-05 (V9 Core data layer locked to DuckDB local stack 2026-05-12)
 **Status:** Active architecture plan
 
 ## Summary
@@ -9,10 +9,9 @@ Warbird training is a pure PineScript indicator modeling program.
 
 The active goal is to perfect the TradingView indicator itself: settings, state
 machine, entries, exits, filters, hidden exports, and visual/operator build.
-The local DuckDB / Pandera / AutoGluon stack at `scripts/duckdb_local/`
-(renamed from `scripts/optuna/` on 2026-05-12) is used offline to model and
-rank PineScript indicator behavior. It does not create a separate data-stack
-decision engine. Optuna is not a runtime dependency of the V9 Core path.
+The local DuckDB / Pandera / AutoGluon stack at `scripts/duckdb_local/` is used
+offline to model and rank PineScript indicator behavior for V9 Core. It does
+not create a separate data-stack decision engine.
 
 Single-surface update (2026-05-02): the only active main chart indicator is
 **Warbird Pro V9** at `indicators/warbird-pro-v9.pine`. Nexus remains as the only retained
@@ -31,7 +30,7 @@ other negative fib extensions as stop candidates, keeps `-.236` only as
 optional context/export data, and freezes fib anchors, fib visuals, and EMA/MA
 setup until a champion is approved for Pine promotion. The production trainer
 is `scripts/ag/train_v9_locked.py` (AutoGluon full-zoo, calibrated log_loss,
-chronological IS/VAL/OOS with embargo). No Optuna search wraps the V9 path.
+chronological IS/VAL/OOS with embargo).
 
 Data-layer + sequencing update (locked 2026-05-11):
 
@@ -96,12 +95,12 @@ Data-layer + sequencing update (locked 2026-05-11):
 **Workspace layout:**
 
 ```
-scripts/duckdb_local/                          # renamed from scripts/optuna/ on 2026-05-12
-├── cards/core_training/                       # Optuna validation cards (smoke only)
+scripts/duckdb_local/                          # V9 DuckDB/Pandera/Core workspace
+├── cards/core_training/                       # local validation cards (smoke only)
 ├── cards/side_models/                         # MAE side-model scaffolds (post-Core)
 ├── workspaces/<indicator_key>/                # per-indicator workspace
 │   ├── exports/                               # canonical export CSVs + manifests
-│   ├── experiments/<symbol>_<tf>/study.db     # local study DB
+│   ├── experiments/<symbol>_<tf>/             # local training artifacts
 │   └── champion.json                          # promoted settings snapshot
 ├── cpcv.py, cpcv_helpers.py                   # embargoed chronological / CPCV splits
 ├── paths.py                                   # canonical path helpers
@@ -111,8 +110,8 @@ scripts/duckdb_local/                          # renamed from scripts/optuna/ on
 ## Research Reference Surface
 
 - `docs/research/2026-05-02-optuna-unified-platform.md` is a long-form Optuna
-  ecosystem research report retained for historical guidance only. The V9
-  Core path does not use Optuna; this document is reference-only.
+  ecosystem research report retained for Nexus/legacy work only. The V9 Core
+  path is DuckDB/Pandera/AutoGluon and does not use that surface.
 - This file is reference-only and does not supersede active contract rules:
   Pine/TradingView-only modeling rows, explicit trigger-family declaration,
   and no out-of-scope feature stacking without an architecture reopen.
@@ -124,8 +123,8 @@ scripts/duckdb_local/                          # renamed from scripts/optuna/ on
   [programmatic batch downloads](https://databento.com/docs/examples/basics-historical/programmatic-batch-download),
   [OHLCV resampling](https://databento.com/docs/examples/basics-historical/ohlcv-resampling?historical=python&live=python&reference=python),
   and [continuous contracts](https://databento.com/docs/examples/symbology/continuous?historical=python&live=python&reference=python)
-  for the Databento ingest side. The downstream modeling stack is AutoGluon
-  Tabular + DuckDB; no Optuna search is wired into the V9 Core path.
+  for the Databento ingest side. The downstream V9 Core modeling stack is
+  AutoGluon Tabular + DuckDB.
 
 ## Non-Goals
 
@@ -405,11 +404,9 @@ operator-gated only.
 
 Recently landed (commit `5e5e6f3`):
 
-- Directory rename `scripts/optuna/ → scripts/duckdb_local/` and
-  `tests/optuna/ → tests/duckdb_local/`. Optuna is no longer a runtime
-  dependency of the V9 Core path. Optuna methodology + the Python library
-  remain in use only for the Nexus footprint research lane and legacy v7
-  profile adapters (kept under the renamed directory).
+- V9 Core file pipeline is under `scripts/duckdb_local/` and
+  `tests/duckdb_local/`. Nexus footprint research and legacy v7 profile
+  adapters remain separate retained Optuna-owned surfaces.
 - `scripts/ag/train_v9_locked.py` is the production V9 trainer. Default CSV
   fixed (5m → 15m, pointing at the locked 1y Core export). `--model-suite`
   flag adds the optional TP/SL touch + MFE/MAE side models. Docstring no
@@ -449,7 +446,7 @@ Recently landed (commit `5e5e6f3`):
 
 Owner/next trigger: Kirk's go for step 1.
 
-The previous "Hybrid+ 4-card" Optuna chain
+The previous "Hybrid+ 4-card" tuning chain
 (`warbird_pro_v9_exit_cpcv`, `warbird_pro_v9_entry_filter_cpcv`,
 `warbird_pro_v9_ag_meta_cpcv`, `warbird_pro_v9_joint_challenger`) is
 formally deprecated and superseded by the single `train_v9_locked.py`
@@ -555,7 +552,7 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 | File | Role | Status |
 |------|------|--------|
 | `scripts/ag/train_v9_locked.py` | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
-| `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records validation report to local study DB; does NOT invoke AG) | Live |
+| `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records local validation evidence; does NOT invoke AG) | Live |
 
 **AG config (locked):**
 
@@ -577,10 +574,10 @@ NOT grafted into Core.
 
 ### Production Launch Sequence (2026-05-12)
 
-The V9 Core path is invoked directly — there is no Optuna wrapper, and the
-legacy `scripts/ag/train_hard_gate.py` (Postgres `ag_training_runs` table,
-`baseline.DEFAULT_DSN`) is on the *legacy* path, not the V9 path. The
-training-hard-gate skill describes that legacy flow and does not apply here.
+The V9 Core path is invoked directly. `scripts/ag/train_hard_gate.py`
+(Postgres `ag_training_runs` table, `baseline.DEFAULT_DSN`) is the legacy
+gate and is NOT on the V9 path; the training-hard-gate skill describes that
+legacy flow and does not apply here.
 
 ```bash
 # 1. Train the entry classifier (default 15m export, 2h time budget)

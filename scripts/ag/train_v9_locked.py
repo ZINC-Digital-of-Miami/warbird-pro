@@ -28,10 +28,10 @@ locked DuckDB-backed Core export at
 scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv.
 The smoke-validation card at
 scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py
-only records validation reports to a local study DB — it does not invoke
+only records local validation evidence — it does not invoke
 AutoGluon. scripts/ag/train_hard_gate.py is the legacy Postgres-backed gate
 (ag_training_runs table, baseline.DEFAULT_DSN) and is not on the V9 path.
-The earlier Hybrid+ 4-card Optuna chain (warbird_pro_v9_exit_cpcv,
+The earlier Hybrid+ 4-card tuning chain (warbird_pro_v9_exit_cpcv,
 warbird_pro_v9_entry_filter_cpcv, warbird_pro_v9_ag_meta_cpcv,
 warbird_pro_v9_joint_challenger) was deprecated 2026-05-09 and superseded by
 this single trainer.

@@ -16,7 +16,7 @@ train from external data stacks.
 Tuning and training are ongoing. Current trigger families, settings, thresholds,
 search spaces, labels, and recommended build choices are mutable evidence
 snapshots. They may be revised after new Pine/TradingView exports, Strategy
-Tester evidence, and Optuna trials.
+Tester evidence, and DuckDB/Core training evidence.
 
 Any accepted model-contract change must update this spec, the Master Plan, the
 active contract docs, and the relevant runbooks before the result is considered
@@ -209,8 +209,8 @@ available in the Pine/TradingView output.
 
 ## Explainability
 
-Feature-importance analysis from Optuna runs is used to explain settings and
-build choices, not to publish a live server model.
+Feature-importance analysis from V9 Core AutoGluon/SHAP outputs is used to
+explain settings and build choices, not to publish a live server model.
 
 Required explanation outputs:
 

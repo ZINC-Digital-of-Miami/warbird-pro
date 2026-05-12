@@ -177,7 +177,7 @@
       "threshold": 0.75,
       "session_filter": "feature_only_not_prefilter"
     },
-    "notes": "Single Core training card supersedes the deprecated Hybrid+ 4-card chain (warbird_pro_v9_exit_cpcv, warbird_pro_v9_entry_filter_cpcv, warbird_pro_v9_ag_meta_cpcv, warbird_pro_v9_joint_challenger removed 2026-05-09). Binary classifier on V9 ml_* feature surface + ETL CVD divergence + microstructure + IB + HVN/LVN + UTC-anchored events. Triple-barrier label: +10pts before -5pts within 24 bars (2h on 5m / 6h on 15m, 2:1 R:R), drop neither-hit rows. Best_quality preset with explicit no-bag/no-stack overrides keeps it time-series safe. AG modeling results are tracked in Optuna alongside tuning studies. Hard gate enforced via scripts/ag/train_hard_gate.py."
+    "notes": "Single Core training card supersedes the deprecated Hybrid+ 4-card chain (warbird_pro_v9_exit_cpcv, warbird_pro_v9_entry_filter_cpcv, warbird_pro_v9_ag_meta_cpcv, warbird_pro_v9_joint_challenger removed 2026-05-09). Binary classifier on V9 ml_* feature surface + ETL CVD divergence + microstructure + IB + HVN/LVN + UTC-anchored events. Triple-barrier label: +10pts before -5pts within 24 bars (2h on 5m / 6h on 15m, 2:1 R:R), drop neither-hit rows. Best_quality preset with explicit no-bag/no-stack overrides keeps it time-series safe. V9 Core results are produced by the DuckDB/Pandera/AutoGluon path and trained directly through scripts/ag/train_v9_locked.py."
   },
   {
     "key": "warbird_nexus_ml_rsi",

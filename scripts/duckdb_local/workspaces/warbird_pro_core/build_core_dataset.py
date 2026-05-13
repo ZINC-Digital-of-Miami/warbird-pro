@@ -152,6 +152,43 @@ DEFAULT_INDICATOR_KNOBS: dict[str, Any] = {
 }
 KNOB_COLUMNS = tuple(DEFAULT_INDICATOR_KNOBS.keys())
 
+# Columns the ETL still computes for historical/diagnostic continuity but
+# that the 2026-05-12 lean-cut removes from the export CSV. Dropped before
+# the DuckDB COPY in write_outputs(); the manifest's feature_columns_locked
+# is sourced from train_v9_locked.ML_FEATURES, so this list only governs
+# what reaches disk. The dropped knob_* keys are kept in
+# DEFAULT_INDICATOR_KNOBS so the ETL's internal _knob() lookups still
+# resolve, but they never reach the CSV.
+DROPPED_FEATURES_2026_05_12: tuple[str, ...] = (
+    # daily/weekly S/R levels
+    "ml_lvl_pdh_dist_atr", "ml_lvl_pdl_dist_atr",
+    "ml_lvl_pwh_dist_atr", "ml_lvl_pwl_dist_atr",
+    # redundant fib touch binaries (ordinal ml_fib_touch_level_code kept)
+    "ml_fib_touch_500_long", "ml_fib_touch_618_long",
+    "ml_fib_touch_786_long",
+    "ml_fib_touch_500_short", "ml_fib_touch_618_short",
+    "ml_fib_touch_786_short",
+    # footprint surface
+    "ml_fp_delta_pct", "ml_fp_poc_dist_atr", "ml_fp_va_position",
+    "ml_delta_imbalance_pct", "ml_delta_acceleration",
+    "ml_aggressor_pulse", "ml_absorption_candidate",
+    "ml_flush_candidate", "ml_poc_shift",
+    # CVD divergence
+    "ml_cvd_div_bull", "ml_cvd_div_bear",
+    # ZN / VIX / HG cross-asset (NQ + 6E only after the cut)
+    "ml_xa_zn_code", "ml_xa_zn_rate_pressure",
+    "ml_xa_vix_pressure", "ml_xa_hg_growth_proxy",
+    # knob settings for removed assets/surfaces (still resolved by _knob()
+    # internally but not exported)
+    "knob_zn_symbol", "knob_zn_gate_direction",
+    "knob_vix_symbol", "knob_vix_move_bars",
+    "knob_vix_atr_length", "knob_vix_pressure_band",
+    "knob_use_footprint", "knob_fp_ticks_per_row",
+    "knob_fp_va_pct", "knob_fp_imbalance_pct",
+    "knob_fp_absorption_delta_pct", "knob_fp_flush_delta_pct",
+    "knob_fp_event_vol_spike", "knob_fp_compressed_range_atr",
+)
+
 LOCKED_DUCKDB_VERSION = "1.5.2"
 LOCKED_PANDERA_VERSION = "0.31.1"
 LOCKED_DATA_PROFILING_VERSION = "4.19.1"
@@ -1386,29 +1423,16 @@ def finalize_entries(df: pd.DataFrame, knobs: dict[str, Any] | None = None) -> p
     out = df.copy()
     ma_long_ok = (out["ml_ma_bias"] > 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
     ma_short_ok = (out["ml_ma_bias"] < 0) if bool(_knob(knobs, "knob_use_ma_gate")) else True
-    # ZN reversal toggle removed from Pine 2026-05-12; ETL mirrors raw direction.
-    # The `knob_zn_gate_direction` column is still emitted as a constant for
-    # schema-compat, but the reversal branch is gone — AG learns the
-    # regime-dependent ZN/ES relationship directly from `ml_xa_zn_code`.
-    zn_long_vote = out["ml_xa_zn_code"] > 0
-    zn_short_vote = out["ml_xa_zn_code"] < 0
-    vix_band = float(_knob(knobs, "knob_vix_pressure_band"))
-    # xa_*_agreement are still emitted as features (0..4 ints reflecting how many
-    # of the four cross-asset votes agree with direction). They are inputs to
-    # AG, not gates.
-    # DXY removed 2026-05-11; 6E replaces. 6E up = USD weakening = risk-on
-    # (so long-vote uses 6E > 0, mirror of the old dxy < 0).
+    # Agreement features are emitted as ML inputs (not gates), and under the
+    # 2026-05-12 lean contract they are computed from NQ + 6E only.
+    # DXY was removed 2026-05-11; 6E remains as the FX proxy.
     xa_long_agreement = (
         (out["ml_xa_nq_code"] > 0).astype(int)
-        + zn_long_vote.astype(int)
         + (out["ml_xa_6e_code"] > 0).astype(int)
-        + (out["ml_xa_vix_pressure"] < -vix_band).astype(int)
     )
     xa_short_agreement = (
         (out["ml_xa_nq_code"] < 0).astype(int)
-        + zn_short_vote.astype(int)
         + (out["ml_xa_6e_code"] < 0).astype(int)
-        + (out["ml_xa_vix_pressure"] > vix_band).astype(int)
     )
     # Gate-as-feature pivot: drop xa_*_ok and liq_*_ok from the qualification
     # chain. If the knobs are explicitly re-enabled (defaults are now False),
@@ -1459,8 +1483,8 @@ def validate_core_frame(df: pd.DataFrame, gate_mode: str) -> None:
             raise RuntimeError(f"strict gate failed: only {entries} MA-filtered fib trigger candidates (floor 250)")
         if "_nq_close" not in df.columns or df["_nq_close"].isna().all():
             raise RuntimeError("strict gate failed: NQ close unavailable for ml_xa_corr_nq")
-        if float(df["ml_fp_delta_pct"].abs().sum()) == 0.0:
-            raise RuntimeError("strict gate failed: all-zero footprint delta")
+        # 2026-05-12 lean-cut: footprint surface removed; the all-zero-delta
+        # strict check is retired with it.
 
 
 def validate_export_with_pandera(df: pd.DataFrame) -> None:
@@ -1481,7 +1505,6 @@ def validate_export_with_pandera(df: pd.DataFrame) -> None:
         "knob_use_ma_gate",
         "knob_use_session_vwap",
         "knob_use_xa_gate",
-        "knob_use_footprint",
         "profile_is_ma_base",
     }
     string_cols = {
@@ -1612,6 +1635,14 @@ def write_outputs(
     csv_path = out_dir / f"{symbol_root.lower()}_{timeframe_text}m_core.csv"
     manifest_path = csv_path.with_suffix(".manifest.json")
     export = df.copy()
+    # 2026-05-12 lean-cut: drop columns the ETL still computes (for diagnostic
+    # continuity) but which the trainer's locked ML_FEATURES list excludes.
+    # Driving from a single DROPPED_FEATURES_2026_05_12 tuple keeps the CSV
+    # column set, manifest feature_columns_locked, and trainer ML_FEATURES
+    # in lockstep.
+    dropped_present = [c for c in DROPPED_FEATURES_2026_05_12 if c in export.columns]
+    if dropped_present:
+        export = export.drop(columns=dropped_present)
     export["ts"] = pd.to_datetime(export["ts"], utc=True).dt.strftime("%Y-%m-%dT%H:%M:%S%z")
     con = duckdb.connect()
     con.register("export_df", export)

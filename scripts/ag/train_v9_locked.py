@@ -72,7 +72,9 @@ OUTPUT_ROOT = REPO_ROOT / "models/warbird_pro_v9"
 # Missing columns are fatal. The Core trainer must not silently fall back to an
 # older replay/export schema because that masks stale feature contracts.
 ML_FEATURES = [
-    # indicator profile / Pine input knobs
+    # indicator profile / Pine input knobs (NQ + 6E only after 2026-05-12 cut).
+    # Removed in the 2026-05-12 lean-cut: knob_zn_symbol, knob_vix_*,
+    # knob_use_footprint, knob_fp_* (14 knobs).
     "knob_auto_tune_zz", "knob_fib_deviation_manual",
     "knob_fib_depth_manual", "knob_fib_threshold_floor_pct",
     "knob_min_fib_range_atr", "knob_fib_hysteresis_pct",
@@ -84,27 +86,20 @@ ML_FEATURES = [
     "knob_liq_lookback_bars", "knob_eqh_tol_pct",
     "knob_eqh_min_taps", "knob_eqh_lookback", "knob_vol_z_length",
     "knob_use_session_vwap",
-    "knob_use_xa_gate", "knob_nq_symbol", "knob_zn_symbol",
-    "knob_6e_symbol", "knob_vix_symbol", "knob_corr_length",
-    "knob_vix_move_bars", "knob_vix_atr_length",
-    "knob_vix_pressure_band", "knob_xa_min_agreement",
-    "knob_use_footprint", "knob_fp_ticks_per_row", "knob_fp_va_pct",
-    "knob_fp_imbalance_pct", "knob_fp_absorption_delta_pct",
-    "knob_fp_flush_delta_pct", "knob_fp_event_vol_spike",
-    "knob_fp_compressed_range_atr",
+    "knob_use_xa_gate", "knob_nq_symbol",
+    "knob_6e_symbol", "knob_corr_length",
+    "knob_xa_min_agreement",
     # single-source trade trigger and entry context. `ml_trade_tp` (single
     # live TP) was retired 2026-05-12 — Pine now emits the full fib ladder
     # via `ml_trade_tp1` / `ml_trade_tp2` / `ml_trade_tp3`, which are
     # required label-construction inputs (see REQUIRED_INPUT_COLUMNS) but
-    # NOT model features (AG already sees fib geometry via ml_fib_* +
-    # ml_atr14; adding the prices would be redundant).
+    # NOT model features.
     "ml_entry_long_trigger", "ml_entry_short_trigger",
     "ml_trade_entry", "ml_trade_stop",
+    # Fib: ordinal touch code + geometry (the redundant 6 binary fib touch
+    # flags were dropped 2026-05-12 — ml_fib_touch_level_code carries the
+    # same information as a single ordinal).
     "ml_fib_touch_level_code",
-    "ml_fib_touch_500_long", "ml_fib_touch_618_long",
-    "ml_fib_touch_786_long",
-    "ml_fib_touch_500_short", "ml_fib_touch_618_short",
-    "ml_fib_touch_786_short",
     "ml_fib_entry_dist_atr", "ml_fib_pierce_atr",
     "ml_fib_close_reclaim_atr", "ml_fib_reaction_body_ratio",
     "ml_fib_reaction_upper_wick_ratio",
@@ -130,31 +125,21 @@ ML_FEATURES = [
     # liquidity expansions (equal H/L pools, VWAP, volume z-score)
     "ml_liq_eqh_dist_atr", "ml_liq_eql_dist_atr",
     "ml_liq_vwap_dist_atr", "ml_liq_vol_zscore",
-    # ETL CVD divergence features (Python-only, no Pine budget impact)
-    "ml_cvd_div_bull", "ml_cvd_div_bear",
-    # cross-asset trend codes (NQ/ZN/6E — DXY removed 2026-05-11)
-    "ml_xa_nq_code", "ml_xa_zn_code", "ml_xa_6e_code",
-    # cross-asset advanced (VIX movement pressure, ES↔NQ correlation)
-    "ml_xa_vix_pressure", "ml_xa_corr_nq",
+    # cross-asset trend codes (NQ + 6E only after 2026-05-12 lean-cut —
+    # ZN and VIX dropped, DXY already removed 2026-05-11).
+    "ml_xa_nq_code", "ml_xa_6e_code",
+    "ml_xa_corr_nq",
+    # cross-asset agreement — recomputed over NQ + 6E only (0..2 counts).
+    # Cheap composite of trend codes, useful regime feature.
     "ml_xa_long_agreement", "ml_xa_short_agreement",
-    # cross-asset continuous (locked 2026-05-11 gate-as-feature pivot — XA agreement
-    # is no longer a hard gate; these normalized continuous signals let AG learn
-    # regime-relative interactions instead of absolute-level cliffs. 6E momentum
-    # z-score replaces the original DXY momentum z-score).
+    # cross-asset continuous (NQ + 6E only)
     "ml_xa_nq_rel_strength_atr",
-    "ml_xa_zn_rate_pressure",
-    "ml_xa_hg_growth_proxy",
     "ml_xa_6e_momentum_zscore",
     # HTF confluence
     "ml_htf_conf_total",
-    # daily/weekly S/R distances
-    "ml_lvl_pdh_dist_atr", "ml_lvl_pdl_dist_atr",
-    "ml_lvl_pwh_dist_atr", "ml_lvl_pwl_dist_atr",
-    # footprint / order flow (real intrabar bid/ask delta, POC, VA position)
-    "ml_fp_delta_pct", "ml_fp_poc_dist_atr", "ml_fp_va_position",
-    "ml_delta_imbalance_pct", "ml_delta_acceleration",
-    "ml_aggressor_pulse", "ml_absorption_candidate",
-    "ml_flush_candidate", "ml_volume_spike_ratio", "ml_poc_shift",
+    # volume (bar-level spike ratio, the one footprint-adjacent signal kept
+    # after the 2026-05-12 footprint-surface cut)
+    "ml_volume_spike_ratio",
 ]
 
 # Trade-surface discoverables (derived at label-build time).

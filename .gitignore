@@ -50,10 +50,18 @@ venv/
 # logs
 /logs/
 
-# claude code (commit team-wide settings + hooks; ignore local overrides)
+# claude code (commit team-wide settings + hooks + V9 agents/skills;
+# ignore community-installed skills and local overrides)
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
+!.claude/agents/
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/cdp-down-recovery/
+!.claude/skills/tv-preflight/
+!.claude/skills/senior-quant-mindset/
+!.claude/skills/v9-promote-champion/
 .claude/hooks/*.local.*
 .claude/settings.local.json
 .tmp/

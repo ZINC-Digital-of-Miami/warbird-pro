@@ -25,6 +25,24 @@ DEFAULT_CORE_MANIFEST = DEFAULT_CORE_EXPORT.with_suffix(".manifest.json")
 DEFAULT_DATASET_CSV = WORKSPACE / "anofox_es_15m_context.csv"
 DEFAULT_DATASET_MANIFEST = WORKSPACE / "anofox_es_15m_context.manifest.json"
 DEFAULT_STUDY_DB = WORKSPACE / "anofox_research.duckdb"
+DEFAULT_EXTERNAL_FUTURES_1H = (
+    Path("/Volumes")
+    / "Satechi Hub"
+    / "Historical Data"
+    / "Databento"
+    / "raw"
+    / "databento_futures_ohlcv_1h.parquet"
+)
+DEFAULT_EXTERNAL_FRED_MACRO = (
+    Path("/Volumes")
+    / "Satechi Hub"
+    / "Historical Data"
+    / "FREDs"
+    / "staging"
+    / "fred_macro_clean.parquet"
+)
+DEFAULT_EXTERNAL_CONTEXT_CSV = WORKSPACE / "anofox_external_1h_context.csv"
+DEFAULT_EXTERNAL_CONTEXT_MANIFEST = WORKSPACE / "anofox_external_1h_context.manifest.json"
 
 ALLOWED_MODELS = {"AutoTheta", "DynamicOptimizedTheta", "AutoARIMA", "Naive"}
 

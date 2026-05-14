@@ -140,26 +140,30 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - `local_warehouse/`, local `warbird`, and `scripts/ag/train_ag_baseline.py`:
   legacy/reference unless explicitly reopened.
 
-## Live Pine Settings (Authoritative — 2026-05-12)
+## Live Pine Settings (Authoritative — 2026-05-14)
 
 These are the LIVE values from the TradingView indicator inputs panel.
 The Pine code `input.float(default, ...)` values are NOT authoritative.
 Core dataset-builder constants must match these exactly before every dataset build.
 
-| Setting | Live Value |
-|---------|-----------|
-| ZigZag Deviation (fibDeviationManual) | **3.0** |
-| ZigZag Depth (fibDepthManual) | **10** |
-| ZigZag Threshold Floor % (fibThresholdFloorPct) | **0.15** |
-| Confluence Tolerance % (fibConfluenceTolPct) | **0.05** |
-| Min Fib Range ATR (minFibRangeAtr) | **0.5** |
-| Midpoint Hysteresis % (fibHysteresisPct) | **2.0** |
-| Use EMA/MA Gate (useMaGate) | **true** |
-| MA Length SMA (lengthMA) | **50** |
-| EMA Length (lengthEMA) | **21** |
+| Setting                                         | Live Value |
+| ----------------------------------------------- | ---------- |
+| ZigZag Deviation (fibDeviationManual)           | **3.0**    |
+| ZigZag Depth (fibDepthManual)                   | **10**     |
+| ZigZag Threshold Floor % (fibThresholdFloorPct) | **0.25**   |
+| HTF Confluence Tolerance % (htfConfTolPct)      | **1.5**    |
+| HTF 1H Lookback (htf1hLookback)                 | **8**      |
+| Min Fib Range ATR (minFibRangeAtr)              | **0.5**    |
+| Midpoint Hysteresis % (fibHysteresisPct)        | **2.0**    |
+| Primary EMA Length (len)                        | **21**     |
+| Primary EMA Source (src)                        | **close**  |
+| Primary EMA Offset (offset)                     | **1**      |
+| Smoothing Type (maTypeInput)                    | **EMA**    |
+| Smoothing Length (maLengthInput)                | **9**      |
 
-Entry-filter MA training may search only +/-10 around those canonical values:
-`lengthMA` 40-60 and `lengthEMA` 11-31.
+The old `useMaGate`, `lengthMA=50`, and `lengthEMA=21` EMA/SMA HPO surface is
+retired for current V9/Core work. The MA gate is price above/below BOTH the
+primary EMA21 and smoothing EMA9.
 
 ## Kirk's Exit Trade Preferences (operator-stated targets — not in training objective)
 
@@ -189,8 +193,11 @@ Entry-filter MA training may search only +/-10 around those canonical values:
 - The active output is a Pine settings/build recommendation, not a live scoring packet.
 - Every modeling run must declare one trigger family:
   `LIVE_ANCHOR_FOOTPRINT` or `NEXUS_FOOTPRINT_DELTA`.
-- No external feature stacking: no FRED, macro, news, options, cross-asset, or
-  cloud joins in the active modeling dataset.
+- No external live feature stacking: no FRED, macro, news, options, cloud
+  joins, or unapproved cross-asset joins in the active modeling dataset. The
+  approved V9/Core local Databento XA context is limited to NQ + 6E agreement /
+  USD-pressure plus ZN rate-pressure, HG/copper, and NQ/6E 24h model-context
+  features; these are not Pine hard gates or cloud/server features.
 - Databento is an approved market-data supplier for training rows when the
   manifest honestly declares a Databento capture/source kind. It is not the
   Pine indicator, not a TradingView indicator CSV, and not a substitute for
@@ -223,9 +230,11 @@ Entry-filter MA training may search only +/-10 around those canonical values:
 - Training/modeling rows must come from real manifest-backed active-lane
   sources: Warbird Pro V9 Pine/TradingView exports, approved Databento ES
   market-data training rows, or Nexus Pine/TradingView footprint evidence.
-- Do not use daily ingestion, FRED, macro, news, options, or cross-asset joins as
-  active training features.
-- If an indicator feature is not present in Pine/TradingView output, it is not in
+- Do not use daily ingestion, FRED, macro, news, options, or unapproved
+  cross-asset joins as active training features. Approved V9/Core local
+  Databento XA context is limited to NQ, 6E, ZN, and HG model-context features.
+- If an indicator feature is not present in Pine/TradingView output or the
+  approved V9/Core local Databento deterministic feature context, it is not in
   the active modeling dataset.
 
 ### Pine
@@ -368,6 +377,18 @@ If any `.pine` file is touched, run:
 - Update `CLAUDE.md` when operational truth changes.
 - Update `AGENTS.md` only when repo rules or hard workflow constraints change.
 - Update memory when a phase or contract locks.
+
+## Quality Playbook Artifacts
+
+- Quality constitution: `quality/QUALITY.md`
+- Functional test suite: `quality/test_functional.py`
+- Code review protocol: `quality/RUN_CODE_REVIEW.md`
+- Integration protocol: `quality/RUN_INTEGRATION_TESTS.md`
+- Council of Three spec audit protocol: `quality/RUN_SPEC_AUDIT.md`
+- Review/spec/integration result folders:
+  `quality/code_reviews/`, `quality/spec_audits/`, `quality/results/`
+- When touching V9 Core trainer/ETL/provenance surfaces, run the functional
+  suite plus impacted subsystem tests before claiming completion.
 
 ## Memory & Session Handoff
 

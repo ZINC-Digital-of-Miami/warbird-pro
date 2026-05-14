@@ -56,13 +56,13 @@ Data-layer + sequencing update (locked 2026-05-11):
 - The optimization target is indicator quality: settings, thresholds, module
   toggles, stop/target policy, signal frequency, profit factor, drawdown,
   stability, direction balance, and operator usability.
-- External feature stacking is out of scope. No FRED, macro, news, options,
-  external cross-asset joins, Supabase, or mislabeled Databento/TradingView
-  artifacts are admitted into the active modeling dataset. Pine-native
-  NQ/ZN/DXY/VIX values emitted by `warbird-pro-v9.pine` are part of the active
-  indicator behavior. NQ is same-direction, DXY is inverse-risk, VIX is
-  ATR-normalized movement pressure, and ZN follows the explicit Pine setting
-  `ZN Gate Direction`.
+- External feature stacking is out of scope for live scoring/gating: no FRED,
+  macro, news, options, Supabase, or mislabeled Databento/TradingView artifacts
+  are admitted into the active modeling dataset. V9/Core may compute deterministic
+  cross-asset context from approved local Databento futures rows when the manifest
+  declares the source honestly: NQ + 6E remain the agreement-count inputs; 6E is
+  the USD-pressure proxy; ZN rate-pressure, HG/copper, and NQ 24h tech-beta
+  features are model context only, not Pine hard gates or cloud/server features.
 - Cloud Supabase is runtime/support only. It is not a model-training mirror and
   does not receive raw trials, raw labels, or full research datasets.
 
@@ -70,27 +70,51 @@ Data-layer + sequencing update (locked 2026-05-11):
 
 **Canonical paths (2026-05-12):**
 
-| Role | Path |
-|------|------|
-| Main chart Pine indicator | `indicators/warbird-pro-v9.pine` |
-| Retained Nexus research/support Pine | `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` |
-| Locked 1y 15m Core export (CSV) | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv` |
-| Manifest for that export | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.manifest.json` |
-| Pandera profiling report | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.profile.html` |
-| Core ETL builder | `scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py` |
-| **Production V9 trainer** | `scripts/ag/train_v9_locked.py` |
-| SHAP gate runner | `scripts/ag/shap_v9.py` |
-| Monte Carlo gate runner | `scripts/ag/monte_carlo_v9.py` |
-| Smoke-validation card (no AG) | `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` |
-| Trade-dataset semantics (single source of truth) | `scripts/ag/train_v9_locked.py::build_trade_dataset` |
-| Trained model output root | `models/warbird_pro_v9/locked_<tag>/` |
-| SHAP artifacts root | `artifacts/shap_v9/shap_<tag>/` |
-| Monte Carlo artifacts root | `artifacts/mc_v9/<tag>/` |
-| TV settings/tuning helpers (non-V9) | `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py` |
-| TradingView readiness doctor | `scripts/ag/tv_connection_doctor.py` |
-| Indicator-only AG contract | `docs/contracts/pine_indicator_ag_contract.md` |
-| Startup review runbook | `docs/runbooks/startup_repo_review.md` |
-| Legacy (do not use without architecture reopen) | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |
+| Role                                             | Path                                                                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Main chart Pine indicator                        | `indicators/warbird-pro-v9.pine`                                                                       |
+| Retained Nexus research/support Pine             | `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`                                  |
+| Locked 1y 15m Core export (CSV)                  | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.csv`                             |
+| Manifest for that export                         | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.manifest.json`                   |
+| Pandera profiling report                         | `scripts/duckdb_local/workspaces/warbird_pro_core/exports/es_15m_core.profile.html`                    |
+| Core ETL builder                                 | `scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py`                               |
+| **Production V9 trainer**                        | `scripts/ag/train_v9_locked.py`                                                                        |
+| SHAP gate runner                                 | `scripts/ag/shap_v9.py`                                                                                |
+| Monte Carlo gate runner                          | `scripts/ag/monte_carlo_v9.py`                                                                         |
+| Smoke-validation card (no AG)                    | `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py`                    |
+| Trade-dataset semantics (single source of truth) | `scripts/ag/train_v9_locked.py::build_trade_dataset`                                                   |
+| Trained model output root                        | `models/warbird_pro_v9/locked_<tag>/`                                                                  |
+| SHAP artifacts root                              | `artifacts/shap_v9/shap_<tag>/`                                                                        |
+| Monte Carlo artifacts root                       | `artifacts/mc_v9/<tag>/`                                                                               |
+| TV settings/tuning helpers (non-V9)              | `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`                                     |
+| TradingView readiness doctor                     | `scripts/ag/tv_connection_doctor.py`                                                                   |
+| Indicator-only AG contract                       | `docs/contracts/pine_indicator_ag_contract.md`                                                         |
+| Startup review runbook                           | `docs/runbooks/startup_repo_review.md`                                                                 |
+| Legacy (do not use without architecture reopen)  | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |
+
+## Quality Playbook Surface (2026-05-14)
+
+The V9 Core lane now carries a dedicated quality playbook for repeatable
+review, functional verification, and spec-audit execution.
+
+Canonical quality artifacts:
+
+- quality constitution: `quality/QUALITY.md`
+- functional test suite: `quality/test_functional.py`
+- code review protocol: `quality/RUN_CODE_REVIEW.md`
+- integration protocol: `quality/RUN_INTEGRATION_TESTS.md`
+- Council of Three spec audit protocol: `quality/RUN_SPEC_AUDIT.md`
+- results folders: `quality/code_reviews/`, `quality/spec_audits/`,
+  `quality/results/`
+
+Operational requirement for V9 Core changes (trainer/ETL/provenance/MC/SHAP):
+
+- run `quality/test_functional.py` plus impacted subsystem tests before claiming
+  completion
+- keep quality scenarios mapped to executable tests
+- fail closed on provenance/hash/split ambiguity
+- preserve requirement tags (`formal`, `user-confirmed`, `inferred`) in new
+  scenarios/tests and route unresolved inferred items to human review
 
 **Workspace layout:**
 
@@ -132,7 +156,7 @@ The following are explicitly retired from the active plan:
 
 - building a daily-ingestion training warehouse
 - using local legacy warehouse training tables (`ag_training`) as the model source
-- training on FRED, macro, news, options, or external cross-asset features
+- training on FRED, macro, news, options, or unapproved external cross-asset features
 - reconstructing Pine behavior from Python OHLCV as the canonical label path
 - recording Databento market-data rows as `TRADINGVIEW_INDICATOR_CSV` or as a
   Pine indicator source
@@ -261,7 +285,7 @@ The output is a settings/build brief:
 
 **Mental model:** a trained classifier that posts strong log_loss / AUC / WR is
 **not yet trustworthy**. Those metrics rank predictions but say nothing about
-*why* the model is good or whether the apparent edge translates to live P&L.
+_why_ the model is good or whether the apparent edge translates to live P&L.
 Two independent gates run between a clean fit and any live TradingView alert
 that depends on the model's output:
 
@@ -307,15 +331,15 @@ Catches P&L-level pathology that SHAP can't see:
 - **Win/loss streak profile** — serial correlation of outcomes drives
   drawdown depth far more than headline WR.
 
-**Promotion rule:** only after Gate 1 *and* Gate 2 both clear do you
-*enable* (toggle from disabled → active) any TradingView alert that depends
+**Promotion rule:** only after Gate 1 _and_ Gate 2 both clear do you
+_enable_ (toggle from disabled → active) any TradingView alert that depends
 on this model's output — i.e., an alert whose firing condition is
 "V9 entry trigger AND model_proba >= 0.75" (whether wired via webhook,
 TV alert action, or any downstream notification). The phrase "flip an
 alert" in operator shorthand means exactly this toggle.
 
 A model that passes log_loss but fails either gate will push high-confidence
-"entries" that lose real money. The OOS WR being *higher* than IS WR (the
+"entries" that lose real money. The OOS WR being _higher_ than IS WR (the
 2026-05-12 baseline showed IS 41.67% / VAL 43.60% / OOS 46.90%) is exactly
 the pattern where gating is non-optional: it could mean genuine headroom or
 it could mean the OOS window is a friendly regime that won't repeat. The
@@ -435,7 +459,7 @@ Recent local state (through commit `1747194`):
 1. Verify the completed full-suite artifact provenance against the exact
    manifest, repo commit, and run command.
 2. Run the SHAP gate (Phase 4.5, Gate 1) against the same 15m export/run. See the
-   *Validation Gating Before Live Trade Routing* section for what
+   _Validation Gating Before Live Trade Routing_ section for what
    counts as a pass.
 3. Run the Monte Carlo gate (Phase 4.5, Gate 2) against the same OOS split.
 4. Only after both gates clear, enable any TradingView alert that filters
@@ -463,17 +487,20 @@ Core card. The Core card supersedes all four.
 
 ### Live Pine Settings (authoritative — must match dataset builder exactly)
 
-| Parameter | Value | Pine input name |
-|-----------|-------|-----------------|
-| ZigZag Deviation | **3.0** | `fibDeviationManual` |
-| ZigZag Depth | **10** | `fibDepthManual` |
-| ZigZag Threshold Floor % | **0.15** | `fibThresholdFloorPct` |
-| Confluence Tolerance % | **0.05** | `fibConfluenceTolPct` |
-| Min Fib Range (ATR) | **0.5** | `minFibRangeAtr` |
-| Midpoint Hysteresis % | **2.0** | `fibHysteresisPct` |
-| Use EMA/MA Gate | **true** | `useMaGate` |
-| MA Length (SMA, slow) | **50** | `lengthMA` |
-| EMA Length (close, fast) | **21** | `lengthEMA` |
+| Parameter                  | Value     | Pine input name        |
+| -------------------------- | --------- | ---------------------- |
+| ZigZag Deviation           | **3.0**   | `fibDeviationManual`   |
+| ZigZag Depth               | **10**    | `fibDepthManual`       |
+| ZigZag Threshold Floor %   | **0.25**  | `fibThresholdFloorPct` |
+| HTF Confluence Tolerance % | **1.5**   | `htfConfTolPct`        |
+| HTF 1H Lookback (bars)     | **8**     | `htf1hLookback`        |
+| Min Fib Range (ATR)        | **0.5**   | `minFibRangeAtr`       |
+| Midpoint Hysteresis %      | **2.0**   | `fibHysteresisPct`     |
+| Primary EMA Length         | **21**    | `len`                  |
+| Primary EMA Source         | **close** | `src`                  |
+| Primary EMA Offset         | **1**     | `offset`               |
+| Smoothing Type             | **EMA**   | `maTypeInput`          |
+| Smoothing Length           | **9**     | `maLengthInput`        |
 
 **Rule:** Before every dataset build, read the live TradingView indicator
 inputs panel and verify the dataset-builder constants match exactly. Pine code
@@ -481,9 +508,9 @@ inputs panel and verify the dataset-builder constants match exactly. Pine code
 TV settings are. Contamination incident (2026-05-05) used dev=4.0, depth=20,
 floor=0.50 — all wrong; do not repeat.
 
-**MA training rule:** entry-filter HPO may search `lengthMA` from 40-60 and
-`lengthEMA` from 11-31 around the live 50/21 defaults. The Pine gate itself is
-fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
+**MA rule:** the current Pine gate is price above/below BOTH the primary EMA21
+and the smoothing EMA9. The old `useMaGate`, `lengthMA=50`, and
+`lengthEMA=21` EMA/SMA HPO surface is retired for V9/Core.
 
 ### V9 Pine Pattern Set (post-2026-05-09 trim)
 
@@ -498,19 +525,21 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 
 - **Source:** Databento ES — Trades 365d (footprint reconstruction) + OHLCV
   bars 15m (training resolution; ES 5m only after 15m success per locked
-  sequence) + OHLCV 1m (microstructure features only). DXY was removed from
-  the V9 feature set on the 2026-05-11 gate-as-feature pivot and replaced by
-  6E momentum z-score and 6E trend code as continuous cross-asset signals.
+  sequence) + OHLCV 1m (microstructure features only). DXY/VIX remain retired;
+  6E momentum/z-score and trend code are the CME-native USD-pressure proxy.
+  Expanded local Databento XA context now also includes ZN rate-pressure,
+  HG/copper trend/growth, and NQ 24h tech-beta features.
 - **Window:** 2025-05-11 → 2026-05-10 (1y, dense feature coverage; the actual
   built export covers that range). The newer Databento OHLCV-1s 2315d
   download is reserved for a future v10 long-horizon ensemble card, NOT
   Core (would NaN 2/3 of feature surface).
-- **Feature surface (`ML_FEATURES=120`, `MODEL_FEATURES=126`):**
+- **Feature surface (`ML_FEATURES=78`, `MODEL_FEATURES=84`):**
   locked V9 Core input features plus the six trade-discoverable combo fields
   added by `build_trade_dataset` (`sl_atr_mult`, `tp_ratio`,
   `tp_family_code`, `target_distance_points`, `stop_distance_points`,
-  `rr_ratio`). DXY fields are not part of the active V9 Core trainer after
-  the 2026-05-11 gate-as-feature pivot.
+  `rr_ratio`). MA/RSI knobs and MA/RSI `ml_*` columns are removed from the AG
+  feature surface; the MA gate is handled before export. DXY/VIX fields remain
+  retired; ZN/HG/NQ-24h/6E-24h context is admitted as model features only.
 - **Label (triple barrier):** `winner_tp_before_sl` = 1 if **this combo's**
   TP price touched before its SL price within `FORWARD_SCAN_BARS = 24`
   (6h on 15m, 2h on 5m); 0 if SL touched first OR if TP and SL touched on
@@ -553,10 +582,10 @@ fixed SMA(close) slow vs EMA(close) fast; do not reintroduce MA type selection.
 
 ### V9 Core Training Surface
 
-| File | Role | Status |
-|------|------|--------|
-| `scripts/ag/train_v9_locked.py` | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
-| `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records local validation evidence; does NOT invoke AG) | Live |
+| File                                                                                | Role                                                                                               | Status                  |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------- |
+| `scripts/ag/train_v9_locked.py`                                                     | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
+| `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records local validation evidence; does NOT invoke AG)            | Live                    |
 
 **AG config (locked):**
 

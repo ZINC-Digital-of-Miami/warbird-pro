@@ -1,10 +1,12 @@
-# Quality Constitution: Warbird Pro V9 Core
+# Quality Constitution: Warbird Pro V9 Core + Nexus Indicator
 
 ## Purpose
 
 Warbird Pro V9 Core quality means the model pipeline stays contract-faithful from export to training to diagnostics, and fails closed whenever provenance, split boundaries, or schema assumptions drift. This project does not tolerate silent correctness loss; if evidence is ambiguous, execution must stop.
 
 Deming applies here by building quality into context and gates, not post-hoc inspection: manifest validation, split-bound enforcement, and schema constraints must run before trusting output. Juran applies as fitness for use: a "passing" run is only useful if it binds to the exact CSV hash, enforces the 24-bar label horizon, and preserves feature contract compatibility. Crosby applies because upfront constraints are cheaper than post-run rework on corrupted labels, stale features, or split leakage.
+
+Nexus indicator quality means the support/research oscillator remains footprint-faithful from TradingView `request.footprint()` through plots, hidden exports, exhaustion markers, and divergence labels. The Nexus lane must fail closed on unavailable footprint evidence, must not silently substitute OHLCV/candle proxies, and must never route indicator work through V9 Core assumptions unless the user explicitly requests a cross-lane comparison.
 
 ## Coverage Targets
 
@@ -16,6 +18,8 @@ Deming applies here by building quality into context and gates, not post-hoc ins
 | scripts/ag/v9_data_quality_gate.py                                     | 95%    | Duplicate/near-dead/sparse-signal checks are the last line before low-information features poison training.                          |
 | scripts/ag/backfill_v9_run_provenance.py                               | 90%    | Backfill must remain idempotent and parity-safe or it can rewrite historical evidence incorrectly.                                   |
 | scripts/ag/monte_carlo_v9.py                                           | 80%    | Monte Carlo is downstream analytics, but payoff resolution and predictor path detection must remain correct for promotion decisions. |
+| indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine | Static contract + Pine compile | Nexus quality is proven by real footprint API use, evidence plots, Pine compile, lint guards, and explicit no-V9 scope discipline. |
+| quality/RUN_NEXUS_INDICATOR.md | 100% protocol coverage | The runbook is the canonical Nexus lane for indicator edits, footprint proof, verification gates, and reporting discipline. |
 
 ## Coverage Theater Prevention
 
@@ -27,6 +31,9 @@ The following do not count as quality in this repo:
 - Running tests against synthetic schema shapes that omit real exported columns (especially ml_trade_tp1/2/3 and locked ML feature columns).
 - Asserting that a model directory exists without checking predictor-path resolution rules.
 - Accepting high test counts that never exercise fail-closed paths.
+- Treating Nexus alert toggles as signal authority instead of plotted/evidence state.
+- Claiming Nexus footprint proof from compile success alone without citing `request.footprint()`, `footprint.delta()`, `footprint.rows()`, and hidden `nexus_*` exports.
+- Letting V9 Core assumptions, files, or settings contaminate Nexus-only indicator work.
 
 ## Fitness-to-Purpose Scenarios
 
@@ -148,6 +155,103 @@ The following do not count as quality in this repo:
 
 **How to verify:** Run `test_scenario_10_export_schema_rejects_non_monotonic_timestamps` in quality/test_functional.py.
 
+
+## Nexus Indicator Lane Scenarios
+
+### Scenario 11: Nexus Scope Contamination
+
+**Requirement tag:** [Req: user-confirmed — Nexus-only operator correction 2026-05-14]
+
+**What happened:** An assistant can drag V9 Core context into Nexus indicator work and then make irrelevant or misleading claims about the wrong lane.
+
+**The requirement:** Nexus tasks must scope to `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` and `quality/RUN_NEXUS_INDICATOR.md` unless the user explicitly requests a cross-lane comparison.
+
+**How to verify:** Run `test_nexus_1_quality_lane_runbook_exists_and_scopes_work` in quality/test_functional.py.
+
+---
+
+### Scenario 12: Fake Footprint Substitution
+
+**Requirement tag:** [Req: formal — AGENTS.md Nexus request.footprint evidence rule]
+
+**What happened:** Volume-flow logic can look plausible if it uses candle body/wick or generic volume proxies, but that would invalidate the Nexus footprint research lane.
+
+**The requirement:** Nexus volume, liquidity, delta, gas-out, and exported evidence must derive from TradingView footprint APIs: `request.footprint()`, `footprint.delta()`, `footprint.rows()`, and row total volume.
+
+**How to verify:** Run `test_nexus_2_indicator_uses_real_footprint_api` in quality/test_functional.py and include line-cited proof in Nexus review reports.
+
+---
+
+### Scenario 13: Footprint Evidence Export Drift
+
+**Requirement tag:** [Req: formal — AGENTS.md Nexus `nexus_fp_*` evidence only]
+
+**What happened:** Hidden plots are easy to rename or remove because they do not affect visible chart appearance, but they are the export contract for footprint evidence.
+
+**The requirement:** Hidden exports must preserve footprint availability, bar delta, total volume, normalized cumulative delta, delta slope, bar delta ratio, delta direction, gas-out flags, mode minutes, and signal tier unless downstream docs/tests are updated in the same change.
+
+**How to verify:** Run `test_nexus_3_hidden_footprint_export_plots_exist` in quality/test_functional.py.
+
+---
+
+### Scenario 14: Oscillator-Only Exhaustion Masquerading As Real Exhaustion
+
+**Requirement tag:** [Req: user-confirmed — operator priority: volume, liquidity, footprints, real exhaustion]
+
+**What happened:** Oscillator weakening can produce fatigue-looking marks without proving footprint sellers or buyers actually ran out of gas.
+
+**The requirement:** Any signal described as real exhaustion must cite footprint gas-out/deceleration (`gasOutBull` / `gasOutBear`) or clearly label itself oscillator-only.
+
+**How to verify:** Use the static review checklist in `quality/RUN_NEXUS_INDICATOR.md` and include the footprint proof table in the task report.
+
+---
+
+### Scenario 15: Divergence Without Footprint Confirmation
+
+**Requirement tag:** [Req: user-confirmed — operator priority: real divergence]
+
+**What happened:** Price/oscillator pivots can create divergence labels even when footprint/volume evidence is missing or allowed to silently pass.
+
+**The requirement:** Divergence review must explicitly document whether `sfVolPassBull` / `sfVolPassBear` require footprint/volume confirmation or allow unavailable footprint to pass, and any change must be verified against the Nexus proof standard.
+
+**How to verify:** Use the Nexus runbook's divergence checklist and Council of Three Nexus audit prompt.
+
+---
+
+### Scenario 16: Alerts Treated As Signal Authority
+
+**Requirement tag:** [Req: user-confirmed — operator statement: alerts are not used]
+
+**What happened:** Alert booleans can distract review toward notification behavior while the operator only cares about volume, liquidity, footprints, exhaustion, and divergence.
+
+**The requirement:** Nexus quality reviews must treat alerts as non-authoritative UI conveniences. Signal truth comes from footprint-derived calculations and plotted/evidence state.
+
+**How to verify:** Run `test_nexus_4_quality_protocols_reference_nexus_lane` in quality/test_functional.py and review alert logic only for non-interference.
+
+---
+
+### Scenario 17: Pine Verification Theater
+
+**Requirement tag:** [Req: formal — Pine compilation rule + AGENTS.md Pine Verification]
+
+**What happened:** An assistant can claim the indicator works after reading code or planning a patch without compiling Pine or running guards.
+
+**The requirement:** Nexus Pine changes require Pine facade compile, pine lint, contamination/no-TV-force guards, and build output before completion claims.
+
+**How to verify:** Run `test_nexus_5_runbook_requires_real_verification_gates` in quality/test_functional.py and execute the commands in `quality/RUN_NEXUS_INDICATOR.md` for Pine edits.
+
+---
+
+### Scenario 18: Request/Output Budget Drift
+
+**Requirement tag:** [Req: formal — AGENTS.md Pine budget rules]
+
+**What happened:** Adding visible or hidden plots, alertconditions, or additional footprint/security requests can silently exceed TradingView resource budgets or reduce available headroom.
+
+**The requirement:** Every Nexus Pine edit must price output-consuming calls and request paths before and after the change.
+
+**How to verify:** Run `./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` and report request/output counts.
+
 ## AI Session Quality Discipline
 
 1. Read quality/QUALITY.md before editing V9 Core training, ETL, provenance, or diagnostics code.
@@ -157,6 +261,10 @@ The following do not count as quality in this repo:
 5. Keep requirement tags in new scenarios/tests: `[Req: formal|user-confirmed|inferred — source]`.
 6. Add or update tests when introducing new defensive checks.
 7. Record unresolved inferred requirements for human confirmation rather than presenting them as formal truth.
+8. Read quality/RUN_NEXUS_INDICATOR.md before any Nexus indicator work.
+9. For Nexus work, do not mention, inspect, or modify V9 surfaces unless the user explicitly requests a cross-lane comparison.
+10. Treat Nexus alerts as non-authoritative; evidence comes from footprint calculations and plots.
+11. Do not claim Nexus footprint behavior is working without Pine compile/guard evidence for Pine edits or static Nexus tests for quality-doc-only changes.
 
 ## The Human Gate
 
@@ -167,3 +275,5 @@ Human approval is required for:
 - Accepting deviations from source-kind, split-bound, or provenance contracts.
 - Redefining threshold policies (for example sparse density floors, strict entry floors) without operator signoff.
 - Resolving disagreements between formal requirements and inferred code behavior.
+- Changing Nexus footprint, exhaustion, divergence, hidden export, or TradingView live behavior.
+- Treating unavailable Nexus footprint evidence as acceptable for real exhaustion or divergence without explicit operator approval.

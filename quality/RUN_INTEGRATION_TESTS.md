@@ -1,4 +1,4 @@
-# Integration Test Protocol: Warbird Pro V9 Core
+# Integration Test Protocol: Warbird Pro V9 Core + Nexus Indicator
 
 ## Working Directory
 
@@ -10,6 +10,8 @@ Run all commands from the repository root using relative paths only. Do not use 
 - Write outputs only under quality/results/.
 - If any gate fails, stop promotion decisions and report findings.
 - Do not run TradingView mutation operations (`pine_save`, `pine_set_source`, `tv_launch`) from this protocol.
+- For Nexus Pine edits, use Pine facade compile and local guards only unless the user explicitly approves live TradingView operations.
+- Nexus integration checks must not launch training or route through V9 artifacts.
 
 ## Pre-Flight Check
 
@@ -97,6 +99,59 @@ Source: scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py (
 | 7   | Manifest hash verification                | Inline Python check using `validate_manifest_hash`                      | No mismatch exception                                       |
 | 8   | Summary hash and split-range verification | Inline Python check using `check_summary_csv_hash` + `apply_time_split` | Hash matches and split source is `summary_split_ranges_utc` |
 | 9   | Full repo regression safety               | `pytest tests/ag tests/duckdb_local`                                    | No regressions in existing tests                            |
+| 10  | Nexus quality lane static contracts       | `pytest quality/test_functional.py -k nexus`                            | Nexus runbook, footprint API, hidden export, and protocol-link tests pass |
+| 11  | Nexus Pine facade compile                 | Pine facade `translate_light` request for Nexus file                    | Compiler response contains no Pine errors                   |
+| 12  | Nexus Pine lint/resource budget           | `./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` | Output/request counts are reported and no hard errors occur |
+| 13  | Nexus contamination/no-TV-force guards    | `./scripts/guards/check-contamination.sh` + `./scripts/guards/check-no-tv-force.sh` | No contamination or banned TV recovery paths detected       |
+
+
+## Nexus Indicator Verification Lane
+
+Use this lane whenever the task touches Nexus quality docs, Nexus tests, or `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`.
+
+### Nexus Docs/Tests Only
+
+```bash
+./.venv/bin/python -m pytest quality/test_functional.py -k nexus -q
+npm run build
+```
+
+Pass criteria:
+
+- Nexus static contract tests pass with zero errors.
+- Build completes successfully.
+- No Pine verification claim is made because Pine was not changed.
+
+### Nexus Pine Edit Gate
+
+```bash
+curl -s -X POST "https://pine-facade.tradingview.com/pine-facade/translate_light?user_name=admin&v=3" \
+  -H 'Referer: https://www.tradingview.com/' \
+  -F "source=<indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine" > quality/results/nexus-pine-compile.json
+./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine > quality/results/nexus-pine-lint.log
+./scripts/guards/check-contamination.sh > quality/results/nexus-contamination.log
+./scripts/guards/check-no-tv-force.sh > quality/results/nexus-no-tv-force.log
+npm run build > quality/results/nexus-npm-build.log 2>&1
+```
+
+Pass criteria:
+
+- Pine facade returns no compile errors.
+- Pine lint reports output/request counts and no hard failures.
+- Contamination and no-TV-force guards pass.
+- Build passes.
+- Final report includes the footprint proof table from `quality/RUN_NEXUS_INDICATOR.md`.
+
+### Nexus Footprint Proof Artifacts
+
+For any Pine edit, save or report:
+
+| Artifact | Required Content |
+| -------- | ---------------- |
+| Compile output | Raw Pine facade response or summarized no-error response |
+| Lint output | Output-consuming calls and request-path counts |
+| Footprint proof table | `request.footprint`, `footprint.delta`, `footprint.rows`, row volume, availability gate, gas-out, divergence, hidden plots |
+| Scope statement | Explicit `V9 not touched` statement unless cross-lane work was requested |
 
 ## Parallel Execution Plan
 

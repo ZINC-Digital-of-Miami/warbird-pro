@@ -1,4 +1,4 @@
-# Spec Audit Protocol: Warbird Pro V9 Core (Council of Three)
+# Spec Audit Protocol: Warbird Pro V9 Core + Nexus Indicator (Council of Three)
 
 ## The Definitive Audit Prompt
 
@@ -60,6 +60,59 @@ For inferred requirements, append `NEEDS REVIEW`.
 **Output format:**
 
 ### path/to/file.py
+
+- **Line NNN:** [MISSING|DIVERGENT|UNDOCUMENTED|PHANTOM] [Req: tier — source] Description.
+  Spec says: ...
+  Code does: ...
+  Impact: ...
+
+---
+
+
+## Nexus Indicator Audit Prompt
+
+Use this prompt unchanged when the requested audit is Nexus-scoped.
+
+---
+
+**Context files to read first:**
+
+1. AGENTS.md
+2. quality/QUALITY.md
+3. quality/RUN_NEXUS_INDICATOR.md
+4. quality/RUN_CODE_REVIEW.md
+5. indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine
+
+**Task:**
+Audit the Nexus indicator lane only. Do not audit V9 Core, V9 Pine, model training, Optuna, Supabase, or dashboard surfaces unless the user explicitly requested a cross-lane comparison. Compare the implementation against the Nexus quality lane and report only defects.
+
+**Rules:**
+
+- ONLY list defects.
+- Every defect must cite file path and line number.
+- If no line number, do not include the finding.
+- Grep before claiming a requirement is missing.
+- Read the full Pine file before claiming behavior.
+- Classify each finding as one of: `MISSING`, `DIVERGENT`, `UNDOCUMENTED`, `PHANTOM`.
+- Do not include style-only suggestions.
+- Alerts are non-authoritative; only flag alerts if they interfere with footprint/plot/evidence truth.
+
+**Nexus-specific scrutiny areas:**
+
+1. Verify the file remains the Nexus indicator lane and not a V9 surface.
+2. Verify footprint evidence comes from `request.footprint()`, `footprint.delta()`, `footprint.rows()`, and row total volume.
+3. Verify volume flow does not substitute candle body/wick or generic OHLCV proxies for footprint evidence.
+4. Verify `fpFlowAvailable` fails closed on missing delta, missing total volume, or non-positive volume.
+5. Verify `normCumDelta`, `deltaSlope`, and `deltaDir` are safe under warmup and unavailable-footprint states.
+6. Verify gas-out exhaustion claims are backed by signed footprint delta deceleration.
+7. Verify divergence filters state whether unavailable footprint can pass, and whether that matches `quality/RUN_NEXUS_INDICATOR.md`.
+8. Verify hidden `nexus_*` plots preserve the footprint evidence export contract.
+9. Verify alert logic cannot redefine signal truth.
+10. Verify any Pine edit was followed by Pine facade compile, pine lint, contamination/no-TV-force guards, and build evidence.
+
+**Output format:**
+
+### path/to/file
 
 - **Line NNN:** [MISSING|DIVERGENT|UNDOCUMENTED|PHANTOM] [Req: tier — source] Description.
   Spec says: ...

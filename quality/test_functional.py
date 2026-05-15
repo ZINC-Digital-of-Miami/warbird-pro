@@ -184,8 +184,8 @@ def _summary_with_ranges() -> dict[str, object]:
 class TestSpecRequirements:
     def test_spec_1_locked_feature_surface_counts(self) -> None:
         """[Req: formal — train_v9_locked locked feature surface] Feature counts stay fixed."""
-        assert len(ML_FEATURES) == 78
-        assert len(MODEL_FEATURES) == 84
+        assert len(ML_FEATURES) == 82
+        assert len(MODEL_FEATURES) == 88
 
     @pytest.mark.parametrize(
         ("mode", "expected_count"),
@@ -608,3 +608,90 @@ class TestBoundariesAndEdgeCases:
 
         with pytest.raises(RuntimeError, match="manifest hash mismatch"):
             validate_manifest_hash(csv_path, manifest_path)
+
+
+# ---------------------------------------------------------------------------
+# Nexus indicator quality lane static contract tests
+# ---------------------------------------------------------------------------
+
+
+def _repo_file_text(relative_path: str) -> str:
+    return (Path(__file__).resolve().parents[1] / relative_path).read_text()
+
+
+def _between(text: str, start_marker: str, end_marker: str) -> str:
+    start = text.index(start_marker)
+    end = text.index(end_marker, start)
+    return text[start:end]
+
+
+class TestNexusIndicatorQualityLane:
+    def test_nexus_1_quality_lane_runbook_exists_and_scopes_work(self) -> None:
+        """[Req: user-confirmed — Nexus-only quality lane] Runbook locks Nexus scope and authority."""
+        text = _repo_file_text("quality/RUN_NEXUS_INDICATOR.md")
+        assert "NEXUS_SCOPE_LOCK" in text
+        assert "indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine" in text
+        assert "Do not route Nexus work through V9" in text
+        assert "Alerts are not signal authority" in text
+        assert "request.footprint()" in text
+
+    def test_nexus_2_indicator_uses_real_footprint_api(self) -> None:
+        """[Req: formal — Nexus request.footprint evidence] Indicator uses real TradingView footprint APIs."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+        for token in [
+            "request.footprint(",
+            "footprint.delta(",
+            "footprint.rows(",
+            "volume_row.total_volume(",
+        ]:
+            assert token in pine
+
+        volume_flow = _between(pine, "// VOLUME FLOW", "// REGIME DETECTION")
+        assert "fpBarDelta" in volume_flow
+        assert "fpTotalVolume" in volume_flow
+        assert "close - open" not in volume_flow
+        assert "high - low" not in volume_flow
+
+    def test_nexus_3_hidden_footprint_export_plots_exist(self) -> None:
+        """[Req: formal — nexus_fp_* evidence exports] Hidden footprint export plots remain present."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+        required_plot_names = [
+            "nexus_fp_available",
+            "nexus_fp_bar_delta",
+            "nexus_fp_total_volume",
+            "nexus_norm_cum_delta",
+            "nexus_delta_slope",
+            "nexus_bar_delta_ratio",
+            "nexus_delta_dir",
+            "nexus_gasout_bull",
+            "nexus_gasout_bear",
+            "nexus_mode_minutes",
+            "nexus_signal_tier",
+        ]
+        for plot_name in required_plot_names:
+            assert f'"{plot_name}"' in pine
+
+    def test_nexus_4_quality_protocols_reference_nexus_lane(self) -> None:
+        """[Req: user-confirmed — assistant failure prevention] Existing quality protocols point to Nexus lane."""
+        for path in [
+            "quality/QUALITY.md",
+            "quality/RUN_CODE_REVIEW.md",
+            "quality/RUN_INTEGRATION_TESTS.md",
+            "quality/RUN_SPEC_AUDIT.md",
+        ]:
+            text = _repo_file_text(path)
+            assert "Nexus" in text
+            assert "RUN_NEXUS_INDICATOR.md" in text or path == "quality/QUALITY.md"
+
+    def test_nexus_5_runbook_requires_real_verification_gates(self) -> None:
+        """[Req: formal — Pine verification] Nexus runbook requires compile, guards, and build proof."""
+        text = _repo_file_text("quality/RUN_NEXUS_INDICATOR.md")
+        for token in [
+            "pine-facade.tradingview.com",
+            "./scripts/guards/pine-lint.sh",
+            "./scripts/guards/check-contamination.sh",
+            "./scripts/guards/check-no-tv-force.sh",
+            "npm run build",
+            "Footprint proof table",
+        ]:
+            assert token in text

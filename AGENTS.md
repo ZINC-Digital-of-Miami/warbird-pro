@@ -384,6 +384,7 @@ If any `.pine` file is touched, run:
 - Functional test suite: `quality/test_functional.py`
 - Code review protocol: `quality/RUN_CODE_REVIEW.md`
 - Integration protocol: `quality/RUN_INTEGRATION_TESTS.md`
+- Nexus indicator protocol: `quality/RUN_NEXUS_INDICATOR.md`
 - Council of Three spec audit protocol: `quality/RUN_SPEC_AUDIT.md`
 - Review/spec/integration result folders:
   `quality/code_reviews/`, `quality/spec_audits/`, `quality/results/`

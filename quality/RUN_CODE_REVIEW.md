@@ -1,4 +1,4 @@
-# Code Review Protocol: Warbird Pro V9 Core
+# Code Review Protocol: Warbird Pro V9 Core + Nexus Indicator
 
 ## Bootstrap (Read First)
 
@@ -12,6 +12,16 @@ Before reviewing any code, read in this order:
 6. scripts/ag/train_v9_locked.py
 7. scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py
 8. scripts/ag/v9_run_provenance.py
+
+### Nexus Indicator Bootstrap
+
+For Nexus reviews, read these additional files before forming findings:
+
+1. quality/RUN_NEXUS_INDICATOR.md
+2. indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine
+3. AGENTS.md Nexus hard rules and Pine verification sections
+
+Nexus reviews are scoped to the indicator lane. Do not review V9 trainer/ETL/model surfaces unless the user explicitly requests a cross-lane review.
 
 ## What to Check
 
@@ -111,6 +121,92 @@ Before reviewing any code, read in this order:
 
 **Why:** Documentation drift causes future AI sessions to enforce the wrong truth.
 
+
+### Focus Area 9: Nexus Scope And Authority
+
+**Where:** quality/RUN_NEXUS_INDICATOR.md, indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine
+
+**What:**
+
+- Nexus work stays scoped to the Nexus file and runbook.
+- V9 Core assumptions are not used as Nexus authority.
+- Alerts are documented as non-authoritative for signal truth.
+
+**Why:** Scope contamination was the direct assistant-side failure this lane is designed to prevent.
+
+### Focus Area 10: Real Footprint Acquisition
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (`request.footprint`, `footprint.delta`, `footprint.rows`)
+
+**What:**
+
+- `request.footprint()` remains the source of footprint evidence.
+- Bar delta comes from `footprint.delta()`.
+- Row liquidity/volume comes from `footprint.rows()` and `volume_row.total_volume()`.
+- No candle body/wick, local CSV, Databento OHLCV, or generic `volume` proxy replaces footprint evidence.
+
+**Why:** Nexus tuning must use TradingView/Pine footprint evidence only.
+
+### Focus Area 11: Footprint Availability And Fail-Closed Gates
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (`fpAvailable`, `fpFlowAvailable`, `fpTotalVolume`, `normCumDelta`, `deltaSlope`, `deltaDir`)
+
+**What:**
+
+- `fpFlowAvailable` cannot be true with missing delta, missing total volume, or non-positive total volume.
+- Delta normalization and slope use safe divisors and unavailable-state handling.
+- Footprint-backed signals fail closed when footprint is unavailable.
+
+**Why:** A missing-footprint chart must not produce fake footprint proof.
+
+### Focus Area 12: Volume Flow, Liquidity, And Gas-Out Exhaustion
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (VNVF block, `gasOutBull`, `gasOutBear`, fatigue/exhaustion markers)
+
+**What:**
+
+- Signed volume flow is derived from footprint delta and footprint total volume.
+- Gas-out conditions represent signed cumulative delta deceleration.
+- Any marker described as real exhaustion is footprint-backed or explicitly labeled oscillator-only.
+
+**Why:** The operator priority is volume, liquidity, footprints, and real exhaustion rather than generic oscillator crosses.
+
+### Focus Area 13: Divergence Integrity
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (pivot/divergence block, `sfVolPassBull`, `sfVolPassBear`)
+
+**What:**
+
+- Pivot age, oscillator swing, price swing, and volume/footprint confirmation semantics are explicit.
+- If footprint confirmation is required, unavailable footprint cannot silently pass.
+- Labels cite true regular/hidden divergence behavior rather than alert behavior.
+
+**Why:** Divergence labels are visible and persuasive; false confirmation creates bad trade context.
+
+### Focus Area 14: Plot And Export Contract
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (visible plots, hidden `nexus_*` plots)
+
+**What:**
+
+- Visible plots still match the settings that control them.
+- Hidden evidence plots still include footprint availability, bar delta, total volume, normalized delta, slope, ratio, direction, gas-out flags, mode minutes, and signal tier.
+- Any plot rename/removal is documented in the same change.
+
+**Why:** Hidden plots are the CSV/evidence contract for Nexus research.
+
+### Focus Area 15: Pine Verification And Resource Budget
+
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine, scripts/guards/pine-lint.sh
+
+**What:**
+
+- Pine facade compile output is captured after Pine edits.
+- Pine lint reports output/request counts.
+- Additional plot/alert/request paths are budgeted before merge.
+
+**Why:** TradingView resource limits can break an otherwise plausible indicator.
+
 ## Guardrails
 
 - Line numbers are mandatory. No line number, no finding.
@@ -118,6 +214,8 @@ Before reviewing any code, read in this order:
 - If unsure, classify as QUESTION, not BUG.
 - Grep before claiming a requirement is missing.
 - Do not suggest style-only refactors. Flag only correctness, reliability, or contract defects.
+- For Nexus findings, cite `quality/RUN_NEXUS_INDICATOR.md` and the exact Pine line numbers.
+- Do not use V9 Core contracts to judge Nexus behavior unless the user explicitly requested cross-lane analysis.
 
 ## Output Format
 
@@ -162,3 +260,4 @@ After review findings are produced:
 - Keep review batches small (one subsystem per pass).
 - If one pass creates many BUG findings, run regression tests before reviewing another subsystem.
 - For Pine-related diffs, defer to AGENTS/CLAUDE hard-rule verification gates in addition to this protocol.
+- For Nexus-related review, follow quality/RUN_NEXUS_INDICATOR.md and include the footprint proof table before recommending `SHIP IT`.

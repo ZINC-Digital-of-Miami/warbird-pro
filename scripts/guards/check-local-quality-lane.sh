@@ -9,6 +9,7 @@ cd "$ROOT_DIR"
 SCOPE="auto"
 BASE_REF=""
 INTENSITY="full"
+PYTHON_CMD=""
 
 usage() {
   cat <<'USAGE'
@@ -131,6 +132,21 @@ run_git_whitespace_check() {
   esac
 }
 
+resolve_python_runtime() {
+  if [[ -x ".venv/bin/python" ]]; then
+    PYTHON_CMD=".venv/bin/python"
+  else
+    PYTHON_CMD="$(command -v python3 || true)"
+  fi
+
+  [[ -n "$PYTHON_CMD" ]] || {
+    echo "FAIL: python3 is not available and .venv/bin/python is missing."
+    exit 1
+  }
+
+  echo "INFO: python runtime $("$PYTHON_CMD" -V 2>&1) at $PYTHON_CMD"
+}
+
 run_syntax_checks() {
   echo "CHECK: changed-file syntax"
   if [[ "${#CHANGED_FILES[@]}" -eq 0 ]]; then
@@ -146,10 +162,10 @@ run_syntax_checks() {
         bash -n "$file"
         ;;
       *.py)
-        python3 -m py_compile "$file"
+        "$PYTHON_CMD" -m py_compile "$file"
         ;;
       *.json)
-        python3 -m json.tool "$file" >/dev/null
+        "$PYTHON_CMD" -m json.tool "$file" >/dev/null
         ;;
     esac
   done
@@ -193,7 +209,55 @@ run_pine_guards_if_needed() {
   done
 }
 
+normalize_node_runtime_for_npm_checks() {
+  local codex_node_prefix="/Applications/Codex.app/Contents/Resources"
+  local preferred_node22_dir="/opt/homebrew/opt/node@22/bin"
+  local homebrew_bin_dir="/opt/homebrew/bin"
+  local node_path=""
+  local npm_path=""
+
+  # Force Homebrew Node ahead of any app-bundled Node runtime.
+  if [[ -x "$preferred_node22_dir/node" ]]; then
+    export PATH="$preferred_node22_dir:$homebrew_bin_dir:$PATH"
+  elif [[ -x "$homebrew_bin_dir/node" ]]; then
+    export PATH="$homebrew_bin_dir:$PATH"
+  fi
+
+  node_path="$(command -v node || true)"
+  npm_path="$(command -v npm || true)"
+
+  [[ -n "$node_path" ]] || {
+    echo "FAIL: node is not available in PATH for local quality lane checks."
+    exit 1
+  }
+  [[ -n "$npm_path" ]] || {
+    echo "FAIL: npm is not available in PATH for local quality lane checks."
+    exit 1
+  }
+
+  if [[ "$node_path" == "$codex_node_prefix/"* ]]; then
+    cat <<EOF
+FAIL: node resolved to Codex bundled runtime: $node_path
+This runtime enforces hardened library validation and breaks Next native addons on this volume.
+Install/enable Homebrew node@22 and ensure /opt/homebrew/opt/node@22/bin is available.
+EOF
+    exit 1
+  fi
+
+  local node_major
+  node_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0")"
+  if [[ "$node_major" -lt 22 ]]; then
+    echo "FAIL: detected node major version $node_major; require >= 22 for local quality lane checks."
+    exit 1
+  fi
+
+  echo "INFO: node runtime $(node -v) at $node_path"
+  echo "INFO: npm runtime $(npm -v) at $npm_path"
+}
+
 run_full_checks() {
+  normalize_node_runtime_for_npm_checks
+
   echo "CHECK: npm lint"
   npm run lint
 
@@ -201,10 +265,10 @@ run_full_checks() {
   npm run build
 
   echo "CHECK: Warbird V9 contract tests"
-  python3 -m pytest tests/duckdb_local/test_warbird_pro_v9_contract.py -q
+  "$PYTHON_CMD" -m pytest tests/duckdb_local/test_warbird_pro_v9_contract.py -q
 
   echo "CHECK: tuner jsonl safety tests"
-  python3 -m pytest scripts/ag/test_tuner.py -k "load_trials_jsonl_csv_full_includes_tv_mcp_strict or load_history_jsonl_filters_by_profile" -q
+  "$PYTHON_CMD" -m pytest scripts/ag/test_tuner.py -k "load_trials_jsonl_csv_full_includes_tv_mcp_strict or load_history_jsonl_filters_by_profile" -q
 }
 
 collect_changed_files
@@ -223,6 +287,7 @@ else
 fi
 
 run_git_whitespace_check
+resolve_python_runtime
 run_syntax_checks
 run_deterministic_repo_guards
 run_pine_guards_if_needed

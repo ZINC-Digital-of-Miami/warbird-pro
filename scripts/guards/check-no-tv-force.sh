@@ -42,6 +42,21 @@ hits="$(printf '%s\n' "$raw_hits" | awk -F: '
     file=$1
     line=$0
     sub(/^[^:]*:[^:]*:/, "", line)
+
+    # Allow declarative deny/warning text in guard hook files.
+    # These files intentionally document banned operations and are not call sites.
+    if (file == "scripts/guards/hook-pre-tv-banned-ops.sh" ||
+        file == "scripts/guards/hook-user-prompt-discipline.sh" ||
+        file == "scripts/guards/hook-pre-plan-contract.sh") {
+      if (index(line, "Do NOT call") > 0 ||
+          index(line, "Never call") > 0 ||
+          index(line, "banned from the agent") > 0 ||
+          index(line, "as recovery") > 0 ||
+          index(line, "called as \"recovery\"") > 0) {
+        next
+      }
+    }
+
     if (file == ".claude/settings.json") {
       # deny payload line (contains both permissionDecision and deny)
       if (index(line, "permissionDecision") > 0 && index(line, "deny") > 0) next

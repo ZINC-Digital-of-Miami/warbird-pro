@@ -5,6 +5,7 @@ const eslintConfig = [
   {
     ignores: [
       ".venv/**",
+      ".claude-state/**",
       ".tradingview-mcp/**",
       ".playwright-mcp/**",
       ".kilo/**",

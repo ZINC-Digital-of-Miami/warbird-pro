@@ -1,5 +1,7 @@
 # Hi-Def SHAP + Monte Carlo Implementation Plan
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 > **Superseded 2026-04-26:** This plan belongs to the retired warehouse
 > `ag_training` architecture. Active modeling is indicator-only Pine/TradingView
 > output analysis. Use this file for lineage only.

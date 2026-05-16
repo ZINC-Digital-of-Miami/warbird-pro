@@ -1,5 +1,7 @@
 # Nexus ML RSI — Delta-First Redesign Implementation Plan
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Rebuild the Nexus ML RSI Optuna profile and Pine indicator around TradingView `request.footprint()` cumulative delta as the primary signal driver, with four signal tiers, Warbird brand colors, delta-fade bar coloring, and per-mode Optuna studies tuned for real 10+ point MES reversal legs.

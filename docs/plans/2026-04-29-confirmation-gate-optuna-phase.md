@@ -1,5 +1,7 @@
 # Plan — Confirmation-Gate Optuna Phase (Patterns + MA Lengths)
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 **Date:** 2026-04-29
 **Status:** PROPOSED — awaiting Architect approval. **This plan is now Phase 2 of the broader campaign in `docs/plans/2026-04-29-entry-exit-exhaustion-optuna-campaign.md`.** Read the campaign doc first; this doc provides Phase 2 detail.
 **Working file:** `indicators/v7-warbird-institutional-backtest-strategy.pine` on **main** (per campaign Section 1 — work-surface lock decision)

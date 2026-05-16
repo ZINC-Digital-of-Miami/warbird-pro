@@ -1,5 +1,7 @@
 # v8-prescreen Backtest Results (2026-04-17 rebuild)
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 Tracks per-layer PF lift during the state-machine rebuild. See `2026-04-17-v8-prescreen-state-machine-design.md` §7 for the run taxonomy and `2026-04-17-v8-prescreen-state-machine-plan.md` for the task sequence producing these rows.
 
 All runs on CME_MINI:MES1! 15m, **Strategy Tester Deep Backtesting range Jan 1 2020 -> Apr 17 2026 (~6.3 years)**, 1 contract fixed, $1/side commission, slippage 1 tick, Bar Magnifier enabled.

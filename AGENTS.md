@@ -367,6 +367,20 @@ If any `.pine` file is touched, run:
 - No `--no-verify` on git hooks.
 - Do not use destructive git commands unless explicitly requested.
 
+### Canonical Git Push Protocol (`origin`)
+
+- Push only with explicit user approval in the current session.
+- Work and commit on `main` only; do not push feature branches.
+- Use explicit remote/branch push: `git push origin main`.
+- If upstream is missing, set it once with `git push -u origin main`, then
+  continue with `git push origin main`.
+- Before pushing, verify:
+  - `git branch --show-current` returns `main`
+  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}` resolves to `origin/main`
+  - local precheck logs exist under `.git/warbird-prechecks/` for the commit/push attempt
+- Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+- If rollback is required after push, create a revert commit on `main`.
+
 ## Process
 
 - One task at a time. Complete fully.

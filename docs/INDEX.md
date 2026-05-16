@@ -44,6 +44,19 @@ Use `python3 scripts/ag/tv_auto_tune.py --storage jsonl preflight --indicator-on
 for V9 chart validation and reserve regular `preflight` for explicitly reopened
 strategy-harness sessions.
 
+## Canonical Git Push Protocol
+
+Use one repository push path across all active and historical docs:
+
+- push only after explicit user approval in the current session
+- work on `main` only
+- push explicitly with `git push origin main`
+- set upstream once with `git push -u origin main` when required
+- never use `git push --force`, `git push -f`, or `git push --no-verify`
+
+This protocol is authoritative in `AGENTS.md` and `docs/MASTER_PLAN.md`, and
+overrides stale push wording in older `docs/plans/` artifacts.
+
 ## Read Order
 
 1. `docs/MASTER_PLAN.md` — Warbird Indicator-Only DuckDB Local Modeling Plan v6

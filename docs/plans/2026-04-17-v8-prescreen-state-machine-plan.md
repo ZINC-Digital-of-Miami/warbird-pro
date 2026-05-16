@@ -1,5 +1,7 @@
 # v8-prescreen State-Machine Rebuild — Implementation Plan
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Turn `indicators/v8-warbird-prescreen.pine` from a losing every-flip-is-a-trade strategy (PF 0.647, 1,706 trades) into a gated, state-machine-based wrapper that fires `strategy.entry` only when price retests the ladder ENTRY level with all quality/HTF/ADX/session/asymmetric gates aligned.

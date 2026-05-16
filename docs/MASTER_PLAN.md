@@ -116,6 +116,21 @@ Operational requirement for V9 Core changes (trainer/ETL/provenance/MC/SHAP):
 - preserve requirement tags (`formal`, `user-confirmed`, `inferred`) in new
   scenarios/tests and route unresolved inferred items to human review
 
+## Git Push Protocol (Operational)
+
+All agent instruction surfaces and planning docs use this canonical Git push protocol:
+
+- push only after explicit user approval in the current session
+- commit and push on `main` only
+- use explicit remote/branch command: `git push origin main`
+- if upstream is missing, set once with `git push -u origin main`
+- never use `git push --force`, `git push -f`, or `git push --no-verify`
+- rely on `.githooks/pre-commit` + `.githooks/pre-push` and verify audit logs in
+  `.git/warbird-prechecks/`
+
+This protocol supersedes any older push wording in historical docs under
+`docs/plans/`.
+
 **Workspace layout:**
 
 ```

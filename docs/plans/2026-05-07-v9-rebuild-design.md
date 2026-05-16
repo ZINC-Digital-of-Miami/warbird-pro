@@ -1,5 +1,7 @@
 # V9 Full Tunable Rebuild — Design Doc (REDRAFT)
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 **Date drafted:** 2026-05-07
 **Last updated:** 2026-05-08
 **Status:** DRAFT v2 — supersedes the 2026-05-07 reflection draft and the

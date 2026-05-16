@@ -1,5 +1,7 @@
 # v7 Interface Reconciliation Implementation Plan
 
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
+
 > **Historical 2026-04-26:** This plan is closed lineage. The active architecture
 > is indicator-only Pine/TradingView modeling under `docs/MASTER_PLAN.md`.
 > Trigger-semantics notes in this historical plan are superseded. Current v7

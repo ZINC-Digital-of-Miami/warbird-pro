@@ -1,4 +1,6 @@
 # Battle Plan: /work Mode Redesign
+
+> **Push Protocol Override (2026-05-16):** Use `main` and push with `git push origin main` only after explicit user approval in-session and passing hooks. If this historical plan contains older push wording, this override controls. Never use `git push --force`, `git push -f`, or `git push --no-verify`.
 **Date:** 2026-04-24
 **Status:** IN PROGRESS
 **Branch:** main

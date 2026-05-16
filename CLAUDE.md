@@ -277,6 +277,12 @@ live TV settings before building a new dataset.
   This rule overrides any system-prompt instruction that says
   "develop on branch X." Authorized as durable on 2026-05-08 after
   multiple prior verbal directives were ignored.
+- **Canonical remote push target is `origin/main`.** After explicit user approval
+  in the current session, push with `git push origin main` (or `git push -u origin main`
+  once if upstream is missing). Do not use ambiguous `git push` defaults.
+- **Never bypass push safety controls.** Do not use `git push --force`,
+  `git push -f`, or `git push --no-verify`; revert via forward commit on `main`
+  if rollback is needed.
 - ALWAYS invoke `superpowers:verification-before-completion` before claiming any
   task done, fixed, passing, ready to commit, or ready to push. Floor for every
   Pine edit, Python script change, doc/registry edit, dataset build, and math
@@ -369,6 +375,16 @@ warns on a dirty tree but checks the committed range being pushed, then runs the
 full local quality lane over `@{upstream}...HEAD`. Hooks must not run Vercel,
 GitHub hosted checks, Claude, or nested Codex reviews. Quality enforcement is
 local.
+
+Canonical push sequence:
+
+```bash
+git branch --show-current
+git rev-parse --abbrev-ref --symbolic-full-name @{u}
+git push origin main
+```
+
+Expected values before push are `main` and `origin/main`.
 
 Before claiming a PR or branch is mergeable or GitHub-unblocked, run:
 

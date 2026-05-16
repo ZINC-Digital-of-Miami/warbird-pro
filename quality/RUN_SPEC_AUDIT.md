@@ -106,9 +106,11 @@ Audit the Nexus indicator lane only. Do not audit V9 Core, V9 Pine, model traini
 5. Verify `normCumDelta`, `deltaSlope`, and `deltaDir` are safe under warmup and unavailable-footprint states.
 6. Verify gas-out exhaustion claims are backed by signed footprint delta deceleration.
 7. Verify divergence filters state whether unavailable footprint can pass, and whether that matches `quality/RUN_NEXUS_INDICATOR.md`.
-8. Verify hidden `nexus_*` plots preserve the footprint evidence export contract.
+8. Verify data-window/export-only `nexus_*` plots preserve the footprint evidence and lag/false-signal diagnostic export contract.
 9. Verify alert logic cannot redefine signal truth.
 10. Verify any Pine edit was followed by Pine facade compile, pine lint, contamination/no-TV-force guards, and build evidence.
+11. Verify tuning-path routing is explicit for changed knobs (Python reconstructible vs TV-only footprint/exhaustion vs manual deep backtest).
+12. For deferred active-run windows, verify docs-only preservation of hold scope/TC skill mapping and confirm no active training/Pine mutation in the audited change set.
 
 **Output format:**
 

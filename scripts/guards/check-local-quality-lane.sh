@@ -10,6 +10,8 @@ SCOPE="auto"
 BASE_REF=""
 INTENSITY="full"
 PYTHON_CMD=""
+NODE_CMD=""
+NPM_CMD=""
 
 usage() {
   cat <<'USAGE'
@@ -211,58 +213,68 @@ run_pine_guards_if_needed() {
 
 normalize_node_runtime_for_npm_checks() {
   local codex_node_prefix="/Applications/Codex.app/Contents/Resources"
-  local preferred_node22_dir="/opt/homebrew/opt/node@22/bin"
-  local homebrew_bin_dir="/opt/homebrew/bin"
-  local node_path=""
-  local npm_path=""
+  local preferred_node22_node="/opt/homebrew/opt/node@22/bin/node"
+  local preferred_node22_npm="/opt/homebrew/opt/node@22/bin/npm"
+  local homebrew_node="/opt/homebrew/bin/node"
+  local homebrew_npm="/opt/homebrew/bin/npm"
+  local node_major="0"
+  local selected_node_dir=""
 
-  # Force Homebrew Node ahead of any app-bundled Node runtime.
-  if [[ -x "$preferred_node22_dir/node" ]]; then
-    export PATH="$preferred_node22_dir:$homebrew_bin_dir:$PATH"
-  elif [[ -x "$homebrew_bin_dir/node" ]]; then
-    export PATH="$homebrew_bin_dir:$PATH"
+  NODE_CMD=""
+  NPM_CMD=""
+
+  # Prefer a deterministic Homebrew Node 22 pair when available.
+  if [[ -x "$preferred_node22_node" && -x "$preferred_node22_npm" ]]; then
+    NODE_CMD="$preferred_node22_node"
+    NPM_CMD="$preferred_node22_npm"
+  elif [[ -x "$homebrew_node" && -x "$homebrew_npm" ]]; then
+    NODE_CMD="$homebrew_node"
+    NPM_CMD="$homebrew_npm"
+  else
+    NODE_CMD="$(command -v node || true)"
+    NPM_CMD="$(command -v npm || true)"
   fi
 
-  node_path="$(command -v node || true)"
-  npm_path="$(command -v npm || true)"
-
-  [[ -n "$node_path" ]] || {
-    echo "FAIL: node is not available in PATH for local quality lane checks."
+  [[ -n "$NODE_CMD" && -x "$NODE_CMD" ]] || {
+    echo "FAIL: node is not available for local quality lane checks."
     exit 1
   }
-  [[ -n "$npm_path" ]] || {
-    echo "FAIL: npm is not available in PATH for local quality lane checks."
+  [[ -n "$NPM_CMD" && -x "$NPM_CMD" ]] || {
+    echo "FAIL: npm is not available for local quality lane checks."
     exit 1
   }
 
-  if [[ "$node_path" == "$codex_node_prefix/"* ]]; then
+  if [[ "$NODE_CMD" == "$codex_node_prefix/"* ]]; then
     cat <<EOF
-FAIL: node resolved to Codex bundled runtime: $node_path
+FAIL: node resolved to Codex bundled runtime: $NODE_CMD
 This runtime enforces hardened library validation and breaks Next native addons on this volume.
 Install/enable Homebrew node@22 and ensure /opt/homebrew/opt/node@22/bin is available.
 EOF
     exit 1
   fi
 
-  local node_major
-  node_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0")"
+  node_major="$($NODE_CMD -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0")"
   if [[ "$node_major" -lt 22 ]]; then
     echo "FAIL: detected node major version $node_major; require >= 22 for local quality lane checks."
     exit 1
   fi
 
-  echo "INFO: node runtime $(node -v) at $node_path"
-  echo "INFO: npm runtime $(npm -v) at $npm_path"
+  # Ensure npm shebangs resolve the same node runtime.
+  selected_node_dir="$(dirname "$NODE_CMD")"
+  export PATH="$selected_node_dir:$PATH"
+
+  echo "INFO: node runtime $($NODE_CMD -v) at $NODE_CMD"
+  echo "INFO: npm runtime $($NPM_CMD -v) at $NPM_CMD"
 }
 
 run_full_checks() {
   normalize_node_runtime_for_npm_checks
 
   echo "CHECK: npm lint"
-  npm run lint
+  "$NPM_CMD" run lint
 
   echo "CHECK: npm build"
-  npm run build
+  "$NPM_CMD" run build
 
   echo "CHECK: Warbird V9 contract tests"
   "$PYTHON_CMD" -m pytest tests/duckdb_local/test_warbird_pro_v9_contract.py -q

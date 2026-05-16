@@ -652,11 +652,12 @@ class TestNexusIndicatorQualityLane:
         assert "close - open" not in volume_flow
         assert "high - low" not in volume_flow
 
-    def test_nexus_3_hidden_footprint_export_plots_exist(self) -> None:
-        """[Req: formal — nexus_fp_* evidence exports] Hidden footprint export plots remain present."""
+    def test_nexus_3_export_only_footprint_plots_exist(self) -> None:
+        """[Req: formal — nexus_fp_* evidence exports] Export-only footprint plots remain present and TradingView-exportable."""
         pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
         required_plot_names = [
             "nexus_fp_available",
+            "nexus_fp_quality_ok",
             "nexus_fp_bar_delta",
             "nexus_fp_total_volume",
             "nexus_norm_cum_delta",
@@ -667,9 +668,24 @@ class TestNexusIndicatorQualityLane:
             "nexus_gasout_bear",
             "nexus_mode_minutes",
             "nexus_signal_tier",
+            "nexus_pivot_span",
+            "nexus_regime_score",
+            "nexus_osc_momentum",
+            "nexus_vf_calc",
+            "nexus_div_reg_bull_raw",
+            "nexus_div_reg_bear_raw",
+            "nexus_div_hid_bull_raw",
+            "nexus_div_hid_bear_raw",
+            "nexus_div_reg_bull",
+            "nexus_div_reg_bear",
+            "nexus_div_hid_bull",
+            "nexus_div_hid_bear",
         ]
         for plot_name in required_plot_names:
-            assert f'"{plot_name}"' in pine
+            matching_lines = [line for line in pine.splitlines() if f'"{plot_name}"' in line]
+            assert len(matching_lines) == 1
+            assert "display = display.data_window" in matching_lines[0]
+            assert "display = display.none" not in matching_lines[0]
 
     def test_nexus_4_quality_protocols_reference_nexus_lane(self) -> None:
         """[Req: user-confirmed — assistant failure prevention] Existing quality protocols point to Nexus lane."""
@@ -695,3 +711,189 @@ class TestNexusIndicatorQualityLane:
             "Footprint proof table",
         ]:
             assert token in text
+
+    def test_nexus_6_footprint_quality_gates_exhaustion_and_divergence(self) -> None:
+        """[Req: formal — footprint fail-closed semantics] Exhaustion/divergence require footprint quality when confirmed."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+
+        assert "bool fpQualityOk" in pine
+        assert "fpBarsSinceGap >= fpQualityBarsNeeded" in pine
+        assert "nexus_fp_quality_ok" in pine
+        assert "int deltaDir = not fpQualityOk" in pine
+        assert "bool gasOutBull = fpQualityOk" in pine
+        assert "bool gasOutBear = fpQualityOk" in pine
+        assert "fatObSignal = showFatigueInput and fatObCount == fatigueBarsInput and gasOutBull" in pine
+        assert "fatOsSignal = showFatigueInput and fatOsCount == fatigueBarsInput and gasOutBear" in pine
+        assert "not volumeAvailable[pivSpan]" not in pine
+        assert "sfFootprintPassBull = fpQualityOk[pivSpan] == true" in pine
+        assert "sfFootprintPassBear = fpQualityOk[pivSpan] == true" in pine
+
+    def test_nexus_7_alert_surface_removed_and_cross_dots_ui_only(self) -> None:
+        """[Req: user-confirmed — alerts not signal authority] Alert code stays removed and cross dots are context-only."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+
+        assert "GRP_ALERT" not in pine
+        assert "alertcondition(" not in pine
+        assert "alert(" not in pine
+        assert 'showCrossDotsInput = input.bool(false, "Show Cross Dots"' in pine
+        assert "UI-only context dots" in pine
+        assert "crossDotY = showCrossDotsInput" in pine
+
+    def test_nexus_8_signal_tier_uses_only_footprint_gated_signals(self) -> None:
+        """[Req: formal — footprint signal tier authority] Export-only signal tier is built from footprint-gated Tier 1/Tier 2 signals."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+
+        assert "bullReversalSignal = gasOutBear and oscVal <= effOS and isWarmedUp" in pine
+        assert "bearReversalSignal = gasOutBull and oscVal >= effOB and isWarmedUp" in pine
+        assert "bullTier2Signal    = bullCandidateCross and deltaBullConfirm and not bullReversalSignal" in pine
+        assert "bearTier2Signal    = bearCandidateCross and deltaBearConfirm and not bearReversalSignal" in pine
+        signal_tier_line = [line for line in pine.splitlines() if '"nexus_signal_tier"' in line]
+        assert len(signal_tier_line) == 1
+        assert "crossUp" not in signal_tier_line[0]
+        assert "crossDown" not in signal_tier_line[0]
+        assert "bullReversalSignal" in signal_tier_line[0]
+        assert "bearReversalSignal" in signal_tier_line[0]
+        assert "bullTier2Signal" in signal_tier_line[0]
+        assert "bearTier2Signal" in signal_tier_line[0]
+
+
+    def test_nexus_9_verification_checkpoint_documents_current_contract(self) -> None:
+        """[Req: formal — verification checkpoint] The Nexus checkpoint records the current footprint-quality contract."""
+        checkpoint = _repo_file_text("quality/results/2026-05-15-nexus-footprint-quality-verification.md")
+
+        for token in [
+            "Nexus-only verification",
+            "fpQualityOk",
+            "nexus_fp_quality_ok",
+            "Alert group, alert inputs",
+            "data-window/export-only",
+            "Triple-Check Plan",
+            "No V9 Pine, V9 trainer, V9 export",
+        ]:
+            assert token in checkpoint
+
+
+    def test_nexus_10_lag_false_signal_diagnostic_exports_exist(self) -> None:
+        """[Req: formal — lag/false-signal diagnostics] Export-only diagnostics expose divergence, pivot lag, regime, momentum, and flow state."""
+        pine = _repo_file_text("indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine")
+
+        for token in [
+            "bool divRegBullConfirmed",
+            "bool divRegBearConfirmed",
+            "bool divHidBullConfirmed",
+            "bool divHidBearConfirmed",
+            "if divRegBullConfirmed",
+            "if divRegBearConfirmed",
+            "if divHidBullConfirmed",
+            "if divHidBearConfirmed",
+        ]:
+            assert token in pine
+
+        for plot_name in [
+            "nexus_pivot_span",
+            "nexus_regime_score",
+            "nexus_osc_momentum",
+            "nexus_vf_calc",
+            "nexus_div_reg_bull_raw",
+            "nexus_div_reg_bear_raw",
+            "nexus_div_hid_bull_raw",
+            "nexus_div_hid_bear_raw",
+            "nexus_div_reg_bull",
+            "nexus_div_reg_bear",
+            "nexus_div_hid_bull",
+            "nexus_div_hid_bear",
+        ]:
+            matching_lines = [line for line in pine.splitlines() if f'"{plot_name}"' in line]
+            assert len(matching_lines) == 1
+            assert "display = display.data_window" in matching_lines[0]
+            assert "display = display.none" not in matching_lines[0]
+
+
+    def test_nexus_11_isolated_15m_builder_pretraining_gate_exists(self) -> None:
+        """[Req: user-confirmed — sequential heavy training] Nexus 15m builder is isolated and audit-first."""
+        builder = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/build_nexus_15m_dataset.py")
+        readme = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/README.md")
+        audit = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/reports/pretrain_label_audit.md")
+        manifest = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/exports/nexus_15m_dataset.manifest.json")
+
+        for token in [
+            "warbird_nexus_ml_rsi_15m",
+            "NEXUS_FOOTPRINT_DELTA",
+            "TV_NEXUS_15M_CHART_EXPORT",
+            "label_volume_expansion_next_12b",
+            "EMBARGO_BARS",
+            "not_footprint_quality",
+            "training_started",
+        ]:
+            assert str(token) in builder or str(token) in manifest or str(token) in audit
+
+        assert "No V9 Pine/trainer/export/model files are touched" in audit
+        assert "No V9 artifacts used" in manifest
+        assert "not replace the periodic Optuna workspace" in readme
+        assert "train_v9_locked" not in builder
+        assert "warbird_pro_v9" not in builder
+
+
+    def test_nexus_12_heavy_trainer_contract_exists(self) -> None:
+        """[Req: user-approved — Nexus heavy training] Heavy trainer is Nexus-only and target-sequential."""
+        trainer = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/train_nexus_15m_heavy.py")
+        readme = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/README.md")
+        runbook = _repo_file_text("quality/RUN_NEXUS_INDICATOR.md")
+
+        for token in [
+            "NEXUS_FOOTPRINT_DELTA",
+            "TV_NEXUS_15M_CHART_EXPORT",
+            "label_volume_expansion_next_12b",
+            "best_quality",
+            "log_loss",
+            "DEFAULT_NUM_BAG_FOLDS = 5",
+            "DEFAULT_NUM_BAG_SETS = 2",
+            "DEFAULT_NUM_STACK_LEVELS = 1",
+            "DEFAULT_HPO_TRIALS = 80",
+            "DEFAULT_MODEL_PROFILE = \"neural_scout\"",
+            "model_profile_contract",
+            "fixed_scout_families",
+            "use_bag_holdout",
+            "dynamic_stacking",
+            "training_started",
+            "No V9 artifacts used",
+        ]:
+            assert token in trainer or token in readme or token in runbook
+
+        assert "train_v9_locked" not in trainer
+        assert "warbird_pro_v9" not in trainer
+        assert "winner_tp_before_sl" not in trainer
+        assert "models" in trainer
+        assert "warbird_nexus_ml_rsi_15m" in trainer
+        assert "Internal k-fold scores are not OOS proof" in readme
+        assert "future test split" in runbook
+        assert "num_bag_folds >= 2" in trainer
+        assert "--model-profile neural_scout" in readme or "--model-profile neural_scout" in runbook
+
+
+    def test_nexus_13_section_chain_contract_exists(self) -> None:
+        """[Req: user-approved — section-by-section optimization] Nexus trains one indicator area at a time."""
+        trainer = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/train_nexus_15m_heavy.py")
+        chain = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/run_nexus_15m_section_chain.py")
+        readme = _repo_file_text("scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/README.md")
+        runbook = _repo_file_text("quality/RUN_NEXUS_INDICATOR.md")
+
+        for token in [
+            "footprint_delta_flow",
+            "volume_flow",
+            "oscillator_regime",
+            "divergence_exhaustion",
+            "signal_tier_composite",
+            "save_and_proceed",
+            "rerun_or_expand_section",
+            "baseline_log_loss",
+            "SECTION_SEQUENCE",
+        ]:
+            assert token in trainer or token in chain or token in readme or token in runbook
+
+        assert "stop-after-one" in readme
+        assert "auto-rerun-on-fail" in chain
+        assert "model-profile" in chain
+        assert "chronological test" in runbook
+        assert "train_v9_locked" not in trainer
+        assert "warbird_pro_v9" not in trainer

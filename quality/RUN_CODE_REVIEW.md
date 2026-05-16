@@ -185,15 +185,15 @@ Nexus reviews are scoped to the indicator lane. Do not review V9 trainer/ETL/mod
 
 ### Focus Area 14: Plot And Export Contract
 
-**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (visible plots, hidden `nexus_*` plots)
+**Where:** indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine (visible plots, data-window/export-only `nexus_*` plots)
 
 **What:**
 
 - Visible plots still match the settings that control them.
-- Hidden evidence plots still include footprint availability, bar delta, total volume, normalized delta, slope, ratio, direction, gas-out flags, mode minutes, and signal tier.
+- Data-window/export-only evidence plots still include footprint availability, footprint quality, bar delta, total volume, normalized delta, slope, ratio, direction, gas-out flags, mode minutes, signal tier, pivot span, regime score, oscillator momentum, volume-flow state, and raw/confirmed divergence flags.
 - Any plot rename/removal is documented in the same change.
 
-**Why:** Hidden plots are the CSV/evidence contract for Nexus research.
+**Why:** Data-window/export-only plots are the CSV/evidence contract for Nexus research.
 
 ### Focus Area 15: Pine Verification And Resource Budget
 
@@ -206,6 +206,19 @@ Nexus reviews are scoped to the indicator lane. Do not review V9 trainer/ETL/mod
 - Additional plot/alert/request paths are budgeted before merge.
 
 **Why:** TradingView resource limits can break an otherwise plausible indicator.
+
+### Focus Area 16: Nexus Tuning-Path Governance During Deferred Hold
+
+**Where:** quality/RUN_NEXUS_INDICATOR.md (Deferred Hold section), Nexus tuning scripts and Pine changesets when resumed
+
+**What:**
+
+- TV-only footprint/exhaustion knobs are not routed to reconstruction-only Python tuning.
+- The selected tuning path is explicitly documented (Optuna Python, CDP TV auto-tune, or manual deep backtest).
+- During active-run defer windows, only docs/workbook updates occur; no active training/Pine mutation occurs.
+- TC skill mapping is present for the planned Pine surface before implementation resumes.
+
+**Why:** Mixing tuning paths creates non-reproducible champions and wastes compute with false optimization confidence.
 
 ## Guardrails
 

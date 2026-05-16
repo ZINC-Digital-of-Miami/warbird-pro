@@ -1,0 +1,228 @@
+{
+  "title": "Nexus 15m Section 04 divergence_exhaustion",
+  "section": "divergence_exhaustion",
+  "target": "label_swing_low_next_12b",
+  "training_runtime_note": "AutoGluon reported total runtime 6034.62 seconds in tool output.",
+  "source_csv": "/Users/zincdigital/Downloads/CME_MINI_MES1!, 15_d464a.csv",
+  "source_sha256": "560a0da03115be6c689a61c7bb5cdea861e16174a6a115efb65c25f745b351d7",
+  "dataset_sha256": "004e4b7ed584d12de7a722e5a32ecd1752ac5374bedf924cc8bffd95f2d36d79",
+  "model_dir": "/Volumes/Satechi Hub/warbird-pro/models/warbird_nexus_ml_rsi_15m/heavy_20260515_213422/divergence_exhaustion/label_swing_low_next_12b",
+  "feature_count": 22,
+  "feature_columns": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "price_tr",
+    "price_atr14",
+    "price_er20",
+    "price_range20_atr",
+    "price_ret_1_atr",
+    "nexus_div_reg_bull_raw",
+    "nexus_div_reg_bear_raw",
+    "nexus_div_hid_bull_raw",
+    "nexus_div_hid_bear_raw",
+    "nexus_div_reg_bull",
+    "nexus_div_reg_bear",
+    "nexus_div_hid_bull",
+    "nexus_div_hid_bear",
+    "nexus_visible_tier1_exhaustion",
+    "nexus_visible_momentum_fatigue",
+    "nexus_gasout_bull",
+    "nexus_gasout_bear",
+    "nexus_signal_tier"
+  ],
+  "splits": {
+    "train": {
+      "rows": 4661,
+      "positive_rows": 3795,
+      "positive_rate": 0.814202960738039,
+      "class_counts": {
+        "0": 866,
+        "1": 3795
+      },
+      "ts_start": "2026-02-03T16:00:00+00:00",
+      "ts_end": "2026-04-15T18:45:00+00:00"
+    },
+    "validation": {
+      "rows": 978,
+      "positive_rows": 821,
+      "positive_rate": 0.8394683026584867,
+      "class_counts": {
+        "0": 157,
+        "1": 821
+      },
+      "ts_start": "2026-04-16T01:15:00+00:00",
+      "ts_end": "2026-04-30T15:30:00+00:00"
+    },
+    "test": {
+      "rows": 966,
+      "positive_rows": 798,
+      "positive_rate": 0.8260869565217391,
+      "class_counts": {
+        "0": 168,
+        "1": 798
+      },
+      "ts_start": "2026-04-30T22:00:00+00:00",
+      "ts_end": "2026-05-15T09:15:00+00:00"
+    }
+  },
+  "fit_settings": {
+    "presets": "best_quality",
+    "eval_metric": "log_loss",
+    "time_limit_sec": 14400,
+    "hpo_num_trials": 80,
+    "calibrate": true,
+    "use_bag_holdout": true,
+    "num_bag_folds": 5,
+    "num_bag_sets": 2,
+    "num_stack_levels": 1,
+    "dynamic_stacking": "auto",
+    "delay_bag_sets": false,
+    "feature_importance_shuffles": 10,
+    "model_profile": "neural_scout",
+    "model_profile_contract": {
+      "profile": "neural_scout",
+      "full_hpo_families": [
+        "FASTAI",
+        "NN_TORCH"
+      ],
+      "fixed_scout_families": [
+        "GBM",
+        "CAT",
+        "XGB"
+      ],
+      "dropped_families": [
+        "RF",
+        "XT"
+      ],
+      "reason": "Sections 01-02 OOS leaderboards were dominated by neural families; trees are fixed tiny scouts only."
+    },
+    "min_roc_auc": 0.55,
+    "min_ap_lift": 0.02,
+    "hyperparameter_families": [
+      "FASTAI",
+      "NN_TORCH",
+      "GBM",
+      "CAT",
+      "XGB"
+    ]
+  },
+  "leakage_guard": {
+    "label_horizon_bars": 12,
+    "embargo_bars": 21,
+    "bagging_policy": "AutoGluon k-fold bagging is allowed only inside the historical train segment; chronological validation is passed as tuning_data with use_bag_holdout=True, and the future test split is never used for fitting or ensemble weighting.",
+    "proof_policy": "Use chronological validation/test metrics only; never treat internal k-fold scores as OOS proof."
+  },
+  "baseline_metrics": {
+    "baseline_probability": 0.814202960738039,
+    "baseline_log_loss": 0.4625116554590619,
+    "baseline_average_precision": 0.8260869565217391
+  },
+  "section_decision": {
+    "decision": "save_and_proceed",
+    "passed": true,
+    "min_roc_auc": 0.55,
+    "min_ap_lift": 0.02,
+    "roc_auc": 0.5716598042725862,
+    "average_precision_lift_vs_base_rate": 0.0302315843130726,
+    "log_loss_lift_vs_baseline": 0.0032603689965560734,
+    "reason": "Chronological test beat baseline gates; save this section and proceed."
+  },
+  "leaderboard_top_model": "NeuralNetTorch_BAG_L1/f87e2_00023",
+  "leaderboard_top_score_test": -0.4562097709580979,
+  "leaderboard_top_score_val": -0.46716498802068007,
+  "test_metrics": {
+    "log_loss": 0.45925128646250585,
+    "brier_score": 0.14279649309236128,
+    "accuracy_at_0p5": 0.8260869565217391,
+    "positive_rate_pred_at_0p5": 1.0,
+    "mean_positive_probability": 0.8449904519613994,
+    "roc_auc": 0.5716598042725862,
+    "average_precision": 0.8563185408348117
+  },
+  "feature_importance_top10": {
+    "price_ret_1_atr": {
+      "importance": 0.0051047767762197275,
+      "stddev": 0.0013503659039506802,
+      "p_value": 3.9770161926412384e-07,
+      "n": 10,
+      "p99_high": 0.006492531926278066,
+      "p99_low": 0.0037170216261613893
+    },
+    "price_range20_atr": {
+      "importance": 0.0046565708987141245,
+      "stddev": 0.0022293889389134952,
+      "p_value": 4.934645848189832e-05,
+      "n": 10,
+      "p99_high": 0.006947687678550483,
+      "p99_low": 0.0023654541188777656
+    },
+    "price_er20": {
+      "importance": 0.0017978726205090223,
+      "stddev": 0.0009591303158604553,
+      "p_value": 0.00011068450290583766,
+      "n": 10,
+      "p99_high": 0.002783559560262383,
+      "p99_low": 0.0008121856807556613
+    },
+    "price_atr14": {
+      "importance": 0.00041728543359404455,
+      "stddev": 0.0011760503023394652,
+      "p_value": 0.14544417019980438,
+      "n": 10,
+      "p99_high": 0.0016258984910064202,
+      "p99_low": -0.0007913276238183312
+    },
+    "price_tr": {
+      "importance": 0.0003026998367764322,
+      "stddev": 0.0013980626982126767,
+      "p_value": 0.2553966976474693,
+      "n": 10,
+      "p99_high": 0.0017394724210610835,
+      "p99_low": -0.001134072747508219
+    },
+    "nexus_gasout_bull": {
+      "importance": 8.49968097401621e-05,
+      "stddev": 0.00033851622784936044,
+      "p_value": 0.22381066759156215,
+      "n": 10,
+      "p99_high": 0.0004328859538616723,
+      "p99_low": -0.00026289233438134816
+    },
+    "nexus_div_reg_bear_raw": {
+      "importance": 5.859160555804488e-05,
+      "stddev": 4.4629406118487075e-05,
+      "p_value": 0.0012392597905102425,
+      "n": 10,
+      "p99_high": 0.00010445672108249431,
+      "p99_low": 1.2726490033595448e-05
+    },
+    "close": {
+      "importance": 5.146653856645811e-05,
+      "stddev": 5.69948551944941e-05,
+      "p_value": 0.009458632641983924,
+      "n": 10,
+      "p99_high": 0.0001100394806050459,
+      "p99_low": -7.106403472129678e-06
+    },
+    "nexus_div_reg_bear": {
+      "importance": 5.087885356417909e-05,
+      "stddev": 7.239974312698663e-05,
+      "p_value": 0.026682209151194586,
+      "n": 10,
+      "p99_high": 0.00012528321766536722,
+      "p99_low": -2.3525510537009034e-05
+    },
+    "open": {
+      "importance": 4.571991736955772e-05,
+      "stddev": 4.745006352665886e-05,
+      "p_value": 0.006930305919355264,
+      "n": 10,
+      "p99_high": 9.448378932238596e-05,
+      "p99_low": -3.0439545832705204e-06
+    }
+  },
+  "scope_lock": "Nexus-only; No V9 Pine/trainer/export/model/fib surface used.",
+  "caution": "This target is highly imbalanced and the default 0.5 threshold predicts all positives; treat as weak-pass diagnostics rather than a settings-ready divergence model."
+}

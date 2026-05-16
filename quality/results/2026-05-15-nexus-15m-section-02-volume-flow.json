@@ -1,0 +1,207 @@
+{
+  "title": "Nexus 15m Section 02 volume_flow",
+  "section": "volume_flow",
+  "target": "label_volume_expansion_next_12b",
+  "training_runtime_note": "AutoGluon reported total runtime 9375.71 seconds in tool output.",
+  "source_csv": "/Users/zincdigital/Downloads/CME_MINI_MES1!, 15_d464a.csv",
+  "source_sha256": "560a0da03115be6c689a61c7bb5cdea861e16174a6a115efb65c25f745b351d7",
+  "dataset_sha256": "004e4b7ed584d12de7a722e5a32ecd1752ac5374bedf924cc8bffd95f2d36d79",
+  "model_dir": "/Volumes/Satechi Hub/warbird-pro/models/warbird_nexus_ml_rsi_15m/heavy_20260515_162301/volume_flow/label_volume_expansion_next_12b",
+  "feature_count": 18,
+  "feature_columns": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "price_tr",
+    "price_atr14",
+    "price_er20",
+    "price_range20_atr",
+    "price_ret_1_atr",
+    "nexus_visible_vf_bull",
+    "nexus_visible_vf_bear",
+    "nexus_visible_vf_base",
+    "nexus_visible_delta_gasout",
+    "nexus_vf_calc",
+    "nexus_gasout_bull",
+    "nexus_gasout_bear",
+    "nexus_fp_total_volume",
+    "nexus_bar_delta_ratio"
+  ],
+  "splits": {
+    "train": {
+      "rows": 4661,
+      "positive_rows": 2058,
+      "positive_rate": 0.4415361510405492,
+      "class_counts": {
+        "0": 2603,
+        "1": 2058
+      },
+      "ts_start": "2026-02-03T16:00:00+00:00",
+      "ts_end": "2026-04-15T18:45:00+00:00"
+    },
+    "validation": {
+      "rows": 978,
+      "positive_rows": 430,
+      "positive_rate": 0.4396728016359918,
+      "class_counts": {
+        "0": 548,
+        "1": 430
+      },
+      "ts_start": "2026-04-16T01:15:00+00:00",
+      "ts_end": "2026-04-30T15:30:00+00:00"
+    },
+    "test": {
+      "rows": 966,
+      "positive_rows": 411,
+      "positive_rate": 0.4254658385093168,
+      "class_counts": {
+        "0": 555,
+        "1": 411
+      },
+      "ts_start": "2026-04-30T22:00:00+00:00",
+      "ts_end": "2026-05-15T09:15:00+00:00"
+    }
+  },
+  "fit_settings": {
+    "presets": "best_quality",
+    "eval_metric": "log_loss",
+    "time_limit_sec": 14400,
+    "hpo_num_trials": 80,
+    "calibrate": true,
+    "use_bag_holdout": true,
+    "num_bag_folds": 5,
+    "num_bag_sets": 2,
+    "num_stack_levels": 1,
+    "dynamic_stacking": "auto",
+    "delay_bag_sets": false,
+    "feature_importance_shuffles": 10,
+    "min_roc_auc": 0.55,
+    "min_ap_lift": 0.02,
+    "hyperparameter_families": [
+      "GBM",
+      "CAT",
+      "XGB",
+      "RF",
+      "XT",
+      "NN_TORCH",
+      "FASTAI"
+    ]
+  },
+  "leakage_guard": {
+    "label_horizon_bars": 12,
+    "embargo_bars": 21,
+    "bagging_policy": "AutoGluon k-fold bagging is allowed only inside the historical train segment; chronological validation is passed as tuning_data with use_bag_holdout=True, and the future test split is never used for fitting or ensemble weighting.",
+    "proof_policy": "Use chronological validation/test metrics only; never treat internal k-fold scores as OOS proof."
+  },
+  "baseline_metrics": {
+    "baseline_probability": 0.4415361510405492,
+    "baseline_log_loss": 0.6825200759691016,
+    "baseline_average_precision": 0.4254658385093168
+  },
+  "section_decision": {
+    "decision": "save_and_proceed",
+    "passed": true,
+    "min_roc_auc": 0.55,
+    "min_ap_lift": 0.02,
+    "roc_auc": 0.8577058810635453,
+    "average_precision_lift_vs_base_rate": 0.4168610330753913,
+    "log_loss_lift_vs_baseline": 0.1697235398061019,
+    "reason": "Chronological test beat baseline gates; save this section and proceed."
+  },
+  "leaderboard_top_model": "NeuralNetFastAI_BAG_L1/d5f89_00070",
+  "leaderboard_top_score_test": -0.41832216930552046,
+  "leaderboard_top_score_val": -0.4276119527158182,
+  "test_metrics": {
+    "log_loss": 0.5127965361629997,
+    "brier_score": 0.16904497777969568,
+    "accuracy_at_0p5": 0.7546583850931677,
+    "positive_rate_pred_at_0p5": 0.5279503105590062,
+    "mean_positive_probability": 0.565270461793557,
+    "roc_auc": 0.8577058810635453,
+    "average_precision": 0.8423268715847081
+  },
+  "feature_importance_top10": {
+    "nexus_fp_total_volume": {
+      "importance": 0.37536340223781756,
+      "stddev": 0.02567667948324492,
+      "p_value": 2.5951154062755533e-12,
+      "n": 10,
+      "p99_high": 0.4017510236114181,
+      "p99_low": 0.348975780864217
+    },
+    "nexus_visible_vf_bull": {
+      "importance": 0.0030277581799166508,
+      "stddev": 0.001222838462840051,
+      "p_value": 1.3136198344715953e-05,
+      "n": 10,
+      "p99_high": 0.004284454879330414,
+      "p99_low": 0.001771061480502888
+    },
+    "price_tr": {
+      "importance": 0.0016211323424230374,
+      "stddev": 0.0031559906860406687,
+      "p_value": 0.06937262728366331,
+      "n": 10,
+      "p99_high": 0.004864506834681431,
+      "p99_low": -0.0016222421498353567
+    },
+    "nexus_gasout_bull": {
+      "importance": 0.00024937969764944335,
+      "stddev": 0.00047477019443687557,
+      "p_value": 0.06553753215875205,
+      "n": 10,
+      "p99_high": 0.0007372954399651916,
+      "p99_low": -0.00023853604466630486
+    },
+    "open": {
+      "importance": 0.0,
+      "stddev": 0.0,
+      "p_value": 0.5,
+      "n": 10,
+      "p99_high": 0.0,
+      "p99_low": 0.0
+    },
+    "low": {
+      "importance": 0.0,
+      "stddev": 0.0,
+      "p_value": 0.5,
+      "n": 10,
+      "p99_high": 0.0,
+      "p99_low": 0.0
+    },
+    "close": {
+      "importance": 0.0,
+      "stddev": 0.0,
+      "p_value": 0.5,
+      "n": 10,
+      "p99_high": 0.0,
+      "p99_low": 0.0
+    },
+    "high": {
+      "importance": 0.0,
+      "stddev": 0.0,
+      "p_value": 0.5,
+      "n": 10,
+      "p99_high": 0.0,
+      "p99_low": 0.0
+    },
+    "nexus_visible_vf_bear": {
+      "importance": -0.00027361578446467584,
+      "stddev": 0.003836246376402018,
+      "p_value": 0.5867034546341028,
+      "n": 10,
+      "p99_high": 0.0036688494763724927,
+      "p99_low": -0.004216081045301845
+    },
+    "nexus_visible_delta_gasout": {
+      "importance": -0.0006889865354599234,
+      "stddev": 0.0007224244168414599,
+      "p_value": 0.992712203936267,
+      "n": 10,
+      "p99_high": 5.3440537133168215e-05,
+      "p99_low": -0.001431413608053015
+    }
+  },
+  "scope_lock": "Nexus-only; No V9 Pine/trainer/export/model/fib surface used."
+}

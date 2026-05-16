@@ -3,9 +3,10 @@
 // Warbird Nexus Machine Learning RSI
 // ══════════════════════════════════════════════════════════
 // Author:  Kirk Musick
-// Version: 1.2.5-optuna-footprint — Nexus footprint/multi-mode lane
-// Defaults restored to Optuna Fast 5m Signal Quality April 25 trial #357 after expanded #492 visual rejection.
-// Signal-quality research only; not a production trade/P&L champion.
+// Version: 1.2.6-footprint-quality — Nexus-only footprint/multi-mode lane
+// Current checkpoint: footprint-quality fail-closed repair, data-window/export-only quality/diagnostic exports, and alert-surface removal.
+// Defaults retain the prior Nexus Optuna snapshot until a new isolated Nexus 15m training run is approved.
+// Research/support indicator only; not a production trade/P&L champion and not part of Warbird V9.
 
 indicator(
     title            = "Warbird Nexus Machine Learning RSI - Optuna Fast Test",
@@ -27,10 +28,9 @@ GRP_REGIME  = "🔬 Regime Detection"
 GRP_DIV     = "🔀 Divergence"
 GRP_EXHAUST = "💨 Momentum Fatigue"
 GRP_DELTA   = "🧩 Footprint Delta"
-GRP_ALERT   = "🔔 Alerts"
 GRP_COLORS  = "🎨 Colors"
 
-const string INDICATOR_VERSION = "v1.2.5-optuna-footprint"
+const string INDICATOR_VERSION = "v1.2.6-footprint-quality"
 const color WARBIRD_BULL = #26C6DA
 const color WARBIRD_BEAR = #cc0000
 const color WARBIRD_YELLOW = #FFEB3B
@@ -78,8 +78,8 @@ sigTypeInput = input.string("EMA", "Signal Smoothing",
     options = ["EMA", "SMA", "DEMA", "WMA"],
     group = GRP_MAIN,
     tooltip = "Smoothing method for the signal/trigger line.\nEMA recommended for responsive crossovers.")
-showCrossDotsInput = input.bool(true, "Show Cross Dots", group = GRP_MAIN,
-    tooltip = "Show dots when oscillator crosses the signal line")
+showCrossDotsInput = input.bool(false, "Show Cross Dots", group = GRP_MAIN,
+    tooltip = "Show UI-only context dots when oscillator crosses the signal line. These dots are not Nexus signal authority and are excluded from the footprint signal tier.")
 
 // ══════════════════════════════════════════════════════════
 // INPUTS — Visual Settings
@@ -182,7 +182,7 @@ divMaxAgeInput = input.int(60, "Max Pivot Age (bars)", minval = 20, maxval = 500
 // INPUTS — Momentum Fatigue
 // ══════════════════════════════════════════════════════════
 showFatigueInput = input.bool(true, "Show Fatigue Markers", group = GRP_EXHAUST,
-    tooltip = "Detects momentum fatigue with chart markers.\n◆ Bearish Exhaustion: weakening in overbought zone\n◆ Bullish Exhaustion: strengthening in oversold zone")
+    tooltip = "Detects footprint-confirmed momentum fatigue with chart markers.\n◆ Bearish Exhaustion: overbought weakening + bullish delta gas-out\n◆ Bullish Exhaustion: oversold strengthening + bearish delta gas-out")
 fatigueBarsInput = input.int(4, "Confirmation Bars", minval = 1, maxval = 5, group = GRP_EXHAUST,
     tooltip = "Consecutive bars of weakening/strengthening needed.\n1=fast, 3=balanced, 5=very strict")
 fatigueMarkerColorInput = input.color(color.new(WARBIRD_YELLOW, 20), "Fatigue Color", inline = "exh_colors", group = GRP_EXHAUST)
@@ -193,24 +193,6 @@ gasOutOffsetInput = input.float(10.0, "Gas-Out Offset", minval = 2.0, maxval = 2
     tooltip = "Vertical offset applied to gas-out diamonds so they remain readable above/below the oscillator trace.")
 
 
-
-// ══════════════════════════════════════════════════════════
-// INPUTS — Alerts
-// ══════════════════════════════════════════════════════════
-webhookInput = input.bool(false, "Webhook JSON Format", group = GRP_ALERT,
-    tooltip = "Send alerts in JSON format for webhook integrations")
-alCrossInput = input.bool(true, "Cross Alerts", group = GRP_ALERT,
-    tooltip = "Alert when oscillator crosses the signal line in oversold/overbought zones")
-alZoneInput = input.bool(false, "Zone Exit Alerts", group = GRP_ALERT,
-    tooltip = "Alert when oscillator exits OB or OS zone")
-alDivRegAlertInput = input.bool(true, "Regular Div Alerts", group = GRP_ALERT,
-    tooltip = "Alert on regular divergence detection")
-alDivHidAlertInput = input.bool(false, "Hidden Div Alerts", group = GRP_ALERT,
-    tooltip = "Alert on hidden divergence detection")
-alVolFlowInput = input.bool(false, "Volume Flow Alerts", group = GRP_ALERT,
-    tooltip = "Alert when volume flow crosses the midline")
-alFatigueInput = input.bool(true, "Fatigue Alerts", group = GRP_ALERT,
-    tooltip = "Alert when fatigue label fires in OB or OS zone")
 
 // ══════════════════════════════════════════════════════════
 // THEME DETECTION & COLORS
@@ -320,11 +302,14 @@ float fpAvgVolume = fpFlowAvailable ? fpAvgVolumeRaw : na
 float normCumDelta = fpFlowAvailable and not na(fpAvgVolume) and fpAvgVolume > 0 ? safeDiv(fpCumDelta, math.max(fpAvgVolume * deltaLookbackInput, 1.0), 0.0) : na
 float deltaSlope = fpFlowAvailable ? normCumDelta - nz(normCumDelta[deltaSlopeLenInput], normCumDelta) : na
 float barDeltaRatio = fpFlowAvailable ? safeDiv(fpBarDelta, fpTotalVolume, 0.0) : na
-int deltaDir = not fpFlowAvailable or na(normCumDelta) ? 0 : normCumDelta > deltaFlipThresholdInput ? 1 : normCumDelta < -deltaFlipThresholdInput ? -1 : 0
-bool gasOutBull = fpFlowAvailable and normCumDelta > 0.0 and deltaSlope < -gasoutThreshInput
-bool gasOutBear = fpFlowAvailable and normCumDelta < 0.0 and deltaSlope > gasoutThreshInput
-bool deltaBullConfirm = fpFlowAvailable and deltaDir == 1
-bool deltaBearConfirm = fpFlowAvailable and deltaDir == -1
+int fpQualityBarsNeeded = math.max(deltaLookbackInput, deltaSlopeLenInput)
+int fpBarsSinceGap = nz(ta.barssince(not fpFlowAvailable), bar_index + 1)
+bool fpQualityOk = fpFlowAvailable and fpBarsSinceGap >= fpQualityBarsNeeded and not na(normCumDelta) and not na(deltaSlope) and not na(barDeltaRatio)
+int deltaDir = not fpQualityOk or na(normCumDelta) ? 0 : normCumDelta > deltaFlipThresholdInput ? 1 : normCumDelta < -deltaFlipThresholdInput ? -1 : 0
+bool gasOutBull = fpQualityOk and normCumDelta > 0.0 and deltaSlope < -gasoutThreshInput
+bool gasOutBear = fpQualityOk and normCumDelta < 0.0 and deltaSlope > gasoutThreshInput
+bool deltaBullConfirm = fpQualityOk and deltaDir == 1
+bool deltaBearConfirm = fpQualityOk and deltaDir == -1
 
 // ══════════════════════════════════════════════════════════
 // ENGINE — Adaptive Momentum Fusion (AMF)
@@ -420,8 +405,8 @@ var int fatOsCount = 0
 fatObCount := fatigueObWeak ? fatObCount + 1 : 0
 fatOsCount := fatigueOsStr  ? fatOsCount + 1 : 0
 
-bool fatObSignal = showFatigueInput and fatObCount == fatigueBarsInput and isWarmedUp
-bool fatOsSignal = showFatigueInput and fatOsCount == fatigueBarsInput and isWarmedUp
+bool fatObSignal = showFatigueInput and fatObCount == fatigueBarsInput and gasOutBull and isWarmedUp
+bool fatOsSignal = showFatigueInput and fatOsCount == fatigueBarsInput and gasOutBear and isWarmedUp
 
 // ══════════════════════════════════════════════════════════
 // KNN BIAS — Manhattan Distance + Inverse-Distance Weighting
@@ -484,8 +469,10 @@ float sfOscSwingLL   = not na(curLL_o) and not na(prevLL_o) ? math.abs(curLL_o -
 float sfOscSwingHH   = not na(curHH_o) and not na(prevHH_o) ? math.abs(curHH_o - prevHH_o) : 0.0
 float sfPriceSwingLL = not na(curLL_p) and not na(prevLL_p) ? math.abs(curLL_p - prevLL_p) : 0.0
 float sfPriceSwingHH = not na(curHH_p) and not na(prevHH_p) ? math.abs(curHH_p - prevHH_p) : 0.0
-bool sfVolPassBull = not divVolConfInput or not volumeAvailable[pivSpan] or vfCalcVal[pivSpan] > vfGateThresholdInput
-bool sfVolPassBear = not divVolConfInput or not volumeAvailable[pivSpan] or vfCalcVal[pivSpan] < vfGateBearThreshold
+bool sfFootprintPassBull = fpQualityOk[pivSpan] == true and vfCalcVal[pivSpan] > vfGateThresholdInput
+bool sfFootprintPassBear = fpQualityOk[pivSpan] == true and vfCalcVal[pivSpan] < vfGateBearThreshold
+bool sfVolPassBull = not divVolConfInput or sfFootprintPassBull
+bool sfVolPassBear = not divVolConfInput or sfFootprintPassBear
 bool sfPassBull = not divFilterInput or (sfOscSwingLL >= divMinOscInput and sfPriceSwingLL >= sfMinPriceAbs and sfVolPassBull)
 bool sfPassBear = not divFilterInput or (sfOscSwingHH >= divMinOscInput and sfPriceSwingHH >= sfMinPriceAbs and sfVolPassBear)
 
@@ -493,20 +480,24 @@ color divRegBullCol = color.new(bullColorInput, 100 - divRegAlpha)
 color divRegBearCol = color.new(bearColorInput, 100 - divRegAlpha)
 color divHidBullCol = color.new(bullColorInput, 100 - divHidAlpha)
 color divHidBearCol = color.new(bearColorInput, 100 - divHidAlpha)
+bool divRegBullConfirmed = divRegInput and dRegBull and sfPassBull and isWarmedUp
+bool divRegBearConfirmed = divRegInput and dRegBear and sfPassBear and isWarmedUp
+bool divHidBullConfirmed = divHidInput and dHidBull and sfPassBull and isWarmedUp
+bool divHidBearConfirmed = divHidInput and dHidBear and sfPassBear and isWarmedUp
 
-if divRegInput and dRegBull and sfPassBull and isWarmedUp
+if divRegBullConfirmed
     line.new(prevLL_b, prevLL_o, bar_index[pivSpan], curLL_o, color = divRegBullCol, width = 2, style = line.style_solid)
     label.new(bar_index[pivSpan], curLL_o, "D▲", style = label.style_label_up, color = divRegBullCol, textcolor = color.white, size = divSz, tooltip = "Regular Bullish Divergence\nPrice: Lower Low | Osc: Higher Low\nPotential reversal upward")
 
-if divRegInput and dRegBear and sfPassBear and isWarmedUp
+if divRegBearConfirmed
     line.new(prevHH_b, prevHH_o, bar_index[pivSpan], curHH_o, color = divRegBearCol, width = 2, style = line.style_solid)
     label.new(bar_index[pivSpan], curHH_o, "D▼", style = label.style_label_down, color = divRegBearCol, textcolor = color.white, size = divSz, tooltip = "Regular Bearish Divergence\nPrice: Higher High | Osc: Lower High\nPotential reversal downward")
 
-if divHidInput and dHidBull and sfPassBull and isWarmedUp
+if divHidBullConfirmed
     line.new(prevLL_b, prevLL_o, bar_index[pivSpan], curLL_o, color = divHidBullCol, width = 2, style = line.style_dashed)
     label.new(bar_index[pivSpan], curLL_o, "H▲", style = label.style_label_up, color = divHidBullCol, textcolor = color.white, size = divSz, tooltip = "Hidden Bullish Divergence\nPrice: Higher Low | Osc: Lower Low\nUptrend continuation")
 
-if divHidInput and dHidBear and sfPassBear and isWarmedUp
+if divHidBearConfirmed
     line.new(prevHH_b, prevHH_o, bar_index[pivSpan], curHH_o, color = divHidBearCol, width = 2, style = line.style_dashed)
     label.new(bar_index[pivSpan], curHH_o, "H▼", style = label.style_label_down, color = divHidBearCol, textcolor = color.white, size = divSz, tooltip = "Hidden Bearish Divergence\nPrice: Lower High | Osc: Higher High\nDowntrend continuation")
 
@@ -543,9 +534,9 @@ bool bearCandidateCross = crossDown and isWarmedUp and oscVal > 50.0
 // Tier 1: footprint exhaustion (gasOut) AND oscillator in extreme zone
 bool bullReversalSignal = gasOutBear and oscVal <= effOS and isWarmedUp
 bool bearReversalSignal = gasOutBull and oscVal >= effOB and isWarmedUp
-// Tier 2: oscillator/signal cross in extreme zone without footprint confirmation
-bool bullTier2Signal    = bullCandidateCross and not bullReversalSignal
-bool bearTier2Signal    = bearCandidateCross and not bearReversalSignal
+// Tier 2: oscillator/signal cross in extreme zone with footprint direction confirmation
+bool bullTier2Signal    = bullCandidateCross and deltaBullConfirm and not bullReversalSignal
+bool bearTier2Signal    = bearCandidateCross and deltaBearConfirm and not bearReversalSignal
 float crossDotY = showCrossDotsInput and (crossUp or crossDown) ? sigVal : na
 color crossDotColor = crossUp ? bullColorInput : bearColorInput
 plotshape(crossDotY, "Cross Dot", shape.circle, location.absolute, crossDotColor, size = size.tiny)
@@ -553,6 +544,8 @@ plotshape(crossDotY, "Cross Dot", shape.circle, location.absolute, crossDotColor
 float reversalY = bullReversalSignal ? math.max(0.0, oscVal - 8.0) : bearReversalSignal ? math.min(100.0, oscVal + 8.0) : na
 color reversalColor = bullReversalSignal ? bullColorInput : bearReversalSignal ? bearColorInput : na
 plotshape(reversalY, "Tier 1 Exhaustion", shape.diamond, location.absolute, reversalColor, size = size.normal)
+float gasOutY = showGasOutInput and gasOutBull ? math.min(100.0, oscVal + gasOutOffsetInput) : showGasOutInput and gasOutBear ? math.max(0.0, oscVal - gasOutOffsetInput) : na
+plotshape(gasOutY, "Delta Gas-Out", shape.diamond, location.absolute, gasOutMarkerColorInput, size = size.tiny)
 float tier2Y    = bullTier2Signal ? math.max(0.0, oscVal - 4.0) : bearTier2Signal ? math.min(100.0, oscVal + 4.0) : na
 color tier2Color = bullTier2Signal ? color.new(bullColorInput, 40) : bearTier2Signal ? color.new(bearColorInput, 40) : na
 plotshape(tier2Y, "Tier 2 Cross", shape.circle, location.absolute, tier2Color, size = size.small)
@@ -575,17 +568,30 @@ fill(p_osc, p_mid, effOB, 50.0, obFillCol, color.new(chart.bg_color, 100), title
 fill(p_mid, p_osc, 50.0, effOS, color.new(chart.bg_color, 100), osFillCol, title = "Bear Gradient")
 fill(p_top, p_ob, regObFill, title = "Regime OB State")
 fill(p_os, p_bot, regOsFill, title = "Regime OS State")
-plot(fpFlowAvailable ? 1.0 : 0.0, "nexus_fp_available", display = display.none, editable = false)
-plot(fpBarDelta, "nexus_fp_bar_delta", display = display.none, editable = false)
-plot(fpTotalVolume, "nexus_fp_total_volume", display = display.none, editable = false)
-plot(normCumDelta, "nexus_norm_cum_delta", display = display.none, editable = false)
-plot(deltaSlope, "nexus_delta_slope", display = display.none, editable = false)
-plot(barDeltaRatio, "nexus_bar_delta_ratio", display = display.none, editable = false)
-plot(float(deltaDir), "nexus_delta_dir", display = display.none, editable = false)
-plot(gasOutBull ? 1.0 : 0.0, "nexus_gasout_bull", display = display.none, editable = false)
-plot(gasOutBear ? 1.0 : 0.0, "nexus_gasout_bear", display = display.none, editable = false)
-plot(modeInput == "5m" ? 5.0 : modeInput == "15m" ? 15.0 : modeInput == "1H" ? 60.0 : 240.0, "nexus_mode_minutes", display = display.none, editable = false)
-plot(bullReversalSignal ? 1.0 : bearReversalSignal ? -1.0 : bullTier2Signal ? 0.5 : bearTier2Signal ? -0.5 : 0.0, "nexus_signal_tier", display = display.none, editable = false)
+plot(fpFlowAvailable ? 1.0 : 0.0, "nexus_fp_available", display = display.data_window, editable = false)
+plot(fpQualityOk ? 1.0 : 0.0, "nexus_fp_quality_ok", display = display.data_window, editable = false)
+plot(fpBarDelta, "nexus_fp_bar_delta", display = display.data_window, editable = false)
+plot(fpTotalVolume, "nexus_fp_total_volume", display = display.data_window, editable = false)
+plot(normCumDelta, "nexus_norm_cum_delta", display = display.data_window, editable = false)
+plot(deltaSlope, "nexus_delta_slope", display = display.data_window, editable = false)
+plot(barDeltaRatio, "nexus_bar_delta_ratio", display = display.data_window, editable = false)
+plot(float(deltaDir), "nexus_delta_dir", display = display.data_window, editable = false)
+plot(gasOutBull ? 1.0 : 0.0, "nexus_gasout_bull", display = display.data_window, editable = false)
+plot(gasOutBear ? 1.0 : 0.0, "nexus_gasout_bear", display = display.data_window, editable = false)
+plot(modeInput == "5m" ? 5.0 : modeInput == "15m" ? 15.0 : modeInput == "1H" ? 60.0 : 240.0, "nexus_mode_minutes", display = display.data_window, editable = false)
+plot(bullReversalSignal ? 1.0 : bearReversalSignal ? -1.0 : bullTier2Signal ? 0.5 : bearTier2Signal ? -0.5 : 0.0, "nexus_signal_tier", display = display.data_window, editable = false)
+plot(float(pivSpan), "nexus_pivot_span", display = display.data_window, editable = false)
+plot(float(regimeScore), "nexus_regime_score", display = display.data_window, editable = false)
+plot(oscMom, "nexus_osc_momentum", display = display.data_window, editable = false)
+plot(vfCalcVal, "nexus_vf_calc", display = display.data_window, editable = false)
+plot(dRegBull ? 1.0 : 0.0, "nexus_div_reg_bull_raw", display = display.data_window, editable = false)
+plot(dRegBear ? 1.0 : 0.0, "nexus_div_reg_bear_raw", display = display.data_window, editable = false)
+plot(dHidBull ? 1.0 : 0.0, "nexus_div_hid_bull_raw", display = display.data_window, editable = false)
+plot(dHidBear ? 1.0 : 0.0, "nexus_div_hid_bear_raw", display = display.data_window, editable = false)
+plot(divRegBullConfirmed ? 1.0 : 0.0, "nexus_div_reg_bull", display = display.data_window, editable = false)
+plot(divRegBearConfirmed ? 1.0 : 0.0, "nexus_div_reg_bear", display = display.data_window, editable = false)
+plot(divHidBullConfirmed ? 1.0 : 0.0, "nexus_div_hid_bull", display = display.data_window, editable = false)
+plot(divHidBearConfirmed ? 1.0 : 0.0, "nexus_div_hid_bear", display = display.data_window, editable = false)
 
 
 // ══════════════════════════════════════════════════════════
@@ -595,115 +601,3 @@ if barstate.islast and showWatermarkInput
     var wmTable = table.new(position = position.bottom_center, columns = 2, rows = 1, bgcolor = color.new(color.black, 100), border_color = color.new(color.black, 100), border_width = 0, frame_color = color.new(color.black, 100), frame_width = 0)
     table.cell(wmTable, 0, 0, "WARBIRD", text_color = WM_COLOR, text_size = size.large, text_halign = text.align_right, bgcolor = color.new(color.black, 100), text_formatting = text.format_bold)
     table.cell(wmTable, 1, 0, "PRO", text_color = color.new(WARBIRD_BEAR, 35), text_size = size.large, text_halign = text.align_left, bgcolor = color.new(color.black, 100))
-
-// ══════════════════════════════════════════════════════════
-// ALERTS
-// ══════════════════════════════════════════════════════════
-string symbolLabel = syminfo.ticker
-string symbolJson  = syminfo.prefix + ":" + syminfo.ticker
-string tf          = timeframe.isintraday ? timeframe.period + "m" : timeframe.period
-string priceStr    = str.tostring(close, format.mintick)
-string oscStr      = str.tostring(oscVal, "#.#")
-string sigStr      = str.tostring(sigVal, "#.#")
-string vfValueStr  = volumeAvailable ? str.tostring(vfCalcVal, "#.#") : "N/A"
-string vfJsonStr   = volumeAvailable ? str.tostring(vfCalcVal, "#.#") : "null"
-string vfAvailJson = volumeAvailable ? "true" : "false"
-string tfModeAlertStr = modeInput + " Native"
-bool alertReady    = barstate.isconfirmed and isWarmedUp
-
-bool aCrossUp   = ta.crossover(oscVal, sigVal) and alertReady
-bool aCrossDown = ta.crossunder(oscVal, sigVal) and alertReady
-bool aExitOs    = ta.crossover(oscVal, effOS) and alertReady
-bool aExitOb    = ta.crossunder(oscVal, effOB) and alertReady
-bool vfCrossIn = ta.crossover(vfCalcVal, vfSignalThresholdInput)
-bool vfCrossOut = ta.crossunder(vfCalcVal, vfSignalBearThreshold)
-bool aVfIn      = volumeAvailable and vfCrossIn and alertReady
-bool aVfOut     = volumeAvailable and vfCrossOut and alertReady
-
-bool tradeTriggerBull = alCrossInput and bullReversalSignal
-bool tradeTriggerBear = alCrossInput and bearReversalSignal
-bool exhaustionBull   = alZoneInput and aExitOs
-bool exhaustionBear   = alZoneInput and aExitOb
-bool fatigueAlertOb   = alFatigueInput and fatObSignal and alertReady
-bool fatigueAlertOs   = alFatigueInput and fatOsSignal and alertReady
-bool gasOutAlertBull  = alFatigueInput and showGasOutInput and gasOutBull and alertReady
-bool gasOutAlertBear  = alFatigueInput and showGasOutInput and gasOutBear and alertReady
-
-alertcondition(tradeTriggerBull, "NFE Bull Trigger", "NFE Bull Trigger | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(tradeTriggerBear, "NFE Bear Trigger", "NFE Bear Trigger | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(exhaustionBull, "NFE Exit Oversold", "NFE Exit Oversold | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(exhaustionBear, "NFE Exit Overbought", "NFE Exit Overbought | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(fatigueAlertOb, "NFE OB Fatigue", "NFE OB Fatigue | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(fatigueAlertOs, "NFE OS Fatigue", "NFE OS Fatigue | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(gasOutAlertBull, "NFE Delta Gas-Out Bull", "NFE Delta Gas-Out Bull | {{ticker}} | {{interval}} | Close {{close}}")
-alertcondition(gasOutAlertBear, "NFE Delta Gas-Out Bear", "NFE Delta Gas-Out Bear | {{ticker}} | {{interval}} | Close {{close}}")
-
-if tradeTriggerBull
-    string jsonMsg = '{"signal":"bull_cross","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"sig":' + sigStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Bull Trigger | " + symbolLabel + " " + tf + " | Osc " + oscStr + " > Sig " + sigStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if tradeTriggerBear
-    string jsonMsg = '{"signal":"bear_cross","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"sig":' + sigStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Bear Trigger | " + symbolLabel + " " + tf + " | Osc " + oscStr + " < Sig " + sigStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if exhaustionBull
-    string jsonMsg = '{"signal":"exit_oversold","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Exit Oversold | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr + " | " + tfModeAlertStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if exhaustionBear
-    string jsonMsg = '{"signal":"exit_overbought","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Exit Overbought | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr + " | " + tfModeAlertStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alDivRegAlertInput and dRegBull and sfPassBull and alertReady
-    string jsonMsg = '{"signal":"regular_bull_div","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Regular Bull Div | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alDivRegAlertInput and dRegBear and sfPassBear and alertReady
-    string jsonMsg = '{"signal":"regular_bear_div","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Regular Bear Div | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alDivHidAlertInput and dHidBull and sfPassBull and alertReady
-    string jsonMsg = '{"signal":"hidden_bull_div","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Hidden Bull Div | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alDivHidAlertInput and dHidBear and sfPassBear and alertReady
-    string jsonMsg = '{"signal":"hidden_bear_div","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Hidden Bear Div | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | VF " + vfValueStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alVolFlowInput and aVfIn
-    string jsonMsg = '{"signal":"volume_inflow","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + '}'
-    string textMsg = "NFE Volume Inflow | " + symbolLabel + " " + tf + " | VF " + vfValueStr + " | Osc " + oscStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if alVolFlowInput and aVfOut
-    string jsonMsg = '{"signal":"volume_outflow","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + '}'
-    string textMsg = "NFE Volume Outflow | " + symbolLabel + " " + tf + " | VF " + vfValueStr + " | Osc " + oscStr
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if fatigueAlertOb
-    string jsonMsg = '{"signal":"ob_fatigue","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + ',"bars":' + str.tostring(fatigueBarsInput) + '}'
-    string textMsg = "NFE OB Fatigue | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | " + str.tostring(fatigueBarsInput) + " bars weakening"
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if fatigueAlertOs
-    string jsonMsg = '{"signal":"os_fatigue","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"vf":' + vfJsonStr + ',"vf_available":' + vfAvailJson + ',"bars":' + str.tostring(fatigueBarsInput) + '}'
-    string textMsg = "NFE OS Fatigue | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | " + str.tostring(fatigueBarsInput) + " bars strengthening"
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if gasOutAlertBull
-    string jsonMsg = '{"signal":"delta_gasout_bull","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"delta_slope":' + str.tostring(deltaSlope, "#.####") + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Delta Gas-Out Bull | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | DeltaSlope " + str.tostring(deltaSlope, "#.####")
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)
-
-if gasOutAlertBear
-    string jsonMsg = '{"signal":"delta_gasout_bear","ticker":"' + symbolJson + '","tf":"' + tf + '","price":' + priceStr + ',"osc":' + oscStr + ',"delta_slope":' + str.tostring(deltaSlope, "#.####") + ',"vf_available":' + vfAvailJson + '}'
-    string textMsg = "NFE Delta Gas-Out Bear | " + symbolLabel + " " + tf + " | Osc " + oscStr + " | DeltaSlope " + str.tostring(deltaSlope, "#.####")
-    alert(webhookInput ? jsonMsg : textMsg, alert.freq_once_per_bar_close)

@@ -86,14 +86,14 @@ This is what V1 should have said. **I am NOT updating the ledger until Kirk appr
       ~/nexus-backup-2026-04-28.pine
    ```
 
-2. **Edit Nexus pine — flip `display.none` → `display.data_window`** on lines 745–757 (the plots emitting `nexus_fp_available`, `nexus_fp_bar_delta`, `nexus_fp_total_volume`, `nexus_norm_cum_delta`, `nexus_delta_slope`, `nexus_bar_delta_ratio`, `nexus_delta_dir`, `nexus_gasout_bull`, `nexus_gasout_bear`, `nexus_mode_minutes`, `nexus_signal_tier`).
+2. **Confirm Nexus evidence plots are already exportable** — current Nexus checkpoint keeps `nexus_*` evidence plots on `display.data_window` permanently. Do not look for hidden checkboxes; TradingView only showed visible plots in Kirk's Style screenshots, and `display.none` plots were omitted from CSV exports.
 
    **Why `display.data_window` and NOT `display.all`:**
    - `display.data_window` keeps the chart visually clean (no extra panes, no column-header watermark on the chart).
    - Both options export to CSV per §2.1.
    - `display.all` would clutter the chart and may shift indicator pane scales during the capture session.
 
-3. **Save the Pine Editor** → indicator on chart re-renders. Visual chart should look identical to before (because data_window plots don't appear on chart). The indicator's Data Window should now show all the previously-hidden values when you hover over a bar — this is your verification that the flip took effect.
+3. **Save/reload the Pine Editor after any repo update** → indicator on chart re-renders. Visual chart should look identical because `display.data_window` plots do not appear on chart. The indicator's Data Window should show the `nexus_*` values when you hover over a bar — this verifies the exportable evidence surface is active.
 
 4. **TradingView upper toolbar → ⋮ (More) menu → Download chart data…** (or "Export chart data…" depending on TV UI version).
 
@@ -103,7 +103,7 @@ This is what V1 should have said. **I am NOT updating the ledger until Kirk appr
 
 7. **Save the CSV.** Paste the path here as your reply.
 
-8. **Revert the Nexus pine file** — change `display = display.data_window` back to `display = display.none` on those same lines. Save.
+8. **Do not revert the Nexus evidence plots to `display.none`**. `display.none` caused missing `nexus_*` CSV columns in Kirk's all-boxes-checked export; keep `display.data_window`.
 
 ### Acceptance check (Claude-run when CSV path lands)
 

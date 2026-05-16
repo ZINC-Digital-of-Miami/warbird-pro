@@ -6,7 +6,7 @@ Warbird Pro V9 Core quality means the model pipeline stays contract-faithful fro
 
 Deming applies here by building quality into context and gates, not post-hoc inspection: manifest validation, split-bound enforcement, and schema constraints must run before trusting output. Juran applies as fitness for use: a "passing" run is only useful if it binds to the exact CSV hash, enforces the 24-bar label horizon, and preserves feature contract compatibility. Crosby applies because upfront constraints are cheaper than post-run rework on corrupted labels, stale features, or split leakage.
 
-Nexus indicator quality means the support/research oscillator remains footprint-faithful from TradingView `request.footprint()` through plots, hidden exports, exhaustion markers, and divergence labels. The Nexus lane must fail closed on unavailable footprint evidence, must not silently substitute OHLCV/candle proxies, and must never route indicator work through V9 Core assumptions unless the user explicitly requests a cross-lane comparison.
+Nexus indicator quality means the support/research oscillator remains footprint-faithful from TradingView `request.footprint()` through plots, data-window/export-only exports, exhaustion markers, and divergence labels. The Nexus lane must fail closed on unavailable footprint evidence, must not silently substitute OHLCV/candle proxies, and must never route indicator work through V9 Core assumptions unless the user explicitly requests a cross-lane comparison.
 
 ## Coverage Targets
 
@@ -32,7 +32,7 @@ The following do not count as quality in this repo:
 - Asserting that a model directory exists without checking predictor-path resolution rules.
 - Accepting high test counts that never exercise fail-closed paths.
 - Treating Nexus alert toggles as signal authority instead of plotted/evidence state.
-- Claiming Nexus footprint proof from compile success alone without citing `request.footprint()`, `footprint.delta()`, `footprint.rows()`, and hidden `nexus_*` exports.
+- Claiming Nexus footprint proof from compile success alone without citing `request.footprint()`, `footprint.delta()`, `footprint.rows()`, and data-window/export-only `nexus_*` exports.
 - Letting V9 Core assumptions, files, or settings contaminate Nexus-only indicator work.
 
 ## Fitness-to-Purpose Scenarios
@@ -186,11 +186,11 @@ The following do not count as quality in this repo:
 
 **Requirement tag:** [Req: formal — AGENTS.md Nexus `nexus_fp_*` evidence only]
 
-**What happened:** Hidden plots are easy to rename or remove because they do not affect visible chart appearance, but they are the export contract for footprint evidence.
+**What happened:** Data-window/export-only plots are easy to rename, remove, or accidentally demote to `display.none` because they do not affect visible chart appearance, but they are the export contract for footprint evidence.
 
-**The requirement:** Hidden exports must preserve footprint availability, bar delta, total volume, normalized cumulative delta, delta slope, bar delta ratio, delta direction, gas-out flags, mode minutes, and signal tier unless downstream docs/tests are updated in the same change.
+**The requirement:** Data-window/export-only exports must preserve footprint availability, footprint quality (`nexus_fp_quality_ok`), bar delta, total volume, normalized cumulative delta, delta slope, bar delta ratio, delta direction, gas-out flags, mode minutes, signal tier, pivot span, regime score, oscillator momentum, volume-flow state, and raw/confirmed divergence flags unless downstream docs/tests are updated in the same change; the `nexus_*` plot lines must use `display.data_window`, not `display.none`, so TradingView CSV export exposes them.
 
-**How to verify:** Run `test_nexus_3_hidden_footprint_export_plots_exist` in quality/test_functional.py.
+**How to verify:** Run `test_nexus_3_export_only_footprint_plots_exist` in quality/test_functional.py.
 
 ---
 
@@ -246,11 +246,70 @@ The following do not count as quality in this repo:
 
 **Requirement tag:** [Req: formal — AGENTS.md Pine budget rules]
 
-**What happened:** Adding visible or hidden plots, alertconditions, or additional footprint/security requests can silently exceed TradingView resource budgets or reduce available headroom.
+**What happened:** Adding visible or data-window/export-only plots, alertconditions, or additional footprint/security requests can silently exceed TradingView resource budgets or reduce available headroom.
 
 **The requirement:** Every Nexus Pine edit must price output-consuming calls and request paths before and after the change.
 
 **How to verify:** Run `./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` and report request/output counts.
+
+---
+
+### Scenario 19: Footprint-Quality Fail-Closed Contract
+
+**Requirement tag:** [Req: formal — Nexus footprint-quality checkpoint 2026-05-15]
+
+**What happened:** `fpFlowAvailable` proves a footprint row exists on the current bar, but exhaustion and divergence need enough continuous footprint history to compute normalized cumulative delta, slope, and bar-delta ratio without gap-contaminated state. Alerts were also removed because the operator does not use them and they are not signal authority.
+
+**The requirement:** `fpQualityOk` must gate delta direction, gas-out, fatigue, Tier 1/Tier 2 signal tier, and divergence confirmation when volume confirmation is enabled. Data-window/export-only exports must include `nexus_fp_quality_ok` and remain exportable with `display.data_window`. The Pine file must not contain `GRP_ALERT`, `alertcondition(`, or `alert(` after alert-surface removal.
+
+**How to verify:** Run `test_nexus_6_footprint_quality_gates_exhaustion_and_divergence`, `test_nexus_7_alert_surface_removed_and_cross_dots_ui_only`, and `test_nexus_8_signal_tier_uses_only_footprint_gated_signals` in `quality/test_functional.py`, then run the full Nexus Pine compile/lint/guard/build lane.
+
+---
+
+### Scenario 20: Lag And False-Signal Diagnostic Export Contract
+
+**Requirement tag:** [Req: user-confirmed — operator priority: real accuracy, real delta, real alpha]
+
+**What happened:** The first 15m diagnostic showed lag/false-signal concerns and proved that a human cannot tune all Nexus lengths/options by hand. The export lacked separate raw/confirmed divergence fields, pivot-confirmation lag, and supporting state columns needed to diagnose false positives one component at a time.
+
+**The requirement:** Nexus must export raw divergence flags, confirmed divergence flags, `nexus_pivot_span`, `nexus_regime_score`, `nexus_osc_momentum`, and `nexus_vf_calc` as `display.data_window` plots before heavy sequential training. These exports must not alter visible signal behavior and must remain Nexus-only.
+
+**How to verify:** Run `test_nexus_10_lag_false_signal_diagnostic_exports_exist` in `quality/test_functional.py`, price Pine output budget with `pine-lint.sh`, and re-export TradingView data before any heavy model run.
+
+---
+
+### Scenario 21: Nexus 15m Pre-Training Label Audit Gate
+
+**Requirement tag:** [Req: user-confirmed — heavy training must be sequential and real-data only]
+
+**What happened:** The expanded export showed usable footprint evidence, but the first naive split placed most footprint-quality rows outside train. Starting a heavy model without a manifest-backed dataset, label audit, leakage exclusions, and footprint-quality split boundaries would waste hours and risk false confidence.
+
+**The requirement:** Before any heavy Nexus 15m model run, build the isolated `warbird_nexus_ml_rsi_15m` dataset from a TradingView/Pine export, write a manifest, mark incomplete future labels as missing, split chronologically over the footprint-quality subset with embargo, and publish a pre-training label audit. V9 files, trainers, exports, and model artifacts must not be touched.
+
+**How to verify:** Run `test_nexus_11_isolated_15m_builder_pretraining_gate_exists` in `quality/test_functional.py`, execute `scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/build_nexus_15m_dataset.py`, and inspect `reports/pretrain_label_audit.md` before training.
+
+---
+
+### Scenario 22: Deferred Nexus Meter Plan Preservation During Active Training
+
+**Requirement tag:** [Req: user-confirmed — preserve Nexus live-meter/tuning governance now, implement after run]
+
+**What happened:** The operator approved preserving the post-training Nexus live pressure/gas/confidence meter roadmap and tuning-path governance in the workbook, while explicitly forbidding disruption to active training and in-flight artifacts.
+
+**The requirement:** During active runs, changes are docs-only and must preserve:
+
+- freeze boundaries for Pine + active training scripts
+- three-path tuning routing (Python Optuna vs CDP TV auto-tune vs manual deep backtest)
+- TC skill mapping for each planned Pine implementation surface
+- post-run resume gates and verification requirements
+
+No active training surfaces may be changed under this scenario.
+
+**How to verify:**
+
+- Confirm deferred hold section exists in `quality/RUN_NEXUS_INDICATOR.md`.
+- Confirm section includes tuning-path decision lock and TC skill enforcement matrix.
+- Confirm no edits were made to active Nexus training/Pine surfaces in the defer window.
 
 ## AI Session Quality Discipline
 
@@ -265,6 +324,9 @@ The following do not count as quality in this repo:
 9. For Nexus work, do not mention, inspect, or modify V9 surfaces unless the user explicitly requests a cross-lane comparison.
 10. Treat Nexus alerts as non-authoritative; evidence comes from footprint calculations and plots.
 11. Do not claim Nexus footprint behavior is working without Pine compile/guard evidence for Pine edits or static Nexus tests for quality-doc-only changes.
+12. Treat `fpQualityOk` as the current Nexus fail-closed proof gate for footprint-derived signal tiers, gas-out, fatigue, and divergence confirmation.
+13. Before heavy Nexus training, verify lag/false-signal diagnostic exports are present so settings can be tested sequentially instead of guessed manually.
+14. Do not launch heavy Nexus 15m training until the isolated dataset manifest and pre-training label audit exist and the footprint-quality split is sane.
 
 ## The Human Gate
 
@@ -275,5 +337,5 @@ Human approval is required for:
 - Accepting deviations from source-kind, split-bound, or provenance contracts.
 - Redefining threshold policies (for example sparse density floors, strict entry floors) without operator signoff.
 - Resolving disagreements between formal requirements and inferred code behavior.
-- Changing Nexus footprint, exhaustion, divergence, hidden export, or TradingView live behavior.
+- Changing Nexus footprint, exhaustion, divergence, data-window/export-only export, or TradingView live behavior.
 - Treating unavailable Nexus footprint evidence as acceptable for real exhaustion or divergence without explicit operator approval.

@@ -99,10 +99,11 @@ Source: scripts/duckdb_local/workspaces/warbird_pro_core/build_core_dataset.py (
 | 7   | Manifest hash verification                | Inline Python check using `validate_manifest_hash`                      | No mismatch exception                                       |
 | 8   | Summary hash and split-range verification | Inline Python check using `check_summary_csv_hash` + `apply_time_split` | Hash matches and split source is `summary_split_ranges_utc` |
 | 9   | Full repo regression safety               | `pytest tests/ag tests/duckdb_local`                                    | No regressions in existing tests                            |
-| 10  | Nexus quality lane static contracts       | `pytest quality/test_functional.py -k nexus`                            | Nexus runbook, footprint API, hidden export, and protocol-link tests pass |
+| 10  | Nexus quality lane static contracts       | `pytest quality/test_functional.py -k nexus`                            | Nexus runbook, footprint API, data-window export, diagnostics, and protocol-link tests pass |
 | 11  | Nexus Pine facade compile                 | Pine facade `translate_light` request for Nexus file                    | Compiler response contains no Pine errors                   |
 | 12  | Nexus Pine lint/resource budget           | `./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` | Output/request counts are reported and no hard errors occur |
 | 13  | Nexus contamination/no-TV-force guards    | `./scripts/guards/check-contamination.sh` + `./scripts/guards/check-no-tv-force.sh` | No contamination or banned TV recovery paths detected       |
+| 14  | Deferred-hold docs-only governance check  | Verify `quality/RUN_NEXUS_INDICATOR.md` + `quality/QUALITY.md` include deferred hold + tuning-path routing and confirm no active training/Pine file edits in same change | Deferred guidance present and active training surfaces untouched |
 
 
 ## Nexus Indicator Verification Lane
@@ -121,6 +122,21 @@ Pass criteria:
 - Nexus static contract tests pass with zero errors.
 - Build completes successfully.
 - No Pine verification claim is made because Pine was not changed.
+
+### Deferred Hold Docs-Only Check
+
+Use when preserving roadmap/governance during an active run with explicit no-training-touch instruction.
+
+```bash
+git diff --name-only
+./.venv/bin/python -m pytest quality/test_functional.py -k nexus -q
+```
+
+Pass criteria:
+
+- Diff contains only workbook/protocol/result-note documentation files.
+- No edits to active Nexus Pine or active Nexus heavy training scripts.
+- Deferred hold sections include tuning-path decision lock and TC skill mapping.
 
 ### Nexus Pine Edit Gate
 
@@ -150,7 +166,7 @@ For any Pine edit, save or report:
 | -------- | ---------------- |
 | Compile output | Raw Pine facade response or summarized no-error response |
 | Lint output | Output-consuming calls and request-path counts |
-| Footprint proof table | `request.footprint`, `footprint.delta`, `footprint.rows`, row volume, availability gate, gas-out, divergence, hidden plots |
+| Footprint proof table | `request.footprint`, `footprint.delta`, `footprint.rows`, row volume, availability gate, gas-out, divergence, data-window/export-only plots |
 | Scope statement | Explicit `V9 not touched` statement unless cross-lane work was requested |
 
 ## Parallel Execution Plan

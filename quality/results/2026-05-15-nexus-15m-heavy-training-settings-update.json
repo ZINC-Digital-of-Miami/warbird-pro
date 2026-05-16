@@ -1,0 +1,28 @@
+{
+  "title": "Nexus 15m Research-Heavy Training Settings Update",
+  "source_reviewed": "scripts/ag/train_v9_locked.py",
+  "v9_findings": [
+    "V9 production trainer intentionally uses presets=best_quality with the 7-family zoo, calibrate=True, log_loss, HPO, persist, leaderboard, and feature importance.",
+    "V9 explicitly sets num_bag_folds=0 and num_stack_levels=0 as a time-series safety decision, with chronological validation/test proof and embargo.",
+    "The first Nexus run copied that no-bag/no-stack safety profile, so it was a smooth baseline/test train rather than a true hour-plus research-heavy run."
+  ],
+  "new_nexus_defaults": {
+    "time_limit_sec": 14400,
+    "hpo_trials": 80,
+    "num_bag_folds": 5,
+    "num_bag_sets": 2,
+    "num_stack_levels": 1,
+    "dynamic_stacking": "auto",
+    "feature_importance_shuffles": 10,
+    "use_bag_holdout": true
+  },
+  "lookforward_guard": {
+    "label_horizon_bars": 12,
+    "embargo_bars": 21,
+    "policy": "AutoGluon k-fold bagging/stacking is variance reduction inside the historical train segment only. Chronological validation is tuning_data/bag-holdout; future test remains untouched proof; internal k-fold scores are not OOS proof."
+  },
+  "bagged_smoke": {
+    "command_profile": "time_limit=3600, hpo_trials=1, folds=2, sets=1, stack_levels=1",
+    "result": "completed; AutoGluon accepted use_bag_holdout=True with bagged/stacked models and chronological tuning_data"
+  }
+}

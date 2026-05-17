@@ -86,6 +86,8 @@ overrides stale push wording in older `docs/plans/` artifacts.
   - the operational runbook index
 - `docs/runbooks/startup_repo_review.md`
   - required fresh-chat/start-of-day read-only initialization report checklist
+- quality workbook runtime/artifact surfaces were removed from the active repo
+  surface; Hermes policy/routing now lives under `.kilo/rules/`
 - `docs/runbooks/v9_core_smoke_verification.md`
   - reproducible Core ETL smoke verification commands and exact metric reporting
 - `CLAUDE.md`

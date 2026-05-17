@@ -1,0 +1,58 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "instructions": [
+    ".kilo/instructions.md",
+    ".kilo/rules/*.md"
+  ],
+  "skills": {
+    "paths": [
+      "/Users/zincdigital/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0"
+    ]
+  },
+  "plugin": [
+    "file:///Users/zincdigital/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0"
+  ],
+  "mcp": {
+    "powerdrill": {
+      "type": "remote",
+      "url": "https://ai.data.cloud/memorylake/mcp/v1",
+      "enabled": false
+    },
+    "memory": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "enabled": false
+    },
+    "sequentialthinking": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "enabled": false
+    },
+    "puppeteer": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "enabled": false
+    },
+    "supabase": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@0.5.5"
+      ],
+      "enabled": false
+    }
+  }
+}

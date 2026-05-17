@@ -90,6 +90,17 @@ The goal is pure PineScript trading-indicator modeling:
 
 The old warehouse/FRED/macro `ag_training` plan is superseded and reference-only.
 
+### Nexus HUD V3 Operating Note (2026-05-16)
+
+- Nexus HUD refactor authority is this operating note plus `docs/MASTER_PLAN.md`.
+- The non-Optuna hard lock is embedded in this Nexus V3 operating note.
+- Scope remains Nexus-only: no V9 surfaces, no fib scanner/fib-contract lane, no Optuna lane for this refactor.
+- Any `optuna` token inside Nexus file names is legacy naming only. It is not
+  a valid workflow selector and must never be used to route Nexus V3 work.
+- Manual TradingView export handoff is required; no agent TV export automation.
+- Canonical schema is the `pressure_score` family (no `nexus_*confidence*` names in active implementation surfaces).
+- SHAP/MC are mandatory for accepted completed runs; Phase H0 runner contract must be pinned before final acceptance/promotion claims.
+
 ## Iterative Tuning Contract
 
 Warbird is actively tuning and training the Pine indicator. Current trigger
@@ -117,8 +128,8 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 - `indicators/`: active Pine sources:
   - `indicators/warbird-pro-v9.pine` — only main chart indicator
   - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
-    Nexus footprint evidence lane (retained support/research lane; Pine
-    filenames are not renamed per Locked Rules)
+    Nexus footprint evidence lane (retained support/research lane; legacy file
+    token only, not an Optuna workflow authority)
 - `scripts/duckdb_local/`: active local DuckDB-backed modeling workspace for
   V9 Core. Nexus and legacy v7 lanes retain their own profile adapters under
   this directory.
@@ -170,14 +181,14 @@ primary EMA21 and smoothing EMA9.
 - **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. The discoverable SL grid
   `DISCOVERABLE_SL_ATR_MULTS = (0.75, 1.0, 1.5, 2.0)` brackets this range.
 - **Target breakeven:** 1–3R. The trainer's discoverable TP grid uses fib
-  extensions `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618)` (not fixed
+  extensions `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618, 2.000, 2.236)` (not fixed
   R-multiples); per-row `rr_ratio` is in `MODEL_FEATURES` so AG can condition
   on the realized R per combo.
 - Training objective is `eval_metric='log_loss'` on `winner_tp_before_sl`
   with isotonic calibration — no composite or weighted metric. The legacy
-  `target_hit_rate` 0.14-weight objective from the Optuna era is retired.
-- The discoverable 4×3 grid (4 SL ATR mults × 3 TP fib ratios) in
-  `build_trade_dataset` produces 12 combo rows per admitted entry; AG
+  `target_hit_rate` 0.14-weight objective from earlier HPO history is retired.
+- The discoverable 4×5 grid (4 SL ATR mults × 5 TP fib ratios) in
+  `build_trade_dataset` produces 20 combo rows per admitted entry; AG
   selects the EV-winning combo at inference via the per-row identifiers.
 
 ## Contract First
@@ -392,18 +403,19 @@ If any `.pine` file is touched, run:
 - Update `AGENTS.md` only when repo rules or hard workflow constraints change.
 - Update memory when a phase or contract locks.
 
-## Quality Playbook Artifacts
+## Hermes Quality Surface
 
-- Quality constitution: `quality/QUALITY.md`
-- Functional test suite: `quality/test_functional.py`
-- Code review protocol: `quality/RUN_CODE_REVIEW.md`
-- Integration protocol: `quality/RUN_INTEGRATION_TESTS.md`
-- Nexus indicator protocol: `quality/RUN_NEXUS_INDICATOR.md`
-- Council of Three spec audit protocol: `quality/RUN_SPEC_AUDIT.md`
-- Review/spec/integration result folders:
-  `quality/code_reviews/`, `quality/spec_audits/`, `quality/results/`
-- When touching V9 Core trainer/ETL/provenance surfaces, run the functional
-  suite plus impacted subsystem tests before claiming completion.
+- Active quality lane is Hermes-first guardrails + repo-native validators.
+- Validator routing authority: `.kilo/rules/validation-matrix.md`.
+- Hermes policy authority: `.kilo/rules/hermes-quality-policy.md`.
+- Warbird terminal/validator hooks live in `~/.hermes/agent-hooks/` and must
+  stay enabled for Warbird sessions.
+- Quality workbook runtime/artifact surfaces were removed; do not route new work
+  through quality-playbook workflows.
+- When touching V9 Core trainer/ETL/provenance surfaces, run impacted
+  `tests/ag/**` plus the minimum contract lane:
+  - `pytest tests/ag/test_v9_core_indicator_input_contract.py -q`
+  - `pytest tests/ag/test_v9_core_training_targets.py -q`
 
 ## Memory & Session Handoff
 

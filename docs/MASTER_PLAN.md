@@ -92,29 +92,31 @@ Data-layer + sequencing update (locked 2026-05-11):
 | Startup review runbook                           | `docs/runbooks/startup_repo_review.md`                                                                 |
 | Legacy (do not use without architecture reopen)  | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |
 
-## Quality Playbook Surface (2026-05-14)
+## Hermes-First Quality Surface (2026-05-17)
 
-The V9 Core lane now carries a dedicated quality playbook for repeatable
-review, functional verification, and spec-audit execution.
+The quality-playbook runtime is retired for active Warbird execution. The
+active quality lane is Hermes guardrails plus repo-native validators.
 
-Canonical quality artifacts:
+Canonical active surfaces:
 
-- quality constitution: `quality/QUALITY.md`
-- functional test suite: `quality/test_functional.py`
-- code review protocol: `quality/RUN_CODE_REVIEW.md`
-- integration protocol: `quality/RUN_INTEGRATION_TESTS.md`
-- Council of Three spec audit protocol: `quality/RUN_SPEC_AUDIT.md`
-- results folders: `quality/code_reviews/`, `quality/spec_audits/`,
-  `quality/results/`
+- `.kilo/rules/validation-matrix.md` (validator routing)
+- `.kilo/rules/hermes-quality-policy.md` (Hermes security/operations policy)
+- `~/.hermes/config.yaml` + Warbird hook scripts under
+  `~/.hermes/agent-hooks/`
+- `tests/ag/**` and existing guard scripts for code-path validation
 
 Operational requirement for V9 Core changes (trainer/ETL/provenance/MC/SHAP):
 
-- run `quality/test_functional.py` plus impacted subsystem tests before claiming
-  completion
-- keep quality scenarios mapped to executable tests
+- run impacted `tests/ag/**` before claiming completion
+- always include the minimum contract lane:
+  - `pytest tests/ag/test_v9_core_indicator_input_contract.py -q`
+  - `pytest tests/ag/test_v9_core_training_targets.py -q`
 - fail closed on provenance/hash/split ambiguity
-- preserve requirement tags (`formal`, `user-confirmed`, `inferred`) in new
-  scenarios/tests and route unresolved inferred items to human review
+- keep cloud/training boundary checks explicit (no raw trial/label dumps to
+  cloud Supabase)
+
+Quality workbook runtime/artifact surfaces are removed and are no longer an
+active protocol surface.
 
 ## Git Push Protocol (Operational)
 
@@ -450,22 +452,23 @@ Recent local state (through commit `1747194`):
   fixed (5m → 15m, pointing at the locked 1y Core export). `--model-suite`
   flag adds the optional TP/SL touch + MFE/MAE side models. Docstring no
   longer points at the smoke card or `train_hard_gate.py`.
-- `build_trade_dataset` semantics canonicalized in the docstring: 4×3
+- `build_trade_dataset` semantics canonicalized in the docstring: 4×5
   TP/SL grid, touch-event labels for `tp_hit`/`stop_hit`, pessimistic
   same-bar collision for `winner_tp_before_sl`. `monte_carlo_v9.py` and
   `shap_v9.py` both import this function — single source of truth.
 - Core ETL/Pandera/fg-data-profiling stack wired. DXY was removed from active
   V9 Core features on the 2026-05-11 gate-as-feature pivot; Databento
   trade-side CVD/order-flow features, May 2026
-  order-flow threshold review (35% absorption/flush delta, 1.5x volume
+  order-flow threshold review (20% absorption/flush delta, 1.5x volume
   spike, 0.75 ATR range split) are in code. Smoke verification recorded
   in `docs/audits/2026-05-10-v9-core-smoke-verification.md`.
 - The locked 15m export exists and validates: 23,513 bars (2025-05-11
   22:00 UTC → 2026-05-10 23:45 UTC), 1,414 long triggers, 1,284 short
   triggers. Latest full model-suite run
   `models/warbird_pro_v9/locked_20260512_083803/` used chronological
-  IS/VAL/OOS splits of 22,654 / 4,830 / 4,830 model rows after the current
-  4×3 trade grid and 25-bar embargo (WR 33.07% / 34.02% / 35.13%).
+  IS/VAL/OOS splits of 22,654 / 4,830 / 4,830 model rows under the historical
+  3-TP grid and 25-bar embargo (WR 33.07% / 34.02% / 35.13%). That run
+  predates the current 5-TP / 10-bar chart-mirrored contract.
 - Auxiliary smoke-validation card defaults updated to point at the same
   15m export — passes end-to-end against the new schema.
 
@@ -548,27 +551,30 @@ and the smoothing EMA9. The old `useMaGate`, `lengthMA=50`, and
   built export covers that range). The newer Databento OHLCV-1s 2315d
   download is reserved for a future v10 long-horizon ensemble card, NOT
   Core (would NaN 2/3 of feature surface).
-- **Feature surface (`ML_FEATURES=78`, `MODEL_FEATURES=84`):**
+- **Feature surface (`ML_FEATURES=77`, `MODEL_FEATURES=83`):**
   locked V9 Core input features plus the six trade-discoverable combo fields
   added by `build_trade_dataset` (`sl_atr_mult`, `tp_ratio`,
   `tp_family_code`, `target_distance_points`, `stop_distance_points`,
-  `rr_ratio`). MA/RSI knobs and MA/RSI `ml_*` columns are removed from the AG
-  feature surface; the MA gate is handled before export. DXY/VIX fields remain
-  retired; ZN/HG/NQ-24h/6E-24h context is admitted as model features only.
+  `rr_ratio`). AG trains on non-fib/non-color indicator settings and the
+  corresponding MA/RSI/liquidity/XA/footprint signal surface; protected
+  fib-engine logic/settings and color/visual inputs are excluded from AG
+  features. DXY/VIX/ZN/HG fields remain retired from the active feature set;
+  NQ + 6E context is admitted as model features only.
 - **Label (triple barrier):** `winner_tp_before_sl` = 1 if **this combo's**
-  TP price touched before its SL price within `FORWARD_SCAN_BARS = 24`
-  (6h on 15m, 2h on 5m); 0 if SL touched first OR if TP and SL touched on
+  TP price touched before its SL price within `FORWARD_SCAN_BARS = 10`
+  (2.5h on 15m, 50m on 5m); 0 if SL touched first OR if TP and SL touched on
   the same bar (pessimistic same-bar policy — intrabar sequencing is
-  unobservable) OR neither barrier touches within the 24-bar window
-  (sideways → avoid). Entries closer than `MIN_FUTURE_BARS = 24` bars to
+  unobservable) OR neither barrier touches within the 10-bar window
+  (sideways → avoid). Entries closer than `MIN_FUTURE_BARS = 10` bars to
   end-of-data are DROPPED. TP price is read directly from Pine's per-row
   fib-ladder plots `ml_trade_tp1` (fib 1.000), `ml_trade_tp2` (fib 1.236),
-  and `ml_trade_tp3` (fib 1.618) — label-construction inputs only, NOT
+  `ml_trade_tp3` (fib 1.618), `ml_trade_tp4` (fib 2.000), and
+  `ml_trade_tp5` (fib 2.236) — label-construction inputs only, NOT
   `ML_FEATURES`. SL price is `entry ± ml_atr14 × sl_mult`. The split
-  embargo is `EMBARGO_BARS = 25`.
-- **Discoverable trade grid:** Each admitted entry expands into 12 rows —
-  4 SL ATR multiples {0.75, 1.0, 1.5, 2.0} × 3 TP ratios
-  {1.000, 1.236, 1.618}.
+  embargo is `EMBARGO_BARS = 11`.
+- **Discoverable trade grid:** Each admitted entry expands into 20 rows —
+  4 SL ATR multiples {0.75, 1.0, 1.5, 2.0} × 5 TP ratios
+  {1.000, 1.236, 1.618, 2.000, 2.236}.
   Each row carries its own (`sl_atr_mult`, `tp_ratio`, `tp_family_code`,
   `target_distance_points`, `stop_distance_points`, `rr_ratio`) plus
   the resolution label. The classifier learns from the entire grid so
@@ -586,7 +592,7 @@ and the smoothing EMA9. The old `useMaGate`, `lengthMA=50`, and
 - **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. The discoverable SL grid
   `DISCOVERABLE_SL_ATR_MULTS = (0.75, 1.0, 1.5, 2.0)` brackets this range.
 - **Target breakeven range:** 1–3R. The trainer uses fib-extension TPs
-  `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618)` rather than fixed
+  `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618, 2.000, 2.236)` rather than fixed
   R-multiples; per-row `rr_ratio` is a model feature so AG can condition
   on the realized R per combo. No composite objective — the legacy
   Optuna-era `target_hit_rate` 0.14-weight metric is retired.

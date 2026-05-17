@@ -149,18 +149,19 @@ and trains AFTER Core lands.
 - All OpenMP families single-threaded; `OMP_NUM_THREADS=1` env guard at script top
 
 **Label (locked):** triple-barrier `winner_tp_before_sl`. Each entry expands
-into a 4×3 grid of (SL ATR multiple × TP ratio) combos: SL multiples
+into a 4×5 grid of (SL ATR multiple × TP ratio) combos: SL multiples
 {0.75, 1.0, 1.5, 2.0} multiply the entry-bar `ml_atr14`; TP ratios
-{1.000, 1.236, 1.618} are fib-ladder extensions read directly from Pine's
-per-row `ml_trade_tp1` / `ml_trade_tp2` / `ml_trade_tp3` plots (one column
-per ratio; label-construction inputs only, not `ML_FEATURES`).
+{1.000, 1.236, 1.618, 2.000, 2.236} are fib-ladder extensions read directly from Pine's
+per-row `ml_trade_tp1` / `ml_trade_tp2` / `ml_trade_tp3` / `ml_trade_tp4` /
+  `ml_trade_tp5` plots (one column per ratio; label-construction inputs only,
+not `ML_FEATURES`).
 For each combo row, label = `1` if THIS combo's TP price
-touches strictly before its SL price within `FORWARD_SCAN_BARS = 24`
-(6h on 15m, 2h on 5m); `0` if SL touches first OR both touch on the same
+touches strictly before its SL price within `FORWARD_SCAN_BARS = 10`
+(2.5h on 15m, 50m on 5m); `0` if SL touches first OR both touch on the same
 bar (pessimistic — intrabar sequencing unobservable) OR neither barrier
-touches within the 24-bar window (sideways → avoid). Entries closer than
-`MIN_FUTURE_BARS = 24` bars to end-of-data are DROPPED. The train/val/test
-split uses `EMBARGO_BARS = 25` (= FORWARD_SCAN_BARS + 1), enforced by
+touches within the 10-bar window (sideways → avoid). Entries closer than
+`MIN_FUTURE_BARS = 10` bars to end-of-data are DROPPED. The train/val/test
+split uses `EMBARGO_BARS = 11` (= FORWARD_SCAN_BARS + 1), enforced by
 `scripts/duckdb_local/cpcv.py`. Combo identifiers (`sl_atr_mult`,
 `tp_ratio`, `tp_family_code`, `target_distance_points`,
 `stop_distance_points`, `rr_ratio`) ride with each row in `MODEL_FEATURES`
@@ -168,16 +169,16 @@ so the classifier conditions on combo, not on average win rate across
 combos.
 
 **Feature-count surfaces (locked 2026-05-12):**
-- `ML_FEATURES = 120` — CSV-emitted columns AG trains on (manifest's
+- `ML_FEATURES = 77` — CSV-emitted columns AG trains on (manifest's
   `feature_count_locked` / `feature_columns_locked` describe this set).
 - `TRADE_DISCOVERABLE_FEATURES = 6` — appended per combo row at label-build
   time by `build_trade_dataset` (the combo identifiers above).
-- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 126` —
+- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 83` —
   full AG input width per training row.
 - `LABEL_INPUT_TP_COLUMNS = ("ml_trade_tp1", "ml_trade_tp2",
-  "ml_trade_tp3")` — required CSV inputs for label construction; NOT in
-  `ML_FEATURES` (Pine ladder geometry already learnable via `ml_fib_*`
-  and `ml_atr14`).
+  "ml_trade_tp3", "ml_trade_tp4", "ml_trade_tp5")` — required CSV inputs for label construction; NOT in
+  `ML_FEATURES`. Protected fib-engine logic/settings and color/visual inputs
+  are intentionally excluded from the AG feature surface.
 
 **Inference:** Apply `proba > 0.75` confidence threshold for Grade A+ entries.
 Session is a feature (`ml_session_ny/london/asia`, `ml_minutes_from_open`),
@@ -188,10 +189,13 @@ coverage). Footprint reconstruction from Databento ES Trades 365d. The newer
 OHLCV-1s 2315d (~6.3y) Databento download is reserved for a future v10
 long-horizon ensemble card, NOT Core (would NaN out 2/3 of feature surface).
 
-**Feature surface:** `ML_FEATURES=120` locked input features. `MODEL_FEATURES=126`
+**Feature surface:** `ML_FEATURES=77` locked input features. `MODEL_FEATURES=83`
 after the six trade-discoverable combo fields
 (`sl_atr_mult`, `tp_ratio`, `tp_family_code`, `target_distance_points`,
 `stop_distance_points`, `rr_ratio`) are added by `build_trade_dataset`.
+AG trains on non-fib/non-color indicator settings plus MA/RSI/liquidity/XA/
+footprint signal evidence; protected fib-engine logic/settings and color/visual
+inputs are excluded from `ML_FEATURES`.
 
 **V9 Pine pattern set:** 4 curated patterns —
 Bull: `patRisingWindow`. Bear: `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`.
@@ -256,7 +260,7 @@ live TV settings before building a new dataset.
 - **Target SL:** 1.0 ATR. **Max SL:** 2.0 ATR. The discoverable SL grid
   `DISCOVERABLE_SL_ATR_MULTS = (0.75, 1.0, 1.5, 2.0)` brackets this range.
 - **Target breakeven:** 1–3R. The trainer's discoverable TP grid uses fib
-  extensions `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618)` (not fixed
+  extensions `DISCOVERABLE_TP_RATIOS = (1.000, 1.236, 1.618, 2.000, 2.236)` (not fixed
   R-multiples); per-row `rr_ratio` is in `MODEL_FEATURES` so AG can condition
   on the realized R per combo.
 - Training objective is `eval_metric='log_loss'` on `winner_tp_before_sl`
@@ -375,6 +379,23 @@ warns on a dirty tree but checks the committed range being pushed, then runs the
 full local quality lane over `@{upstream}...HEAD`. Hooks must not run Vercel,
 GitHub hosted checks, Claude, or nested Codex reviews. Quality enforcement is
 local.
+
+### Hermes Quality Fail-Closed Rule
+
+Quality workbook runtime lanes are decommissioned. Warbird quality now runs
+through Hermes guardrails and native repo validators only.
+
+Before claiming completion on Hermes/Kilo/guardrail work, run:
+
+1. `kilo debug config`
+2. `hermes config check`
+3. `hermes doctor`
+4. `hermes memory status`
+5. `hermes lsp status`
+6. `hermes hooks doctor`
+
+Quality workbook runtime/artifact surfaces were removed. Do not route new
+execution through quality-playbook phase runners.
 
 Canonical push sequence:
 

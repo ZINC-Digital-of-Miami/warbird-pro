@@ -9,6 +9,9 @@ claim a validator passed unless it was run and its result is known.
 - Read the active docs for the touched surface.
 - Confirm the work does not start training/modeling, edit Pine, push, install
   dependencies, or run TradingView automation unless explicitly requested.
+- If package installs are explicitly requested, capture explicit human approval
+  in the session before running `npm/pnpm/yarn add`, `pip install`, or
+  `deno add`.
 
 ## Kilo / Guardrail / Config Files
 
@@ -79,11 +82,16 @@ When touching `scripts/ag/train_v9_locked.py`, `scripts/ag/shap_v9.py`,
 
 When touching `supabase/**`, API routes, RLS, Edge Functions, or cloud DDL:
 
-1. Use `supabase/migrations/` for cloud DDL.
-2. Verify RLS expectations for cloud tables.
-3. Verify cron routes validate `CRON_SECRET`, export `maxDuration = 60`, and log
+1. Verify Supabase Edge changes are Deno-compatible and do not rely on
+   Node-native module behavior.
+2. Keep backend automation logic in Supabase lanes unless an explicit
+   architecture change was approved.
+3. Keep DuckDB/Python OLAP SQL logic out of Supabase OLTP migration/query paths.
+4. Use `supabase/migrations/` for cloud DDL.
+5. Verify RLS expectations for cloud tables.
+6. Verify cron routes validate `CRON_SECRET`, export `maxDuration = 60`, and log
    to `job_log` on success and failure.
-4. Run `npm run lint` and `npm run build` for frontend/API changes.
+7. Run `npm run lint` and `npm run build` for frontend/API changes.
 
 ## Removed Quality Workbook
 
@@ -93,7 +101,11 @@ requested.
 
 ## `tc_validator` Rule
 
-If `tc_validator` is available and relevant, run it before claiming completion.
-If unavailable, use the closest concrete work-type validators above and state
-that `tc_validator` was unavailable. Do not use absence of `tc_validator` as proof
-that validation passed.
+`tc_validator` is the completion gate for Warbird Kilo/Hermes work.
+
+1. Run `tc_validator --fast` for docs/config-only work, or `tc_validator` (full)
+   for code/Pine/trainer/ETL/contract work.
+2. If `tc_validator` fails, do not claim completion; fix issues and rerun.
+3. If `tc_validator` is missing, install with
+   `./scripts/setup/install_tc_tracker.sh`, then rerun `tc_validator`.
+4. If install is blocked, the task remains blocked; do not claim completion.

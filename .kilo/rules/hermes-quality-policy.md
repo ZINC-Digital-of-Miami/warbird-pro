@@ -32,6 +32,10 @@ Warbird runs a Hermes-first quality lane.
 5. Keep Warbird skill source canonical at
    `/Volumes/Satechi Hub/warbird-pro/.kilocode/skills`.
 6. Do not enable YOLO/approval-off modes for Warbird sessions.
+7. Block package-install commands by default in Warbird hook policy unless
+   explicit human approval is given in-session.
+8. Treat Supabase edge runtime as Deno-first and keep DuckDB/Postgres SQL lanes
+   separated.
 
 ## Required Hermes Validation For Config/Skill Changes
 
@@ -44,9 +48,13 @@ Run all of the following before claiming completion:
 5. `hermes lsp status`
 6. `hermes hooks doctor`
 
-If a named validator is requested but unavailable (for example `tc_validator`),
-state that explicitly and run the closest concrete checks from the validation
-matrix.
+`tc_validator` is required as the final completion gate:
+
+7. `tc_validator --fast` for docs/config-only work
+8. `tc_validator` (full) for code/Pine/trainer/ETL/contract work
+
+If `tc_validator` is missing, install with `./scripts/setup/install_tc_tracker.sh`
+and rerun. If install is blocked, completion is blocked.
 
 ## Hard Rules
 

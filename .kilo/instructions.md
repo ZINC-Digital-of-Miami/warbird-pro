@@ -33,7 +33,14 @@ route through the matching guardrail before editing. Do not infer from memory.
 ## Validator Rule
 
 Every completed task needs a validator matched to the work type. If a named
-validator such as `tc_validator` is unavailable, do not pretend it ran. Use the
-closest concrete native checks from `.kilo/rules/validation-matrix.md`, report
-that the named validator is unavailable, and fail closed for any surface that
-cannot be validated.
+validator such as `tc_validator` is unavailable, do not pretend it ran. Install
+it with `./scripts/setup/install_tc_tracker.sh`, then rerun validation. Follow
+`.kilo/rules/validation-matrix.md` and fail closed on any unvalidated surface.
+
+## Critical Workspace Constraints
+
+- NO NODE NATIVE MODULES in Supabase Functions. Use Deno-compatible imports only.
+- NO PACKAGE INSTALLS without explicit chat approval.
+- PINE SCRIPT MUST BE V5. Do not introduce v4 syntax.
+- SEPARATE SQL DIALECTS: DuckDB (OLAP) for Python, Postgres (OLTP) for Supabase.
+- NEVER assume a visual UI is complete just because code compiled; use validator evidence.

@@ -4,55 +4,38 @@
     ".kilo/instructions.md",
     ".kilo/rules/*.md"
   ],
-  "skills": {
-    "paths": [
-      "/Users/zincdigital/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0"
-    ]
-  },
-  "plugin": [
-    "file:///Users/zincdigital/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0"
-  ],
-  "mcp": {
-    "powerdrill": {
-      "type": "remote",
-      "url": "https://ai.data.cloud/memorylake/mcp/v1",
-      "enabled": false
+  "snapshot": true,
+  "default_agent": "plan",
+  "model": "openrouter/deepseek/deepseek-v4-pro",
+  "small_model": "openrouter/qwen/qwen3.6-plus",
+  "agent": {
+    "plan": {
+      "model": "openrouter/deepseek/deepseek-v4-pro",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "xhigh"
+      }
     },
-    "memory": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-memory"
-      ],
-      "enabled": false
+    "code": {
+      "model": "openrouter/deepseek/deepseek-v4-pro",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "xhigh"
+      }
     },
-    "sequentialthinking": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ],
-      "enabled": false
+    "debug": {
+      "model": "openrouter/deepseek/deepseek-v4-flash",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "high"
+      }
     },
-    "puppeteer": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-puppeteer"
-      ],
-      "enabled": false
-    },
-    "supabase": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@supabase/mcp-server-supabase@0.5.5"
-      ],
-      "enabled": false
+    "designer": {
+      "mode": "primary",
+      "description": "UI and visual mode for Next.js/Tailwind and chart-facing UX passes",
+      "model": "openrouter/moonshotai/kimi-k2.6",
+      "steps": 90,
+      "temperature": 0.4
     }
   }
 }

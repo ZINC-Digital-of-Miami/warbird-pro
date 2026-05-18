@@ -4,5 +4,38 @@
     ".kilo/instructions.md",
     ".kilo/rules/*.md"
   ],
-  "snapshot": true
+  "snapshot": true,
+  "default_agent": "plan",
+  "model": "openrouter/deepseek/deepseek-v4-pro",
+  "small_model": "openrouter/qwen/qwen3.6-plus",
+  "agent": {
+    "plan": {
+      "model": "openrouter/deepseek/deepseek-v4-pro",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "xhigh"
+      }
+    },
+    "code": {
+      "model": "openrouter/deepseek/deepseek-v4-pro",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "xhigh"
+      }
+    },
+    "debug": {
+      "model": "openrouter/deepseek/deepseek-v4-flash",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "high"
+      }
+    },
+    "designer": {
+      "mode": "primary",
+      "description": "UI and visual mode for Next.js/Tailwind and chart-facing UX passes",
+      "model": "openrouter/moonshotai/kimi-k2.6",
+      "steps": 90,
+      "temperature": 0.4
+    }
+  }
 }

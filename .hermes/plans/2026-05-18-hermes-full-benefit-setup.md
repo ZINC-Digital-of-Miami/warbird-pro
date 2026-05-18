@@ -9,7 +9,8 @@
   surface.
 - Primary Hermes path is OpenAI Codex OAuth: `openai-codex / gpt-5.5` for
   planning and Codex execution for implementation.
-- OpenRouter remains available for explicit fallback/use, not active primary.
+- OpenRouter is not part of the default Hermes primary or fallback route; GPT
+  5.5 and Codex fallbacks use OpenAI Codex OAuth/subscription auth.
 - `computer_use` stays disabled.
 - Enabled Hermes toolsets for this setup: `web`, `browser`, `image_gen`,
   `cronjob` plus the existing safe daily toolsets.

@@ -16,10 +16,10 @@ beneath it.
   - `model: gpt-5.5`
   - `api_mode: codex_responses`
   - `base_url: https://chatgpt.com/backend-api/codex`
-- OpenRouter remains available for all work as an explicit fallback/provider
-  path, not the active primary path.
-- Current fallback order: `openrouter / moonshotai/kimi-k2.6`, then
-  `openrouter / deepseek/deepseek-r1`.
+- Fallbacks stay on the OpenAI Codex OAuth/subscription path; do not route
+  primary or fallback Hermes work through OpenRouter by default.
+- Current fallback order: `openai-codex / gpt-5.3-codex`, then
+  `openai-codex / gpt-5.4`.
 - Do not describe fallback success as primary-model readiness.
 
 Primary-readiness smoke tests:

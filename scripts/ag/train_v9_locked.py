@@ -102,6 +102,8 @@ ML_FEATURES = [
     "ml_trade_entry", "ml_trade_stop",
     # structural / volatility regime (fib internals intentionally excluded)
     "ml_atr14",
+    # daily context (current daily open + prior confirmed daily close)
+    "ml_daily_open", "ml_daily_close",
     # momentum
     "ml_rsi_value", "ml_rsi_stance_code", "ml_ma_bias",
     "ml_ma_slow_dist_atr", "ml_ma_fast_dist_atr",

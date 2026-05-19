@@ -116,7 +116,7 @@ len = input.int(21, minval=1, title="Length")
 src = input(close, title="Source")
 offset = input.int(title="Offset", defval=1, minval=-500, maxval=500, display = display.none)
 out = ta.ema(src, len)
-plot(out, title="EMA", color=color.white, linewidth=2, offset=offset)
+plot(out, title="EMA", color=color.white, linewidth=2, offset=offset, display=display.all)
 
 // Smoothing MA inputs
 GRP = "Smoothing"
@@ -249,6 +249,8 @@ string fibTargetStyle = input.string("Solid", "", options=["Solid", "Dashed", "D
 bool showFibLevelLabelsInput = input.bool(true, "Show Fib Level Labels", group=groupViz)
 int fibLabelOffsetBarsInput = input.int(8, "Fib Label Offset (bars)", minval=0, maxval=30, group=groupViz)
 string fibLabelSizeInput = input.string("Normal", "Fib Label Size", options=["Tiny", "Small", "Normal", "Large"], group=groupViz)
+color fibLabelBgColorInput = input.color(color.new(color.black, 70), "Label BG", inline="fib_label_colors", group=groupViz)
+color fibLabelFontColorInput = input.color(color.white, "Label Font", inline="fib_label_colors", group=groupViz)
 int zoneFillTransparencyInput = input.int(75, "Zone Fill Alpha", minval=0, maxval=100, group=groupViz)
 
 //=====================
@@ -412,7 +414,7 @@ int htf1hLookback = input.int(8, "HTF 1H Lookback (bars)", minval=2, maxval=60, 
 //=====================
 // Daily/weekly S/R levels — PDH/PDL/PWH/PWL (anti-repaint via [1] offset)
 //=====================
-[pdh, pdl] = request.security(syminfo.tickerid, "D", [high[1], low[1]], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+[pdh, pdl, dailyOpen, dailyCloseConfirmed] = request.security(syminfo.tickerid, "D", [high[1], low[1], open, close[1]], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
 [pwh, pwl] = request.security(syminfo.tickerid, "W", [high[1], low[1]], gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
 
 float pdhDistAtr = atr14 > 0 and not na(pdh) ? (pdh - close) / atr14 : 0.0
@@ -830,11 +832,11 @@ setFibLevelLabel(label idIn, bool visible, float price, string txt, color col) =
         int labelX = bar_index + fibLabelOffsetBarsInput
         string labelText = txt + "  " + str.tostring(price, format.mintick)
         if na(id)
-            id := label.new(labelX, price, labelText, style=label.style_label_left, color=color.new(color.black, 70), textcolor=col, size=fibLabelSize)
+            id := label.new(labelX, price, labelText, style=label.style_label_left, color=fibLabelBgColorInput, textcolor=fibLabelFontColorInput, size=fibLabelSize)
         label.set_xy(id, labelX, price)
         label.set_text(id, labelText)
-        label.set_color(id, color.new(color.black, 70))
-        label.set_textcolor(id, col)
+        label.set_color(id, fibLabelBgColorInput)
+        label.set_textcolor(id, fibLabelFontColorInput)
         label.set_size(id, fibLabelSize)
     else if not na(id)
         label.delete(id)
@@ -1138,10 +1140,9 @@ plot(corrMesNq, "ml_xa_corr_nq", display=display.none, editable=false)
 // HTF confluence
 plot(float(htfConfTotal), "ml_htf_conf_total", display=display.none, editable=false)
 
-// daily/weekly S/R distances (pwh dropped 2026-05-13 to free 1 plot slot for BB fill)
-plot(pdhDistAtr, "ml_lvl_pdh_dist_atr", display=display.none, editable=false)
-plot(pdlDistAtr, "ml_lvl_pdl_dist_atr", display=display.none, editable=false)
-plot(pwlDistAtr, "ml_lvl_pwl_dist_atr", display=display.none, editable=false)
+// daily context (confirmed daily close uses D close[1] to avoid intraday repaint)
+plot(dailyOpen, "ml_daily_open", display=display.none, editable=false)
+plot(dailyCloseConfirmed, "ml_daily_close", display=display.none, editable=false)
 
 // footprint (real intrabar bid/ask delta, POC, VA position)
 plot(fpDeltaPct, "ml_fp_delta_pct", display=display.none, editable=false)

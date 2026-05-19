@@ -30,30 +30,32 @@ def test_post_cut_removes_zn_vix_exports_and_requests() -> None:
     not ENFORCE_PINE_LEAN_CUT,
     reason="Pine lean-cut enforcement disabled until explicit Pine-edit approval",
 )
-def test_post_cut_removes_footprint_request_and_exports() -> None:
+def test_post_cut_retains_footprint_request_and_exports() -> None:
     src = _pine_source()
-    assert "request.footprint(" not in src
-    assert '"ml_fp_delta_pct"' not in src
-    assert '"ml_fp_poc_dist_atr"' not in src
-    assert '"ml_fp_va_position"' not in src
+    assert "request.footprint(" in src
+    assert '"ml_fp_delta_pct"' in src
+    assert '"ml_fp_poc_dist_atr"' in src
+    assert '"ml_fp_va_position"' in src
     assert '"ml_delta_imbalance_pct"' not in src
-    assert '"ml_delta_acceleration"' not in src
-    assert '"ml_aggressor_pulse"' not in src
-    assert '"ml_absorption_candidate"' not in src
-    assert '"ml_flush_candidate"' not in src
-    assert '"ml_poc_shift"' not in src
+    assert '"ml_delta_acceleration"' in src
+    assert '"ml_aggressor_pulse"' in src
+    assert '"ml_absorption_candidate"' in src
+    assert '"ml_flush_candidate"' in src
+    assert '"ml_poc_shift"' in src
 
 
 @pytest.mark.skipif(
     not ENFORCE_PINE_LEAN_CUT,
     reason="Pine lean-cut enforcement disabled until explicit Pine-edit approval",
 )
-def test_post_cut_removes_daily_weekly_level_emissions() -> None:
+def test_post_cut_replaces_daily_weekly_level_emissions_with_daily_open_close() -> None:
     src = _pine_source()
     assert '"ml_lvl_pdh_dist_atr"' not in src
     assert '"ml_lvl_pdl_dist_atr"' not in src
     assert '"ml_lvl_pwh_dist_atr"' not in src
     assert '"ml_lvl_pwl_dist_atr"' not in src
+    assert '"ml_daily_open"' in src
+    assert '"ml_daily_close"' in src
 
 
 @pytest.mark.skipif(

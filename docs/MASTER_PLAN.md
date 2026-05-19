@@ -552,7 +552,7 @@ and the smoothing EMA9. The old `useMaGate`, `lengthMA=50`, and
   built export covers that range). The newer Databento OHLCV-1s 2315d
   download is reserved for a future v10 long-horizon ensemble card, NOT
   Core (would NaN 2/3 of feature surface).
-- **Feature surface (`ML_FEATURES=77`, `MODEL_FEATURES=83`):**
+- **Feature surface (`ML_FEATURES=79`, `MODEL_FEATURES=85`):**
   locked V9 Core input features plus the six trade-discoverable combo fields
   added by `build_trade_dataset` (`sl_atr_mult`, `tp_ratio`,
   `tp_family_code`, `target_distance_points`, `stop_distance_points`,

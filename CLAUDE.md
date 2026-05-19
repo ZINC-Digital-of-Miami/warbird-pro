@@ -169,11 +169,11 @@ so the classifier conditions on combo, not on average win rate across
 combos.
 
 **Feature-count surfaces (locked 2026-05-12):**
-- `ML_FEATURES = 77` — CSV-emitted columns AG trains on (manifest's
+- `ML_FEATURES = 79` — CSV-emitted columns AG trains on (manifest's
   `feature_count_locked` / `feature_columns_locked` describe this set).
 - `TRADE_DISCOVERABLE_FEATURES = 6` — appended per combo row at label-build
   time by `build_trade_dataset` (the combo identifiers above).
-- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 83` —
+- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 85` —
   full AG input width per training row.
 - `LABEL_INPUT_TP_COLUMNS = ("ml_trade_tp1", "ml_trade_tp2",
   "ml_trade_tp3", "ml_trade_tp4", "ml_trade_tp5")` — required CSV inputs for label construction; NOT in
@@ -189,7 +189,7 @@ coverage). Footprint reconstruction from Databento ES Trades 365d. The newer
 OHLCV-1s 2315d (~6.3y) Databento download is reserved for a future v10
 long-horizon ensemble card, NOT Core (would NaN out 2/3 of feature surface).
 
-**Feature surface:** `ML_FEATURES=77` locked input features. `MODEL_FEATURES=83`
+**Feature surface:** `ML_FEATURES=79` locked input features. `MODEL_FEATURES=85`
 after the six trade-discoverable combo fields
 (`sl_atr_mult`, `tp_ratio`, `tp_family_code`, `target_distance_points`,
 `stop_distance_points`, `rr_ratio`) are added by `build_trade_dataset`.

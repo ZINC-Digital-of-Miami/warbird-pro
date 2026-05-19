@@ -56,6 +56,8 @@ REQUIRED_FEATURES = {
     "ml_trade_stop",
     # `ml_trade_tp` retired 2026-05-12 — Pine emits the fib ladder via
     # ml_trade_tp1..5 which are label-construction inputs (not ML_FEATURES).
+    "ml_daily_open",
+    "ml_daily_close",
     "ml_recent_liq_bull",
     "ml_recent_liq_bear",
     "ml_liq_bars_since_bull",
@@ -146,8 +148,8 @@ def test_trade_discoverables_are_in_model_feature_surface():
 
 
 def test_v9_feature_surface_counts_are_locked():
-    assert len(ML_FEATURES) == 77
-    assert len(MODEL_FEATURES) == 83
+    assert len(ML_FEATURES) == 79
+    assert len(MODEL_FEATURES) == 85
 
 
 def test_protected_fib_logic_is_not_in_ag_feature_surface():

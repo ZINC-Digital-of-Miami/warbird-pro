@@ -28,10 +28,12 @@ Load `references/tradingview-official-docs.md` when the task touches:
 
 ## Default contract
 
-- Prefer Pine Script V6 unless the user explicitly asks for another version.
+- Prefer Pine Script V6 for generic Pine work unless the user or repo explicitly asks for another version.
+- For Warbird work, resolve version authority from the active Warbird docs, active Pine file, and current-session user instruction. If stale validator text says v5 but the active Warbird file uses Pine V6-only syntax and the user confirms V6, preserve V6 and do not downgrade. If unresolved, stop and surface the conflict before editing.
 - Prefer full compile-ready output over fragmentary snippets.
 - Prefer official namespaces, built-ins, and current syntax over manual reimplementation.
 - If values are likely to be tuned, expose them as `input.*()` controls unless the user wants hardcoded constants.
+- For visual labels, do not assume line color should also be text color. When users need chart-level styling control, expose label background and label font/text colors as their own `input.color()` controls in the existing visual settings group and wire the shared label helper to those inputs.
 - Be explicit about repaint policy, confirmation timing, and `request.security()` behavior when those matter.
 - If the repo has its own Pine verification gates, run them in addition to this skill.
 

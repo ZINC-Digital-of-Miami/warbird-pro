@@ -643,9 +643,23 @@ def compute_fib_entry_reaction_features(
 
 def prior_day_week_levels(df: pd.DataFrame) -> pd.DataFrame:
     s = df.set_index("ts").sort_index()
-    daily = s.resample("1D").agg(pdh=("high", "max"), pdl=("low", "min")).shift(1)
+    daily = s.resample("1D").agg(
+        pdh=("high", "max"),
+        pdl=("low", "min"),
+        daily_open=("open", "first"),
+        daily_close=("close", "last"),
+    )
+    prior_daily_levels = daily[["pdh", "pdl"]].shift(1)
+    daily_context = pd.DataFrame(
+        {
+            "daily_open": daily["daily_open"],
+            "daily_close": daily["daily_close"].shift(1),
+        }
+    )
     weekly = s.resample("1W-MON", label="left", closed="left").agg(pwh=("high", "max"), pwl=("low", "min")).shift(1)
-    levels = daily.reindex(s.index, method="ffill").join(weekly.reindex(s.index, method="ffill"))
+    levels = prior_daily_levels.reindex(s.index, method="ffill").join(
+        daily_context.reindex(s.index, method="ffill")
+    ).join(weekly.reindex(s.index, method="ffill"))
     return levels.reset_index(drop=True)
 
 
@@ -815,6 +829,8 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
             "close": close,
             "volume": volume,
             "ml_atr14": atr14,
+            "ml_daily_open": levels["daily_open"].to_numpy(dtype=float),
+            "ml_daily_close": levels["daily_close"].to_numpy(dtype=float),
             "ml_dir": direction.astype(float),
             "ml_fib_range": fib_range,
             "ml_pivot_dist_atr": safe_div(close - p_pivot, atr14),

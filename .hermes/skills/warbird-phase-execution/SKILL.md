@@ -3,7 +3,7 @@ name: warbird-phase-execution
 description: >
   Execute Warbird work against the current authority stack. Use when Hermes must absorb
   plan changes, execute one active phase at a time, or align Pine, data, runtime,
-  and contract work to the current MES 15m setup-first architecture.
+  and contract work to the current Warbird Pro V9 indicator-only architecture.
 ---
 
 # Warbird Phase Execution
@@ -23,14 +23,24 @@ Use this skill when work must align to the active Warbird plan instead of stale 
 
 ## Lock These Truths First
 
-- The canonical object is the MES 15m fib setup at confirmed bar close.
-- The canonical key is the MES 15m bar-close timestamp in `America/Chicago`.
-- The setup snapshot includes entry-state truth, including entry spot semantics.
-- `indicators/v7-warbird-institutional.pine` is the live structural candidate-generator surface.
-- `indicators/v7-warbird-strategy.pine` mirrors that trigger path for backtesting.
-- Tier 1 is Pine candidate transport only.
-- Tier 2 is server-side AG scoring and operator-visible signal logic.
-- The external-drive local PostgreSQL warehouse is canonical truth; cloud Supabase is the serving subset only.
+- The active architecture is Warbird Indicator-Only DuckDB Local Modeling Plan v6.
+- The active main-chart indicator is `indicators/warbird-pro-v9.pine` / **Warbird Pro V9**.
+- Nexus is a retained support/research lane only; do not route current V9 Core work through Nexus.
+- V9 has no active strategy harness; use indicator-only preflight.
+- V9 Core training is file-based DuckDB/Pandera/AutoGluon under `scripts/duckdb_local/` and `scripts/ag/train_v9_locked.py`.
+- Cloud Supabase is runtime/support only, not training truth.
+- V9 lane is ES-only, with ES 15m before ES 5m.
+- `ml_trade_tp1..5` are label-construction inputs; `ml_trade_tp` is retired.
+- Pine edits require explicit current-session approval; pushing to TradingView Pine Editor requires separate explicit approval.
+- Training/modeling requires a second explicit approval after the user reviews the current indicator on chart. A prior “get ready to train” or “waiting on export” request is not enough if Pine was edited or TradingView/CDP preflight failed.
+- Pine version authority must be resolved from the active Warbird docs, active Pine file, and current-session user instruction. If stale validator text says v5 but the active V9 file uses Pine V6-only syntax and the user confirms V6, preserve V6 and do not downgrade; otherwise stop before editing.
+
+## Phase Sequencing for V9 Indicator Work
+
+1. **Scope (no edits)** — inspect active docs/Pine/tests, run baseline validators, and identify exact deltas. Use the repo `.venv` for V9 Python contract tests before calling a missing dependency a blocker.
+2. **Repair** — only after explicit current-session Pine-edit approval. Make the smallest non-destructive changes to the active V9 indicator and directly coupled docs/tests/scripts. If a Pine hidden export is added for training, wire it through the locked trainer feature list, Core ETL/builder, feature-count tests, and active docs in the same repair pass.
+3. **Validate** — run Pine compile/lint, guardrails, V9 contract tests, and `npm run build`; report exact pass/fail status.
+4. **Train** — only after indicator gates are clean, the user has reviewed the current indicator build on-chart, and the user gives explicit post-review approval for training/modeling. Respect ES 15m-first sequencing. If Pine changed after the last chart review, training is blocked until the user reviews that exact changed build on chart again.
 
 ## Work Modes
 

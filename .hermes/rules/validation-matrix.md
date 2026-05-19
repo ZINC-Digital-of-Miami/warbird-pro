@@ -22,17 +22,19 @@ Hermes integration docs:
 1. Keep secrets in `~/.hermes/.env`, not `config.yaml` or repo files.
 2. Keep `approvals.mode` fail-closed (`manual` or stricter).
 3. Keep `hooks_auto_accept: false`.
-4. Keep `computer_use`, `delegation`, and `messaging` disabled unless a separate
-   explicit task approves them.
+4. Keep `computer_use`, `messaging`, and app/media surfaces disabled unless a
+   separate explicit task approves them. `delegation` may be enabled only for
+   bounded Hermes-first subagent workflows; it must not imply Kilo routing.
 5. Run:
    - `hermes config check`
    - `hermes doctor`
    - `hermes memory status`
    - `hermes lsp status`
    - `hermes hooks doctor`
+   - `python3 .hermes/scripts/warbird_hermes_context_doctor.py`
 6. Run `tc_validator --fast` for docs/config-only Hermes work.
-7. If claiming primary model readiness, run the exact OpenAI Codex smoke tests
-   in `.hermes/rules/hermes-quality-policy.md` and confirm no fallback.
+7. If claiming primary model readiness, run `.hermes/scripts/warbird_hermes_model_smoke.sh`
+   and confirm no fallback or Copilot Claude Opus/Sonnet route.
 8. If claiming VS Code ACP readiness, verify ACP Client panel response
    `VSCODE_ACP_READY`.
 
@@ -52,13 +54,18 @@ For each MCP server added or changed:
 
 When touching gateway or cron automation:
 
-1. Gateway must remain on-demand, not always-on.
+1. Gateway may run persistently only as the Hermes launchd service for cron,
+   webhooks, or API-style automation; messaging app adapters stay disabled.
 2. `hooks_auto_accept` remains `false`.
 3. EOD cleanup must not be a Hermes pre/post tool hook.
 4. EOD cleanup must not kill TradingView.
-5. Validate with:
+5. Avoid overlapping schedulers: do not keep a separate crontab gateway watchdog
+   or legacy cron-tick LaunchAgent active when `ai.hermes.gateway` owns the
+   scheduler.
+6. Validate with:
    - `hermes gateway status`
    - `hermes cron status`
+   - `python3 .hermes/scripts/warbird_hermes_context_doctor.py`
    - EOD dry-run script
 
 ## Documentation-Only Hermes Changes

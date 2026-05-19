@@ -9,17 +9,35 @@ beneath it.
 
 ## Primary Model Lane
 
-- Primary planning model path: `openai-codex / gpt-5.5`.
-- Primary execution path: OpenAI Codex OAuth through Hermes Codex Responses mode.
+- Primary planning/brainstorming/content model path: `openai-codex / gpt-5.5`.
+- Primary hard-coding and audit path: OpenAI Codex OAuth through Hermes Codex
+  Responses mode, using the strongest available Codex coding/audit model for
+  the task (currently `openai-codex / gpt-5.3-codex` as the first hard-coding
+  fallback).
 - Config values:
   - `provider: openai-codex`
   - `model: gpt-5.5`
   - `api_mode: codex_responses`
   - `base_url: https://chatgpt.com/backend-api/codex`
-- Fallbacks stay on the OpenAI Codex OAuth/subscription path; do not route
-  primary or fallback Hermes work through OpenRouter by default.
-- Current fallback order: `openai-codex / gpt-5.3-codex`, then
-  `openai-codex / gpt-5.4`.
+- Provider priority order is **OpenAI Codex → GitHub Copilot → OpenRouter**.
+- Use Copilot for inexpensive/micro tasks and models available through the
+  user's Copilot subscription, but **do not route Copilot work through Claude
+  Opus or Claude Sonnet models**. Copilot Claude Haiku may be used only if
+  explicitly selected later; current Warbird defaults prefer GPT/Gemini Copilot
+  models instead.
+- Use OpenRouter for models not available through OpenAI/Copilot and for strong
+  free/low-cost specialists after the OpenRouter account is funded. Current
+  targeted OpenRouter families include Kimi K2.6, Hy3 Preview, DeepSeek V4
+  Pro/Flash, Gemini 2.5 Flash/Flash-Lite, GPT-OSS, Qwen3 Coder, Nemotron, and
+  GLM free/low-cost variants.
+- Nous Portal OAuth is available for the user's free Nous account, but it is not
+  ahead of the configured Warbird priority order unless explicitly promoted.
+- Current fallback order starts with `openai-codex / gpt-5.3-codex`,
+  `openai-codex / gpt-5.4`, then non-Claude Copilot GPT/Gemini models, then
+  OpenRouter specialists/free models.
+- Non-vision auxiliary helper calls use non-Claude Copilot (`gpt-5.4-mini`) to
+  keep the default helper path stable and zero-monthly-fee; vision remains
+  pinned to OpenRouter Gemini 2.5 Flash for screenshot/image analysis.
 - Do not describe fallback success as primary-model readiness.
 
 Primary-readiness smoke tests:
@@ -40,9 +58,12 @@ hermes chat -Q --provider openai-codex -m gpt-5.5 -t file,terminal --ignore-rule
 5. `computer_use` stays disabled for Warbird by default because terminal,
    browser, file tools, and filesystem MCP cover host access without the
    TradingView automation risk.
-6. Gateway is on-demand only. Do not run gateway as an always-on memory burner.
-7. Scheduled Warbird cleanup/reflection is launchd-driven and bounded; it must
-   stop gateway after the scheduled work completes.
+6. Gateway may run as a persistent launchd service for Hermes cron, webhooks,
+   and API-style automation only. Do **not** install, configure, or use messaging
+   app adapters for Warbird Hermes.
+7. Scheduled Warbird watchdog/report jobs may run through the Hermes gateway cron
+   ticker, but they must stay lightweight and `--no-agent` unless explicitly
+   approved.
 8. No Hermes skill may override `AGENTS.md`, `CLAUDE.md`, or active contract docs.
 9. Self-improvement means memory curation and skill drafts. It is not model
    weight training or autonomous promotion of unreviewed skills.
@@ -62,19 +83,20 @@ Safe daily work keeps these enabled:
 - `session_search`
 - `clarify`
 
-Approved for this Hermes setup work:
+Approved for this Hermes setup work and normal Warbird inspection:
 
 - `web` using fetch-only/no-signup tooling where possible
 - `browser` using local browser automation
 - `image_gen` through the configured OpenAI/Codex image path
 - `cronjob` for bounded scheduled jobs
+- `vision` with auxiliary routing pinned to OpenRouter Gemini 2.5 Flash for
+  image/screenshot analysis
 
 Still disabled by default:
 
 - `computer_use`
 - `delegation`
 - `messaging`
-- `vision`
 - `tts`
 - `video`
 - `video_gen`

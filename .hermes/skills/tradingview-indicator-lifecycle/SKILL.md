@@ -12,8 +12,9 @@ Use this skill when the request spans more than one Pine phase or when you need 
 
 ## Canonical references
 
-- `references/warbird-v9-rebuild-scope-notes.md` — session-derived notes for resuming half-finished V9 rebuild cleanup, including `.venv` pytest routing, lean-cut enforcement probe, and the Pine v5/v6 policy conflict.
+- `references/warbird-v9-rebuild-scope-notes.md` — session-derived notes for resuming half-finished V9 rebuild cleanup, including `.venv` pytest routing and lean-cut enforcement probe.
 - `references/warbird-chart-review-training-gate.md` — workflow correction: any Pine edit requires user chart review of that exact build before V9 training/modeling can start; CDP/preflight failures stop training rather than falling through to local-only training.
+- `references/warbird-fib-visual-semantics-gate.md` — regression prevention for fib/trade-state rendering: keep waiting-state fib semantics separate from active-trade TP semantics so `WAITING` cannot visually masquerade as active trade.
 
 ## Lifecycle Order
 
@@ -49,7 +50,7 @@ Lock these current V9 truths before touching Pine:
 - Pine/TradingView outputs and approved Databento ES rows are active data truth; no mock/demo/fake data
 - `ml_trade_tp` is retired; `ml_trade_tp1..5` are label-construction inputs, not `ML_FEATURES`
 - Pine edits require explicit current-session approval, and pushing to TradingView Pine Editor requires separate explicit approval
-- Pine version authority can conflict during V9 rebuild work. If a pasted validator contract says v5 while the active file uses v6-only syntax (`//@version=6`, `input.*(..., active=...)`, `request.footprint()`), stop and resolve the conflict explicitly. If the user confirms in-session that Warbird is Pine V6, preserve V6 and do not downgrade to v5 to satisfy stale validator text.
+- Warbird Pine authority is **Pine Script v6 only**. Do not downgrade to v5 to satisfy stale pasted validator text. Preserve v6 syntax (`//@version=6`, `input.*(..., active=...)`, `request.footprint()`) unless the user explicitly changes the project standard.
 
 ## Choose the Mode
 
@@ -85,7 +86,7 @@ Confirm before implementation:
 5. indicator-only preflight boundary compliance
 6. `ml_*` feature vs label-input distinction (`ml_trade_tp1..5` are label inputs)
 7. Pine budget safety and output-slot pricing
-8. Pine v5/v6 policy is resolved explicitly if current code and validator contract disagree
+8. Fib/trade-state visual semantics are preserved: waiting-state fib labels remain fib-level labels, while active-trade labels remain `ENTRY/SL/TP*`; never relabel waiting-state fib ladder into TP-like labels
 9. New hidden Pine export columns intended for training are also wired into the locked trainer, Core ETL/builder, feature-count tests, and active docs; otherwise the indicator can emit data that AG silently ignores
 
 If any of these are unresolved, the task is not ready for implementation.
@@ -111,4 +112,5 @@ Do not run training/modeling in closeout unless the user explicitly requested tr
 - Do not carry stale v7/MES/strategy-harness assumptions into current V9 Core indicator-only work
 - Do not treat a system Python dependency miss as a repo contract failure; first retry with the repo `.venv`
 - Do not edit Pine to satisfy skipped lean-cut tests until the user approves the lean-cut direction and Pine edits in the current session
+- Do not relabel non-active fib ladders as TP ladders. That creates false active-trade appearance while `tradeActive == false` (`WAITING` table + missing `ENTRY` line), which is a known Warbird regression pattern.
 - On TradingView CDP failure, stop immediately and wait for human instruction

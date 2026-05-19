@@ -99,8 +99,9 @@ active quality lane is Hermes guardrails plus repo-native validators.
 
 Canonical active surfaces:
 
-- `.kilo/rules/validation-matrix.md` (validator routing)
-- `.kilo/rules/hermes-quality-policy.md` (Hermes security/operations policy)
+- `.hermes/rules/validation-matrix.md` (Hermes validator routing)
+- `.hermes/rules/hermes-quality-policy.md` (Hermes security/operations policy)
+- Kilo is not part of the Hermes validation or execution path
 - `~/.hermes/config.yaml` + Warbird hook scripts under
   `~/.hermes/agent-hooks/`
 - `tests/ag/**` and existing guard scripts for code-path validation

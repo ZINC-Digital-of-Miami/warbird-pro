@@ -117,8 +117,9 @@ At minimum, understand:
 - active tuning and automation scripts under `scripts/duckdb_local/` and `scripts/ag/`
 - contract and runbook authority under `docs/`
 - Hermes quality integrity:
-  - confirm `.kilo/rules/validation-matrix.md` and
-    `.kilo/rules/hermes-quality-policy.md` exist and align with `AGENTS.md`
+  - confirm `.hermes/rules/validation-matrix.md` and
+    `.hermes/rules/hermes-quality-policy.md` exist and align with `AGENTS.md`
+  - confirm Hermes validation is not routed through Kilo
   - confirm Warbird quality runtime is Hermes-first (no active quality-playbook
     phase-runner workflow)
   - confirm no active `quality/` runtime artifact surface is expected

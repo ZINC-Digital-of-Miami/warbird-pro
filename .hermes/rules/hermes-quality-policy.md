@@ -46,6 +46,9 @@ hermes chat -Q --provider openai-codex -m gpt-5.5 -t file,terminal --ignore-rule
 8. No Hermes skill may override `AGENTS.md`, `CLAUDE.md`, or active contract docs.
 9. Self-improvement means memory curation and skill drafts. It is not model
    weight training or autonomous promotion of unreviewed skills.
+10. The `todo` toolset stays disabled for Warbird Hermes sessions because ACP
+   context compaction can duplicate visible plan/checklist cards. Use concise
+   prose progress instead.
 
 ## Enabled Warbird Tool Profile
 
@@ -55,7 +58,6 @@ Safe daily work keeps these enabled:
 - `file`
 - `code_execution`
 - `skills`
-- `todo`
 - `memory`
 - `session_search`
 - `clarify`

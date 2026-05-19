@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tc_validator: Warbird task-completion validator with tc-tracker + Hermes checks.
+# tc_validator: Warbird task-completion validator with Hermes-owned checks.
 
 set -euo pipefail
 
@@ -7,7 +7,6 @@ SCOPE="auto"
 BASE_REF=""
 INTENSITY="full"
 SKIP_QUALITY=0
-SKIP_KILO=0
 SKIP_HERMES=0
 
 usage() {
@@ -20,7 +19,6 @@ Options:
   --fast                               Run fast quality lane (skip npm lint/build + pytest lane)
   --full                               Run full quality lane (default)
   --skip-quality-lane                  Skip scripts/guards/check-local-quality-lane.sh
-  --skip-kilo                          Skip kilo debug config
   --skip-hermes                        Skip Hermes config/doctor checks
   -h, --help                           Show this help
 USAGE
@@ -59,10 +57,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-quality-lane)
       SKIP_QUALITY=1
-      shift
-      ;;
-    --skip-kilo)
-      SKIP_KILO=1
       shift
       ;;
     --skip-hermes)
@@ -129,17 +123,6 @@ else
   echo "INFO: skipping local quality lane (--skip-quality-lane)"
 fi
 
-if [[ "$SKIP_KILO" -eq 0 ]]; then
-  command -v kilo >/dev/null 2>&1 || die "kilo command not found"
-  run_step "Kilo merged config check" bash -lc '
-    kilo debug config > /tmp/kilo-debug-config.json
-    echo "kilo debug config: PASS"
-    echo "output file: /tmp/kilo-debug-config.json"
-  '
-else
-  echo "INFO: skipping kilo checks (--skip-kilo)"
-fi
-
 if [[ "$SKIP_HERMES" -eq 0 ]]; then
   command -v hermes >/dev/null 2>&1 || die "hermes command not found"
   run_step "Hermes config check" hermes config check
@@ -151,34 +134,13 @@ else
   echo "INFO: skipping Hermes checks (--skip-hermes)"
 fi
 
-run_step "tc-tracker skill presence check" test -f ".kilocode/skills/tc-tracker/SKILL.md"
+run_step "Hermes tc-tracker skill presence check" test -f ".hermes/skills/tc-tracker/SKILL.md"
 
-run_step "tc-* module presence check" bash -lc '
-required=(
-  tc-strategies-backtesting
-  tc-example-strategies
-  tc-advanced-pine
-  tc-alerts
-  tc-plots
-  tc-bar-coloring
-  tc-visual-output
-  tc-technical-analysis
-  tc-math
-  tc-operators
-  tc-indicators-basics
-)
-for name in "${required[@]}"; do
-  [[ -e ".kilocode/skills/${name}/SKILL.md" ]] || {
-    echo "missing tc skill: ${name}" >&2
-    exit 1
-  }
-done
-echo "tc module check: ${#required[@]} required skills present"
+run_step "Hermes-owned skill path check" bash -lc '
+  test -d .hermes/skills
+  test ! -e .hermes/skills/.kilocode
+  echo "Hermes skill path present: .hermes/skills"
 '
-
-if command -v hermes >/dev/null 2>&1; then
-  run_step "Hermes skill registry includes tc-tracker" bash -lc 'hermes skills list | rg -q "tc-tracker"'
-fi
 
 echo
 echo "PASS: tc_validator completed successfully"

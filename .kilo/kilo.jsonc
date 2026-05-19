@@ -4,27 +4,64 @@
     ".kilo/instructions.md",
     ".kilo/rules/*.md"
   ],
+  "disabled_providers": ["kilo"],
   "snapshot": true,
   "default_agent": "plan",
-  "model": "kilo/openai/gpt-5.5",
-  "small_model": "kilo/openai/gpt-5.5",
+  "model": "openai/gpt-5.4",
+  "small_model": "openai/gpt-5.4",
+  "provider": {
+    "openai": {
+      "models": {
+        "gpt-5.4": {
+          "id": "gpt-5.5",
+          "name": "GPT 5.5 via OpenAI subscription auth",
+          "reasoning": true,
+          "temperature": false,
+          "tool_call": true,
+          "attachment": true,
+          "limit": {
+            "context": 400000,
+            "input": 272000,
+            "output": 128000
+          },
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
+          "prompt": "codex",
+          "ai_sdk_provider": "openai",
+          "cost": {
+            "input": 0,
+            "output": 0
+          }
+        }
+      }
+    }
+  },
   "agent": {
     "plan": {
-      "model": "kilo/openai/gpt-5.5",
+      "model": "openai/gpt-5.4",
       "steps": 90,
       "options": {
         "reasoning_effort": "xhigh"
       }
     },
     "code": {
-      "model": "kilo/openai/gpt-5.5",
+      "model": "openai/gpt-5.4",
+      "steps": 90,
+      "options": {
+        "reasoning_effort": "xhigh"
+      }
+    },
+    "ask": {
+      "model": "openai/gpt-5.4",
       "steps": 90,
       "options": {
         "reasoning_effort": "xhigh"
       }
     },
     "debug": {
-      "model": "kilo/openai/gpt-5.5",
+      "model": "openai/gpt-5.4",
       "steps": 90,
       "options": {
         "reasoning_effort": "high"
@@ -33,7 +70,7 @@
     "designer": {
       "mode": "primary",
       "description": "UI and visual mode for Next.js/Tailwind and chart-facing UX passes",
-      "model": "kilo/openai/gpt-5.5",
+      "model": "openai/gpt-5.4",
       "steps": 90,
       "temperature": 0.4
     }

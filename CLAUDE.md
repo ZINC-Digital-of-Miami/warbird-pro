@@ -394,26 +394,28 @@ through Hermes guardrails and native repo validators only.
 - `hermes acp --check`, `hermes config check`, `hermes doctor`,
   `hermes hooks doctor`, and `tc_validator --fast` pass in the current
   environment.
-- Current blocker: the configured primary model
-  `nousresearch/hermes-3-llama-3.1-405b` via OpenRouter does not support the
-  Hermes tool exposure active in this environment. Fresh smoke tests fall back
-  to `deepseek/deepseek-r1`; fallback is not proof the primary is ready.
+- Current primary lane: OpenAI Codex OAuth with `openai-codex / gpt-5.5`.
+  OpenRouter remains available but is not the default Hermes primary or fallback
+  route for Warbird.
 - Current gap: VS Code ACP panel connection is still unverified. Do not claim
   Hermes ACP is end-to-end ready until an ACP session returns the exact reply
   `VSCODE_ACP_READY`.
 
-Before claiming completion on Hermes/Kilo/guardrail work, run:
+Before claiming completion on Hermes/guardrail work, run:
 
-1. `kilo debug config`
-2. `hermes config check`
-3. `hermes doctor`
-4. `hermes memory status`
-5. `hermes lsp status`
-6. `hermes hooks doctor`
+1. `hermes config check`
+2. `hermes doctor`
+3. `hermes memory status`
+4. `hermes lsp status`
+5. `hermes hooks doctor`
+6. `tc_validator --fast` for docs/config-only Hermes work
 7. For primary-model readiness claims, run the exact Hermes smoke path being
    claimed and confirm it does not fall back.
 8. For VS Code ACP readiness claims, verify the ACP Client panel connects and
    returns `VSCODE_ACP_READY`.
+
+Kilo is not part of the Hermes validation or execution path; do not run any
+Kilo check for Hermes-only work.
 
 Quality workbook runtime/artifact surfaces were removed. Do not route new
 execution through quality-playbook phase runners.

@@ -406,8 +406,10 @@ If any `.pine` file is touched, run:
 ## Hermes Quality Surface
 
 - Active quality lane is Hermes-first guardrails + repo-native validators.
-- Validator routing authority: `.kilo/rules/validation-matrix.md`.
-- Hermes policy authority: `.kilo/rules/hermes-quality-policy.md`.
+- Hermes validator routing authority: `.hermes/rules/validation-matrix.md`.
+- Hermes policy authority: `.hermes/rules/hermes-quality-policy.md`.
+- Kilo is not part of the Hermes validation or execution path. Do not run Kilo
+  checks for Hermes-only work.
 - Warbird terminal/validator hooks live in `~/.hermes/agent-hooks/` and must
   stay enabled for Warbird sessions.
 - Quality workbook runtime/artifact surfaces were removed; do not route new work

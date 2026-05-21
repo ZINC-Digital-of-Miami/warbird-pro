@@ -2,11 +2,11 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // © Kirk / ZINC Digital
 //
-// Warbird Pro V9 — Fib Anchor + Liquidity + Patterns + Cross-Asset + Footprint
+// Warbird Pro V9 — Fib Anchor + Liquidity + Cross-Asset + Footprint
 // Source ownership:
 // - Fib engine/ladder math: Indicator A (PROTECTED — anchor ownership, ZigZag, ratios)
 // - MA gate: price above BOTH primary EMA and smoothing MA = bull; below both = bear
-// - RSI context + curated candlestick patterns from real backtest performance
+// - RSI context
 //
 // Design contract:
 // - Fib core remains untouched (anchor ownership, ladder math, draw span)
@@ -78,14 +78,57 @@ int WIDTH_PIVOT       = 1
 int WIDTH_TARGET      = 1
 
 //=====================
-// TRADE SETUP / FILTER SETTINGS
+// TRADE INFLUENCES
 //=====================
-string groupSetup = "Trade Setup"
-bool usePatternConfirm = input.bool(false, "Require Candlestick Pattern", group=groupSetup)
+string groupInfluences = "Trade Influences"
+bool useXaInfluence = input.bool(true, "Enable NQ/6E Influence", group=groupInfluences)
+bool useLiquidityInfluence = input.bool(true, "Enable Liquidity Influence", group=groupInfluences)
+bool useFootprint = input.bool(true, "Enable Footprint Influence", group=groupInfluences)
 
-string groupEntryFilters = "Entry Filters"
-bool useLiqGate = input.bool(true, "Require Recent Liquidity Event", group=groupEntryFilters)
-int liqRecencyBars = input.int(1, "Liquidity Recency (bars)", minval=1, maxval=50, group=groupEntryFilters)
+// Influence internals are intentionally not user-facing knobs. The public
+// influence toggles keep the existing gate behavior while the hidden aliases
+// preserve the deterministic AG/export surface.
+int LIQ_LOOKBACK_BARS = 10
+int LIQ_RECENCY_BARS = 1
+int EQH_TOL_PCT = 5
+int EQH_MIN_TAPS = 2
+int EQH_LOOKBACK = 50
+int VOL_Z_LENGTH = 10
+string XA_TREND_TIMEFRAME = "15"
+string NQ_SYMBOL = "CME_MINI:NQ1!"
+string EUR_USD_SYMBOL = "CME:6E1!"
+int XA_CORR_LENGTH = 5
+int FP_TICKS_PER_ROW = 4
+float FP_VA_PCT = 70.0
+float FP_IMBALANCE_PCT = 300.0
+float FP_ABSORPTION_DELTA_PCT = 20.0
+float FP_FLUSH_DELTA_PCT = 20.0
+float FP_EVENT_VOL_SPIKE = 1.50
+float FP_COMPRESSED_RANGE_ATR = 0.75
+
+// Hidden compatibility aliases for existing feature calculations. Keep the
+// operator settings surface narrow while preserving the established V9 export
+// column semantics until the influence architecture is reviewed separately.
+bool useLiqGate = useLiquidityInfluence
+int liqRecencyBars = LIQ_RECENCY_BARS
+int liqLookbackBars = LIQ_LOOKBACK_BARS
+int eqhTolPct = EQH_TOL_PCT
+int eqhMinTaps = EQH_MIN_TAPS
+int eqhLookback = EQH_LOOKBACK
+int volZLength = VOL_Z_LENGTH
+bool useXaGate = useXaInfluence
+string xaTrendTimeframe = XA_TREND_TIMEFRAME
+string nqSymbol = NQ_SYMBOL
+string eurUsdSymbol = EUR_USD_SYMBOL
+int corrLength = XA_CORR_LENGTH
+int xaMinAgreement = 2
+int fpTicksPerRow = FP_TICKS_PER_ROW
+float fpVaPct = FP_VA_PCT
+float fpImbalancePct = FP_IMBALANCE_PCT
+float fpAbsorptionDeltaPct = FP_ABSORPTION_DELTA_PCT
+float fpFlushDeltaPct = FP_FLUSH_DELTA_PCT
+float fpEventVolSpike = FP_EVENT_VOL_SPIKE
+float fpCompressedRangeAtr = FP_COMPRESSED_RANGE_ATR
 
 string groupExecution = "Trade Management"
 // Combo selectors match AG trade-surface discoverables (locked 2026-05-11):
@@ -158,28 +201,6 @@ float rsiOverbought = input.float(80.0, "Bearish Extreme Above", minval=50.0, ma
 float rsiOversold = input.float(20.0, "Bullish Extreme Below", minval=0.0, maxval=50.0, step=0.1, group=groupRsi)
 
 //=====================
-// LIQUIDITY PACKAGE
-//=====================
-string groupLiq = "Liquidity & VWAP"
-int liqLookbackBars = input.int(10, "BSL/SSL Pool Lookback", minval=5, maxval=200, group=groupLiq)
-int eqhTolPct = input.int(5, "Equal H/L Tolerance (1/100 of ATR)", minval=1, maxval=50, group=groupLiq)
-int eqhMinTaps = input.int(2, "Equal H/L Min Taps", minval=2, maxval=10, group=groupLiq)
-int eqhLookback = input.int(50, "Equal H/L Lookback Bars", minval=20, maxval=500, group=groupLiq)
-int volZLength = input.int(10, "Volume Z-Score Length", minval=5, maxval=100, group=groupLiq)
-bool useSessionVwap = input.bool(true, "Enable Session VWAP Feature", group=groupLiq)
-
-//=====================
-// CROSS-ASSET PACKAGE
-//=====================
-string groupXa = "Cross-Asset Context"
-bool useXaGate = input.bool(true, "Use NQ/6E Entry Gate", group=groupXa)
-string xaTrendTimeframe = input.timeframe("15", "Trend Timeframe", group=groupXa)
-string nqSymbol = input.symbol("CME_MINI:NQ1!", "NQ Symbol", group=groupXa)
-string eurUsdSymbol = input.symbol("CME:6E1!", "6E Symbol (EUR/USD — replaces DXY)", group=groupXa)
-int corrLength = input.int(5, "MES-NQ Correlation Length", minval=5, maxval=200, group=groupXa)
-int xaMinAgreement = input.int(2, "Minimum Agreement (of 2)", minval=1, maxval=2, group=groupXa)
-
-//=====================
 // DAILY/WEEKLY S/R LEVELS
 //=====================
 string groupLvl = "D/W Levels"
@@ -190,24 +211,10 @@ bool showPwl = input.bool(true, "Show PWL", group=groupLvl, inline="pw")
 color lvlDayColor = input.color(#808080, "Day Color", group=groupLvl, inline="dc")
 color lvlWeekColor = input.color(#880E4F, "Week Color", group=groupLvl, inline="wc")
 
-//=====================
-// FOOTPRINT (real intrabar bid/ask delta)
-//=====================
-string groupFp = "Footprint"
-bool useFootprint = input.bool(true, "Enable Footprint Features", group=groupFp)
-int fpTicksPerRow = input.int(4, "Ticks Per Row", minval=1, maxval=100, group=groupFp)
-float fpVaPct = input.float(70.0, "Value Area %", minval=50.0, maxval=95.0, step=1.0, group=groupFp)
-float fpImbalancePct = input.float(300.0, "Imbalance %", minval=100.0, maxval=1000.0, step=10.0, group=groupFp)
-float fpAbsorptionDeltaPct = input.float(20.0, "Absorption Delta %", minval=5.0, maxval=100.0, step=1.0, group=groupFp)
-float fpFlushDeltaPct = input.float(20.0, "Flush Delta %", minval=5.0, maxval=100.0, step=1.0, group=groupFp)
-float fpEventVolSpike = input.float(1.50, "Event Volume Spike", minval=0.50, maxval=10.0, step=0.10, group=groupFp)
-float fpCompressedRangeAtr = input.float(0.75, "Compressed Range ATR", minval=0.10, maxval=5.0, step=0.05, group=groupFp)
-
 string groupTable = "Table"
 bool showMlTable = input.bool(false, "Show ML Table", group=groupTable)
 string tablePositionInput = input.string("Bottom Left", "Table Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=groupTable)
 string tableTextSizeInput = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Large"], group=groupTable)
-string riskModeInput = input.string("Throughput", "Risk Mode", options=["Throughput", "Balanced", "Conservative"], group=groupTable)
 
 //=====================
 // FIB VISUAL SETTINGS (Source A — PROTECTED draw span)
@@ -276,32 +283,8 @@ f_xa_label(int code) =>
 //=====================
 float atr14 = ta.atr(14)
 float barRange = high - low
-float bodySize = math.abs(close - open)
 bool bullishCandle = close > open
 bool bearishCandle = close < open
-float upperWickSize = high - math.max(open, close)
-float lowerWickSize = math.min(open, close) - low
-float upperWickRatio = barRange > 0 ? upperWickSize / barRange : 0.0
-float lowerWickRatio = barRange > 0 ? lowerWickSize / barRange : 0.0
-float bodyRatio = barRange > 0 ? bodySize / barRange : 0.0
-
-//=====================
-// Candlestick patterns — curated from real backtest performance (return >= 0.5%)
-//=====================
-// Bullish — Rising Window (gap up), Engulfing, Hammer, Marubozu White
-bool patRisingWindow  = bullishCandle and low > high[1]
-bool patBullEngulf    = bullishCandle and bearishCandle[1] and close > open[1] and open < close[1]
-bool patHammer        = bullishCandle and lowerWickRatio >= 0.60 and bodyRatio <= 0.30 and upperWickRatio <= 0.10
-bool patMarubozuWhite = bullishCandle and bodyRatio >= 0.85 and upperWickRatio <= 0.10 and lowerWickRatio <= 0.10
-
-// Bearish — Engulfing, Marubozu Black, Tweezer Top, Falling Window (gap down)
-bool patBearEngulf    = bearishCandle and bullishCandle[1] and close < open[1] and open > close[1]
-bool patMarubozuBlack = bearishCandle and bodyRatio >= 0.85 and upperWickRatio <= 0.10 and lowerWickRatio <= 0.10
-bool patTweezerTop    = bearishCandle and math.abs(high - high[1]) <= atr14 * 0.05 and bullishCandle[1]
-bool patFallingWindow = bearishCandle and high < low[1]
-
-bool provenBullishPattern = patRisingWindow or patBullEngulf or patHammer or patMarubozuWhite
-bool provenBearishPattern = patBearEngulf or patMarubozuBlack or patTweezerTop or patFallingWindow
 
 //=====================
 // RSI context
@@ -389,10 +372,10 @@ float eqhDistAtr = atr14 > 0 and not na(lastEqHigh) ? (lastEqHigh - close) / atr
 float eqlDistAtr = atr14 > 0 and not na(lastEqLow) ? (close - lastEqLow) / atr14 : 0.0
 
 //=====================
-// Session VWAP (model/export feature)
+// Session VWAP (hidden model/export feature, not an operator setting)
 //=====================
 float vwapRaw = ta.vwap(hlc3, timeframe.change("D"))
-float vwap1 = useSessionVwap ? vwapRaw : na
+float vwap1 = vwapRaw
 float vwapDistAtr = atr14 > 0 and not na(vwap1) ? (close - vwap1) / atr14 : 0.0
 
 //=====================
@@ -464,26 +447,15 @@ bool fpFlushCandidate = math.abs(fpDeltaPct) >= fpFlushDeltaPct and fpVolumeSpik
 
 float htf1hRange = nz(htf1hHigh - htf1hLow)
 
-htfFibPrice(float htfHigh, float htfLow, float htfRng, float ratio) =>
-    htfRng <= 0 ? na : htfLow + htfRng * ratio
+htfFibPrice(float htfHigh, float htfLow, float htfRng, float ratio, float htfDir) =>
+    htfRng <= 0 ? na : (htfDir >= 0 ? htfLow + htfRng * ratio : htfHigh - htfRng * ratio)
 
-float htf1hP382 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_382)
-float htf1hP500 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_PIVOT)
-float htf1hP618 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_618)
-
-htfConfluenceCheck(float level15m, float currentFibRange) =>
-    if na(level15m) or na(currentFibRange) or currentFibRange <= 0
+htfConfluenceCheck(float chartLevel, float htfLevel, float currentFibRange) =>
+    if na(chartLevel) or na(htfLevel) or na(currentFibRange) or currentFibRange <= 0
         0
     else
         float tol = currentFibRange * htfConfTolPct * 0.01
-        int hits = 0
-        if not na(htf1hP382) and math.abs(level15m - htf1hP382) <= tol
-            hits += 1
-        if not na(htf1hP500) and math.abs(level15m - htf1hP500) <= tol
-            hits += 1
-        if not na(htf1hP618) and math.abs(level15m - htf1hP618) <= tol
-            hits += 1
-        hits
+        math.abs(chartLevel - htfLevel) <= tol ? 1 : 0
 
 //=====================
 // AUTO FIB ENGINE (Source A — PROTECTED, unchanged)
@@ -572,10 +544,15 @@ float zoneLower = math.min(p618, p786)
 float zoneFillUpper = math.max(p382, p618)
 float zoneFillLower = math.min(p382, p618)
 
+float htfFibDir = fibBull ? 1.0 : -1.0
+float htf1hP382 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_382, htfFibDir)
+float htf1hP500 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_PIVOT, htfFibDir)
+float htf1hP618 = htfFibPrice(htf1hHigh, htf1hLow, htf1hRange, FIB_618, htfFibDir)
+
 float htfRangeForConfluence = fibRange
-int htfConfPivot = htfConfluenceCheck(pPivot, htfRangeForConfluence)
-int htfConf382 = htfConfluenceCheck(p382, htfRangeForConfluence)
-int htfConf618 = htfConfluenceCheck(p618, htfRangeForConfluence)
+int htfConfPivot = htfConfluenceCheck(pPivot, htf1hP500, htfRangeForConfluence)
+int htfConf382 = htfConfluenceCheck(p382, htf1hP382, htfRangeForConfluence)
+int htfConf618 = htfConfluenceCheck(p618, htf1hP618, htfRangeForConfluence)
 int htfConfTotal = htfConfPivot + htfConf382 + htfConf618
 
 //=====================
@@ -639,8 +616,6 @@ bool triggerShort = touched500Short or touched618Short or touched786Short
 
 float entryLevel = touched786Long ? level786 : touched618Long ? level618 : touched500Long ? level500 : touched786Short ? level786 : touched618Short ? level618 : touched500Short ? level500 : na
 
-bool longPatternOk = not usePatternConfirm or provenBullishPattern
-bool shortPatternOk = not usePatternConfirm or provenBearishPattern
 bool maLongOk = maBull
 bool maShortOk = maBear
 
@@ -653,8 +628,8 @@ bool xaShortOk = not useXaGate or xaShortAgreement >= xaMinAgreement
 bool recentLiqBull = not useLiqGate or (not na(barsSinceLiqBull) and barsSinceLiqBull < liqRecencyBars)
 bool recentLiqBear = not useLiqGate or (not na(barsSinceLiqBear) and barsSinceLiqBear < liqRecencyBars)
 
-bool qualifiedLong = confirmed and isValid and triggerLong and longPatternOk and maLongOk and xaLongOk and recentLiqBull
-bool qualifiedShort = confirmed and isValid and triggerShort and shortPatternOk and maShortOk and xaShortOk and recentLiqBear
+bool qualifiedLong = confirmed and isValid and triggerLong and maLongOk and xaLongOk and recentLiqBull
+bool qualifiedShort = confirmed and isValid and triggerShort and maShortOk and xaShortOk and recentLiqBear
 
 //=====================
 // Trade engine — single source of truth for entry events
@@ -975,17 +950,6 @@ string totalTradesText = str.tostring(tradeClosedCount)
 string winLossText = str.tostring(tradeWinCount) + " / " + str.tostring(tradeLossCount)
 string profitFactorText = na(profitFactor) ? "--" : str.tostring(profitFactor, "#.##")
 
-// Advisory OOS cohorts from locked_20260514_162025. Pine cannot run AG
-// inference or retrain; this setting only displays the selected cohort gate.
-float riskModeThreshold = riskModeInput == "Throughput" ? 0.45 : riskModeInput == "Conservative" ? 0.60 : 0.50
-float riskModeWrPct = riskModeInput == "Throughput" ? 68.34 : riskModeInput == "Conservative" ? 79.28 : 72.07
-float riskModePf = riskModeInput == "Throughput" ? 2.22 : riskModeInput == "Conservative" ? 2.95 : 2.43
-float riskModeEv = riskModeInput == "Throughput" ? 272.56 : riskModeInput == "Conservative" ? 322.66 : 289.84
-int riskModeTrades = riskModeInput == "Throughput" ? 1311 : riskModeInput == "Conservative" ? 753 : 1099
-string riskThresholdText = str.tostring(riskModeThreshold * 100.0, "#") + "%"
-string riskCohortText = str.tostring(riskModeWrPct, "#.##") + "% / " + str.tostring(riskModePf, "#.##")
-string riskEvText = "$" + str.tostring(riskModeEv, "#.##") + " / " + str.tostring(riskModeTrades)
-
 // Per-TF trend labels (same 5-grade f_xa_label scheme as cross-asset)
 string trend5Text = f_xa_label(tfTrend5Code)
 string trend15Text = f_xa_label(tfTrend15Code)
@@ -1017,7 +981,7 @@ f_cell_b(table t, int c, int r, string txt) =>
 
 var table mlTable = na
 if barstate.isfirst and showMlTable
-    mlTable := table.new(f_table_pos(tablePositionInput), 2, 25, bgcolor=color.new(TBL_BG_BODY, 0), border_color=color.new(TBL_BORDER, 0), border_width=1, frame_color=color.new(TBL_BORDER, 0), frame_width=1, force_overlay=true)
+    mlTable := table.new(f_table_pos(tablePositionInput), 2, 19, bgcolor=color.new(TBL_BG_BODY, 0), border_color=color.new(TBL_BORDER, 0), border_width=1, frame_color=color.new(TBL_BORDER, 0), frame_width=1, force_overlay=true)
 
 if showMlTable and not na(mlTable) and barstate.islast
     // TREND — chart symbol on 5m/15m/1h/4h (same 5-grade scale as XA)
@@ -1062,19 +1026,6 @@ if showMlTable and not na(mlTable) and barstate.islast
     f_cell_b(mlTable, 1, 17, xaCorrText)
     f_cell_b(mlTable, 0, 18, "VOLUME PRESSURE")
     f_cell_b(mlTable, 1, 18, volPressureText)
-    // MODEL GATE — static locked-suite OOS cohorts for human review only
-    f_cell_h(mlTable, 0, 19, "MODEL GATE")
-    f_cell_h(mlTable, 1, 19, "")
-    f_cell_b(mlTable, 0, 20, "RISK MODE")
-    f_cell_b(mlTable, 1, 20, riskModeInput)
-    f_cell_b(mlTable, 0, 21, "MIN PROB")
-    f_cell_b(mlTable, 1, 21, riskThresholdText)
-    f_cell_b(mlTable, 0, 22, "OOS WR / PF")
-    f_cell_b(mlTable, 1, 22, riskCohortText)
-    f_cell_b(mlTable, 0, 23, "OOS EV / N")
-    f_cell_b(mlTable, 1, 23, riskEvText)
-    f_cell_b(mlTable, 0, 24, "SOURCE")
-    f_cell_b(mlTable, 1, 24, "OOS 20260514")
 
 //=====================
 // Alerts
@@ -1105,16 +1056,6 @@ plot(atr14 > 0 ? (close - out) / atr14 : 0.0, "ml_ma_fast_dist_atr", display=dis
 plot(adxValue, "ml_adx_value", display=display.none, editable=false)
 plot(adxDiPlus, "ml_adx_plus_di", display=display.none, editable=false)
 plot(adxDiMinus, "ml_adx_minus_di", display=display.none, editable=false)
-
-// candlestick patterns (4 bull + 4 bear; prune after backtest)
-plot(patRisingWindow ? 1.0 : 0.0, "ml_pat_rising_window", display=display.none, editable=false)
-plot(patBullEngulf ? 1.0 : 0.0, "ml_pat_bull_engulf", display=display.none, editable=false)
-plot(patHammer ? 1.0 : 0.0, "ml_pat_hammer", display=display.none, editable=false)
-plot(patMarubozuWhite ? 1.0 : 0.0, "ml_pat_marubozu_white", display=display.none, editable=false)
-plot(patBearEngulf ? 1.0 : 0.0, "ml_pat_bear_engulf", display=display.none, editable=false)
-plot(patMarubozuBlack ? 1.0 : 0.0, "ml_pat_marubozu_black", display=display.none, editable=false)
-plot(patTweezerTop ? 1.0 : 0.0, "ml_pat_tweezer_top", display=display.none, editable=false)
-plot(patFallingWindow ? 1.0 : 0.0, "ml_pat_falling_window", display=display.none, editable=false)
 
 // liquidity primitives (BSL/SSL sweep/reclaim)
 plot(atr14 > 0 ? (bsl - close) / atr14 : 0.0, "ml_bsl_dist_atr", display=display.none, editable=false)

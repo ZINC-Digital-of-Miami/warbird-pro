@@ -59,7 +59,7 @@ def test_zn_and_vix_changes_do_not_affect_agreement_output() -> None:
     assert float(out_left.loc[0, "ml_xa_short_agreement"]) == 0.0
 
 
-def test_write_outputs_drops_removed_columns(tmp_path: Path) -> None:
+def test_write_outputs_keeps_active_footprint_columns(tmp_path: Path) -> None:
     source_path = tmp_path / "source.csv"
     source_path.write_text("dummy\n")
     profile_path = tmp_path / "profile.html"
@@ -92,7 +92,7 @@ def test_write_outputs_drops_removed_columns(tmp_path: Path) -> None:
     )
 
     exported = pd.read_csv(csv_path)
-    assert "ml_fp_delta_pct" not in set(exported.columns)
+    assert "ml_fp_delta_pct" in set(exported.columns)
 
 
 def test_write_outputs_keeps_agreement_columns(tmp_path: Path) -> None:

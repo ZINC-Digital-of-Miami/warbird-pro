@@ -141,10 +141,10 @@ Frozen during V9:
 - EMA/MA visual display semantics
 - Pine source code until promotion approval
 
-The V9 EMA/MA gate is fixed as slow SMA(close) vs fast EMA(close), with live
-defaults `lengthMA=50` and `lengthEMA=21`. Entry-filter HPO may tune only
-within +/-10 of those defaults (`lengthMA` 40-60, `lengthEMA` 11-31); do not
-reintroduce smaller-timeframe MA defaults or MA type-selection params.
+The V9 MA gate is price above/below BOTH the primary EMA and its smoothing MA:
+primary `len=21`, `src=close`, `offset=1`, smoothing `maTypeInput=EMA`, and
+`maLengthInput=9`. The old `useMaGate`, `lengthMA=50`, and `lengthEMA=21`
+EMA/SMA HPO surface is retired for active V9/Core work.
 
 ## Explicit Exclusions
 

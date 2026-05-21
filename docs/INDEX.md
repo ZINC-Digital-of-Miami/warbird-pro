@@ -64,13 +64,14 @@ overrides stale push wording in older `docs/plans/` artifacts.
 3. `docs/contracts/pine_indicator_ag_contract.md`
 4. `docs/runbooks/README.md`
 5. `docs/runbooks/startup_repo_review.md` - required fresh-chat/start-of-day read-only initialization
-6. `docs/contracts/schema_migration_policy.md`
-7. `docs/cloud_scope.md`
-8. `WARBIRD_MODEL_SPEC.md`
-9. `CLAUDE.md`
-10. `docs/agent-safety-gates.md`
-11. `Powerdrill/reports/2026-04-06-powerdrill-findings.md`
-12. `docs/research/2026-05-02-optuna-unified-platform.md` - Nexus/legacy research reference only (non-authority for V9 Core)
+6. `docs/runbooks/v9_ml_trading_research_operating_system.md` - reusable indicator-first ML/trading research workflow
+7. `docs/contracts/schema_migration_policy.md`
+8. `docs/cloud_scope.md`
+9. `WARBIRD_MODEL_SPEC.md`
+10. `CLAUDE.md`
+11. `docs/agent-safety-gates.md`
+12. `Powerdrill/reports/2026-04-06-powerdrill-findings.md`
+13. `docs/research/2026-05-02-optuna-unified-platform.md` - Nexus/legacy research reference only (non-authority for V9 Core)
 
 ## Authority Split
 
@@ -86,6 +87,10 @@ overrides stale push wording in older `docs/plans/` artifacts.
   - the operational runbook index
 - `docs/runbooks/startup_repo_review.md`
   - required fresh-chat/start-of-day read-only initialization report checklist
+- `docs/runbooks/v9_ml_trading_research_operating_system.md`
+  - reusable phase-gated workflow requiring indicator/chart validation before
+    modeling, short-window exploratory baselines before full-year training, and
+    SHAP/Monte Carlo feature triage before promotion claims
 - quality workbook runtime/artifact surfaces were removed from the active repo
   surface; Hermes policy/routing lives under `.hermes/rules/` and is not routed
   through Kilo

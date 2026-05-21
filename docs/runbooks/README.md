@@ -34,6 +34,11 @@ strategy-harness sessions.
 - `docs/runbooks/v9_core_smoke_verification.md`
   - reproducible small-window Core ETL smoke verification commands and metric
     reporting path; not a full 1y Core training gate
+- `docs/runbooks/v9_ml_trading_research_operating_system.md`
+  - reusable audit-gated research workflow for Warbird indicator validation,
+    short-window discovery baselines, SHAP/Monte Carlo feature triage,
+    timeframe validation, full-year AutoGluon training, promotion readiness,
+    and monitoring preparation
 - `scripts/ag/tv_connection_doctor.py`
   - read-only TradingView CDP/MCP readiness check; run before any live TV
     operation

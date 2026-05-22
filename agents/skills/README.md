@@ -19,6 +19,9 @@ Keep (active, curated):
   - `senior-quant-mindset`
   - `v9-promote-champion`
   - `verify-tv-slot`
+- Pine engineering skills migrated under `agents/skills/`:
+  - `pine-script-ai-coding-agent`
+  - `tradingview-indicator-assembler-optuna-ready`
 - read-only MCP-oriented helpers that are not tied to Hermes runtime
 
 Retire or migrate from legacy mirrors:
@@ -27,10 +30,13 @@ Retire or migrate from legacy mirrors:
 - duplicate Pine primer stacks mirrored in multiple locations
 - duplicate generic utility skills mirrored in both `.github/skills` and
   `.claude/skills` (removed from `.claude/skills` in 2026-05-22 de-dup pass)
+- empty `tc-*` placeholder directories in `.claude/skills` (retired in phase-2
+  batch-2)
 
 Audit record: `docs/audits/2026-05-22-skill-overlap-pruning.md`.
 Phase-2 plan: `agents/skills/phase-2-custom-skill-migration.md`.
 Batch-1 audit: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md`.
+Batch-2 audit: `docs/audits/2026-05-22-phase2-batch2-pine-foundations-skills.md`.
 
 ## Required Audit Rules
 

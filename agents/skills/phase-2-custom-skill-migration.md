@@ -26,6 +26,12 @@ keep/drop decisions.
 2. Pine foundations and advanced helpers
    - candidate surfaces: `tc-*`, `pine-script-ai-coding-agent`,
      `tradingview-indicator-assembler-optuna-ready`
+    - 2026-05-22 outcome:
+       - migrated `pine-script-ai-coding-agent`
+       - migrated `tradingview-indicator-assembler-optuna-ready`
+       - retired legacy `.claude/skills` copies for both
+       - dropped empty legacy `tc-*` placeholder directories and stale
+          `.claude/skills/tc-README.md`
 3. Training pipeline and model-governance helpers
    - candidate surfaces: `training-*`, `preflight-training`,
      `optuna-*`, `pine-tuning-optimizations`

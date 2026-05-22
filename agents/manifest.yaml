@@ -15,6 +15,8 @@ skills:
     - agents/skills/senior-quant-mindset/SKILL.md
     - agents/skills/v9-promote-champion/SKILL.md
     - agents/skills/verify-tv-slot/SKILL.md
+    - agents/skills/pine-script-ai-coding-agent/SKILL.md
+    - agents/skills/tradingview-indicator-assembler-optuna-ready/SKILL.md
   curation_policy:
     - agents/skills/README.md
 

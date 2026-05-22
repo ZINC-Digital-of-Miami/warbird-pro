@@ -34,8 +34,8 @@ If neither, list the most recent 3 runs under `models/warbird_pro_v9/locked_*/` 
 Read `models/warbird_pro_v9/<run>/manifest.json` (or whatever the trainer's manifest is called — `Glob` for it first). Confirm:
 - CSV input path + SHA recorded
 - Train/val/test date ranges recorded and non-overlapping
-- Embargo bars recorded as 25 (= FORWARD_SCAN_BARS + 1)
-- ML_FEATURES count = 120, MODEL_FEATURES = 126 (per CLAUDE.md Phase B lock)
+- Embargo bars recorded as 11 (= FORWARD_SCAN_BARS + 1)
+- ML_FEATURES count = 75, MODEL_FEATURES = 81 (per CLAUDE.md V9 parity lock)
 - Calibrate flag = True
 - eval_metric = log_loss
 - preset = best_quality

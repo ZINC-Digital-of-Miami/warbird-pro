@@ -75,6 +75,7 @@ FIB_THRESHOLD_FLOOR_PCT = 0.25
 MIN_FIB_RANGE_ATR = 0.5
 FIB_HYSTERESIS_PCT = 2.0
 HTF_CONF_TOL_PCT = 1.5
+HTF_1H_LOOKBACK = 8
 
 USE_MA_GATE = True
 MA_FAST_BASE = 21
@@ -111,7 +112,7 @@ DEFAULT_INDICATOR_KNOBS: dict[str, Any] = {
     "knob_min_fib_range_atr": MIN_FIB_RANGE_ATR,
     "knob_fib_hysteresis_pct": FIB_HYSTERESIS_PCT,
     "knob_htf_conf_tol_pct": HTF_CONF_TOL_PCT,
-    "knob_use_pattern_confirm": False,
+    "knob_htf_1h_lookback": HTF_1H_LOOKBACK,
     "knob_use_liq_gate": True,
     "knob_liq_recency_bars": LIQ_RECENCY_BARS,
     "knob_trade_stop_atr_mult": 1.0,
@@ -132,15 +133,9 @@ DEFAULT_INDICATOR_KNOBS: dict[str, Any] = {
     "knob_use_session_vwap": True,
     "knob_use_xa_gate": True,
     "knob_nq_symbol": "CME_MINI:NQ1!",
-    "knob_zn_symbol": "CBOT:ZN1!",
     "knob_6e_symbol": "CME:6E1!",
-    "knob_vix_symbol": "CBOE:VIX",
     "knob_corr_length": CORR_LEN,
-    "knob_vix_move_bars": VIX_MOVE_BARS,
-    "knob_vix_atr_length": VIX_ATR_LEN,
-    "knob_vix_pressure_band": VIX_PRESSURE_BAND,
     "knob_xa_min_agreement": XA_MIN_AGREEMENT,
-    "knob_zn_gate_direction": "Same Direction",
     "knob_use_footprint": True,
     "knob_fp_ticks_per_row": 4,
     "knob_fp_va_pct": 70.0,
@@ -156,9 +151,7 @@ KNOB_COLUMNS = tuple(DEFAULT_INDICATOR_KNOBS.keys())
 # that the 2026-05-12 lean-cut removes from the export CSV. Dropped before
 # the DuckDB COPY in write_outputs(); the manifest's feature_columns_locked
 # is sourced from train_v9_locked.ML_FEATURES, so this list only governs
-# what reaches disk. The dropped knob_* keys are kept in
-# DEFAULT_INDICATOR_KNOBS so the ETL's internal _knob() lookups still
-# resolve, but they never reach the CSV.
+# what reaches disk.
 DROPPED_FEATURES_2026_05_12: tuple[str, ...] = (
     # daily/weekly S/R levels
     "ml_lvl_pdh_dist_atr", "ml_lvl_pdl_dist_atr",
@@ -175,11 +168,6 @@ DROPPED_FEATURES_2026_05_12: tuple[str, ...] = (
     # ZN / VIX / HG cross-asset (NQ + 6E only after the cut)
     "ml_xa_zn_code", "ml_xa_zn_rate_pressure",
     "ml_xa_vix_pressure", "ml_xa_hg_growth_proxy",
-    # knob settings for removed assets/surfaces (still resolved by _knob()
-    # internally but not exported)
-    "knob_zn_symbol", "knob_zn_gate_direction",
-    "knob_vix_symbol", "knob_vix_move_bars",
-    "knob_vix_atr_length", "knob_vix_pressure_band",
 )
 
 LOCKED_DUCKDB_VERSION = "1.5.2"
@@ -512,26 +500,42 @@ def htf_confluence(
     p_382: np.ndarray,
     p_618: np.ndarray,
     fib_range: np.ndarray,
+    fib_bull: np.ndarray,
     htf_conf_tol_pct: float = HTF_CONF_TOL_PCT,
+    htf_1h_lookback: int = HTF_1H_LOOKBACK,
 ) -> np.ndarray:
     s = df.set_index("ts").sort_index()
     high_1h = s["high"].resample("1h", label="left", closed="left").max()
     low_1h = s["low"].resample("1h", label="left", closed="left").min()
-    htf_high = high_1h.rolling(55, min_periods=55).max()
-    htf_low = low_1h.rolling(55, min_periods=55).min()
+    htf_high = high_1h.rolling(htf_1h_lookback, min_periods=htf_1h_lookback).max()
+    htf_low = low_1h.rolling(htf_1h_lookback, min_periods=htf_1h_lookback).min()
     htf_range = htf_high - htf_low
-    htf = pd.DataFrame(index=htf_high.index)
-    htf["p382"] = htf_low + htf_range * FIB_382
-    htf["p500"] = htf_low + htf_range * FIB_PIVOT
-    htf["p618"] = htf_low + htf_range * FIB_618
+    htf = pd.DataFrame({"htf_high": htf_high, "htf_low": htf_low, "htf_range": htf_range}, index=htf_high.index)
     aligned = htf.reindex(s.index, method="ffill")
+    htf_high_arr = aligned["htf_high"].to_numpy(dtype=float)
+    htf_low_arr = aligned["htf_low"].to_numpy(dtype=float)
+    htf_range_arr = aligned["htf_range"].to_numpy(dtype=float)
+    htf_bull = np.asarray(fib_bull, dtype=bool)
+    htf_p382 = direction_aware_htf_fib_price(htf_high_arr, htf_low_arr, htf_range_arr, FIB_382, htf_bull)
+    htf_p500 = direction_aware_htf_fib_price(htf_high_arr, htf_low_arr, htf_range_arr, FIB_PIVOT, htf_bull)
+    htf_p618 = direction_aware_htf_fib_price(htf_high_arr, htf_low_arr, htf_range_arr, FIB_618, htf_bull)
     tol = fib_range * htf_conf_tol_pct * 0.01
     total = np.zeros(len(df), dtype=float)
-    for level in (p_pivot, p_382, p_618):
-        for col in ("p382", "p500", "p618"):
-            ref = aligned[col].to_numpy(dtype=float)
-            total += np.where(np.isfinite(level) & np.isfinite(ref) & (np.abs(level - ref) <= tol), 1.0, 0.0)
+    for chart_level, htf_level in ((p_382, htf_p382), (p_pivot, htf_p500), (p_618, htf_p618)):
+        total += np.where(np.isfinite(chart_level) & np.isfinite(htf_level) & (np.abs(chart_level - htf_level) <= tol), 1.0, 0.0)
     return total
+
+
+def direction_aware_htf_fib_price(
+    htf_high: np.ndarray,
+    htf_low: np.ndarray,
+    htf_range: np.ndarray,
+    ratio: float,
+    fib_bull: np.ndarray,
+) -> np.ndarray:
+    htf_base = np.where(fib_bull, htf_low, htf_high)
+    htf_dir = np.where(fib_bull, 1.0, -1.0)
+    return np.where(np.isfinite(htf_range) & (htf_range > 0), htf_base + htf_dir * htf_range * ratio, np.nan)
 
 
 def compute_liquidity_state(
@@ -685,21 +689,6 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
     ma_bear = (close < fast_ma) & (close < slow_ma)
     plus_di, minus_di, adx = dmi_adx(high, low, close, 14)
 
-    bar_range = high - low
-    body_size = np.abs(close - open_)
-    bullish = close > open_
-    bearish = close < open_
-    upper_wick = high - np.maximum(open_, close)
-    lower_wick = np.minimum(open_, close) - low
-    upper_wick_ratio = np.where(bar_range > 0, upper_wick / np.maximum(bar_range, 1e-12), 0.0)
-    lower_wick_ratio = np.where(bar_range > 0, lower_wick / np.maximum(bar_range, 1e-12), 0.0)
-    body_ratio = np.where(bar_range > 0, body_size / np.maximum(bar_range, 1e-12), 0.0)
-
-    pat_rising_window = np.r_[False, bullish[1:] & (low[1:] > high[:-1])]
-    pat_bear_engulf = np.r_[False, bearish[1:] & bullish[:-1] & (close[1:] < open_[:-1]) & (open_[1:] > close[:-1])]
-    pat_marubozu_black = bearish & (body_ratio >= 0.85) & (upper_wick_ratio <= 0.10) & (lower_wick_ratio <= 0.10)
-    pat_tweezer_top = np.r_[False, bearish[1:] & (np.abs(high[1:] - high[:-1]) <= atr14[1:] * 0.05) & bullish[:-1]]
-
     anchors_high, anchors_low, _ahb, _alb = zigzag_anchors(
         high,
         low,
@@ -790,7 +779,16 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
 
     vwap_session = session_vwap(df, volume) if bool(_knob(knobs, "knob_use_session_vwap")) else close
     vol_z = zscore(pd.Series(volume), int(_knob(knobs, "knob_vol_z_length"))).to_numpy(dtype=float)
-    htf_conf_total = htf_confluence(df, p_pivot, p_382, p_618, fib_range, float(_knob(knobs, "knob_htf_conf_tol_pct")))
+    htf_conf_total = htf_confluence(
+        df,
+        p_pivot,
+        p_382,
+        p_618,
+        fib_range,
+        fib_bull,
+        float(_knob(knobs, "knob_htf_conf_tol_pct")),
+        int(_knob(knobs, "knob_htf_1h_lookback")),
+    )
     levels = prior_day_week_levels(df)
 
     fib_reaction = compute_fib_entry_reaction_features(
@@ -845,10 +843,6 @@ def compute_base_features(df_5m: pd.DataFrame, knobs: dict[str, Any] | None = No
             "ml_adx_value": adx,
             "ml_adx_plus_di": plus_di,
             "ml_adx_minus_di": minus_di,
-            "ml_pat_rising_window": pat_rising_window.astype(float),
-            "ml_pat_bear_engulf": pat_bear_engulf.astype(float),
-            "ml_pat_marubozu_black": pat_marubozu_black.astype(float),
-            "ml_pat_tweezer_top": pat_tweezer_top.astype(float),
             "ml_bsl_dist_atr": safe_div(bsl - close, atr14),
             "ml_ssl_dist_atr": safe_div(close - ssl, atr14),
             "ml_swept_bsl": swept_bsl.astype(float),
@@ -1041,8 +1035,8 @@ def merge_cross_assets(
         vix_aligned = duckdb_asof_align(vix_frame, date_col, value_col, idx)
         out["ml_xa_vix_pressure"] = close_movement_pressure(
             vix_aligned,
-            int(_knob(knobs, "knob_vix_move_bars")),
-            int(_knob(knobs, "knob_vix_atr_length")),
+            VIX_MOVE_BARS,
+            VIX_ATR_LEN,
         ).to_numpy(dtype=float)
     else:
         out["ml_xa_vix_pressure"] = 0.0
@@ -1512,7 +1506,6 @@ def validate_export_with_pandera(df: pd.DataFrame) -> None:
 
     bool_cols = {
         "knob_auto_tune_zz",
-        "knob_use_pattern_confirm",
         "knob_use_liq_gate",
         "knob_use_ma_gate",
         "knob_use_session_vwap",
@@ -1524,10 +1517,7 @@ def validate_export_with_pandera(df: pd.DataFrame) -> None:
         "profile_id",
         "profile_mode",
         "knob_nq_symbol",
-        "knob_zn_symbol",
         "knob_6e_symbol",
-        "knob_vix_symbol",
-        "knob_zn_gate_direction",
     }
 
     schema_cols: dict[str, pa.Column] = {

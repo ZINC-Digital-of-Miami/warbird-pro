@@ -206,9 +206,11 @@ primary EMA21 and smoothing EMA9.
   `LIVE_ANCHOR_FOOTPRINT` or `NEXUS_FOOTPRINT_DELTA`.
 - No external live feature stacking: no FRED, macro, news, options, cloud
   joins, or unapproved cross-asset joins in the active modeling dataset. The
-  approved V9/Core local Databento XA context is limited to NQ + 6E agreement /
-  USD-pressure plus ZN rate-pressure, HG/copper, and NQ/6E 24h model-context
-  features; these are not Pine hard gates or cloud/server features.
+  approved V9/Core cross-asset feature surface is NQ + 6E only: Pine-emitted
+  NQ/6E codes plus manifest-declared Core context for NQ relative strength and
+  6E momentum/pressure. ZN/HG/VIX/DXY may exist only as historical or dropped
+  diagnostics; they are not active ML features, Pine gates, Pine exports, or
+  cloud/server features.
 - Databento is an approved market-data supplier for training rows when the
   manifest honestly declares a Databento capture/source kind. It is not the
   Pine indicator, not a TradingView indicator CSV, and not a substitute for
@@ -242,8 +244,9 @@ primary EMA21 and smoothing EMA9.
   sources: Warbird Pro V9 Pine/TradingView exports, approved Databento ES
   market-data training rows, or Nexus Pine/TradingView footprint evidence.
 - Do not use daily ingestion, FRED, macro, news, options, or unapproved
-  cross-asset joins as active training features. Approved V9/Core local
-  Databento XA context is limited to NQ, 6E, ZN, and HG model-context features.
+  cross-asset joins as active training features. Approved V9/Core cross-asset
+  model features are limited to NQ + 6E; ZN/HG/VIX/DXY are not active feature
+  columns unless Kirk explicitly opens a new research lane.
 - If an indicator feature is not present in Pine/TradingView output or the
   approved V9/Core local Databento deterministic feature context, it is not in
   the active modeling dataset.
@@ -268,13 +271,14 @@ primary EMA21 and smoothing EMA9.
   pivot-window `fibHtfSnapshot` variant that uses `ta.barssince(...)` and
   `pivotHighInWindow` / `pivotLowInWindow`. That pattern is banned due to
   repeated wide-fib regressions.
-- Pine budget baseline verified 2026-05-11 by `scripts/guards/pine-lint.sh`:
-  - `warbird-pro-v9.pine`: **60** output-consuming calls
-    (**58** `plot()` + 2 `alertcondition()`) — above the 75% TradingView-hard-cap
-    warning threshold; 9 `request.security()` calls after comment-line
-    normalization, 1 `request.footprint()` call, 19 `line.new()` calls,
-    1 `box.new()`, and 1 `table.new()`. Only **4 output slots remain** before
-    the 64-call hard cap; price every new plot or alertcondition before
+- Pine budget baseline verified 2026-05-21 by `scripts/guards/pine-lint.sh`
+  after the V9 settings-surface cleanup:
+  - `warbird-pro-v9.pine`: **54** output-consuming calls
+    (**52** `plot()` + 2 `alertcondition()`) — still above the 75%
+    TradingView-hard-cap warning threshold; 11 `request.security()` calls after
+    comment-line normalization, 1 `request.footprint()` call, 19 `line.new()`
+    calls, 1 `box.new()`, and 1 `table.new()`. Only **10 output slots remain**
+    before the 64-call hard cap; price every new plot or alertcondition before
     editing Pine.
   - Nexus files are retained; price their request/output budget before any
     Nexus edit.

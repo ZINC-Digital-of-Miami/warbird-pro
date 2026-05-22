@@ -22,7 +22,7 @@ This skill exists because the alternative ("high school rock band" — Kirk's te
 If the task touches a file > 100 lines, read it in full. Do not jump to the function you think matters. The agent that broke the 2026-05-13 V8 fallback bug did exactly this — skimmed `hook-pre-plan-contract.sh`, saw "V8 plan", left it.
 
 ### Re-read CLAUDE.md at session start
-Project state changes faster than memory. Today's session: V9 Core. Active Pine: `warbird-pro-v9.pine`. Retired Pine variants: 6 listed in CLAUDE.md. ML_FEATURES=120, MODEL_FEATURES=126. Don't quote any of these from memory — verify against CLAUDE.md before claiming them.
+Project state changes faster than memory. Today's session: V9 Core. Active Pine: `warbird-pro-v9.pine`. Retired Pine variants are listed in CLAUDE.md. Current V9 Core parity is ML_FEATURES=75, MODEL_FEATURES=81. Don't quote any of these from memory — verify against CLAUDE.md before claiming them.
 
 ### Cite file:line
 "`train_v9_locked.py` uses `eval_metric='log_loss'`" is unfalsifiable. "`scripts/ag/train_v9_locked.py:142` sets `eval_metric='log_loss'`" is verifiable. Always the second form.

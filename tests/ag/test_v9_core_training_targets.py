@@ -14,10 +14,8 @@ def _feature_defaults() -> dict[str, object]:
     out: dict[str, object] = {}
     for col in ML_FEATURES:
         # symbol-knob columns are strings; everything else defaults to 0.0
-        if col in {"knob_nq_symbol", "knob_zn_symbol", "knob_6e_symbol", "knob_vix_symbol"}:
+        if col in {"knob_nq_symbol", "knob_6e_symbol"}:
             out[col] = "TEST"
-        elif col == "knob_zn_gate_direction":
-            out[col] = "Same Direction"
         else:
             out[col] = 0.0
     return out

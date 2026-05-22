@@ -402,14 +402,16 @@ Promotion is manual. A champion means:
 
 ## Pine Budget Baseline
 
-Verified 2026-05-10 by `scripts/guards/pine-lint.sh`:
+Verified 2026-05-21 by `scripts/guards/pine-lint.sh` after the V9
+settings-surface cleanup:
 
-- `warbird-pro-v9.pine`: 60 output-consuming calls
-  (58 `plot()` + 2 `alertcondition()`), 9 `request.security()` calls after
+- `warbird-pro-v9.pine`: 54 output-consuming calls
+  (52 `plot()` + 2 `alertcondition()`), 11 `request.security()` calls after
   comment-line normalization, 1 `request.footprint()` call, 19 `line.new()`
   calls, 1 `box.new()`, and 1 `table.new()`. Session VWAP is intentionally
   modeling/export-only through `ml_liq_vwap_dist_atr`; it is not a visible
-  chart overlay.
+  chart overlay and not an operator-facing setting. The current build leaves
+  10 output slots before the 64-call hard cap.
 
 Any Pine addition must be priced before code is written. Nexus request/output
 budgets must be repriced before any Nexus edit.
@@ -532,36 +534,46 @@ floor=0.50 — all wrong; do not repeat.
 and the smoothing EMA9. The old `useMaGate`, `lengthMA=50`, and
 `lengthEMA=21` EMA/SMA HPO surface is retired for V9/Core.
 
-### V9 Pine Pattern Set (post-2026-05-09 trim)
+### Candlestick Status (removed from active V9)
 
-- **Bull (1):** `patRisingWindow`
-- **Bear (3):** `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`
-- **Dropped 2026-05-09:** `patBullEngulf`, `patPiercing`, `patHaramiBull`,
-  `patHaramiBear`
-- **HOLD for v10:** Three Line Strike (84% vendor citation unverified — validate
-  in Python first before reserving Pine plot budget)
+Candlestick logic is not part of the current V9 live Pine lane. The active
+indicator no longer has a candlestick operator input, candlestick hard gate,
+candlestick detector block, or `ml_pat_*` export plots. Historical pattern
+work, including `patRisingWindow`, `patBearEngulf`, `patMarubozuBlack`,
+`patTweezerTop`, the older dropped patterns, and the unverified Three Line
+Strike idea, is lineage only. Do not use those names as active V9 features or
+training requirements unless Kirk explicitly opens a new candlestick research
+lane with its own audit, export budget, and AG contract.
 
 ### Core Training Dataset Contract
 
 - **Source:** Databento ES — Trades 365d (footprint reconstruction) + OHLCV
   bars 15m (training resolution; ES 5m only after 15m success per locked
-  sequence) + OHLCV 1m (microstructure features only). DXY/VIX remain retired;
-  6E momentum/z-score and trend code are the CME-native USD-pressure proxy.
-  Expanded local Databento XA context now also includes ZN rate-pressure,
-  HG/copper trend/growth, and NQ 24h tech-beta features.
+  sequence) + OHLCV 1m (microstructure features only). Active Pine cross-asset
+  context is NQ + 6E only. DXY/VIX/ZN Pine requests, inputs, and exports are
+  retired; 6E momentum/z-score and trend code are the CME-native USD-pressure
+  proxy. Any manifest-declared Databento side context must stay within the
+  active NQ + 6E feature contract and must not be described as a Pine gate or
+  Pine export. ZN/HG/VIX/DXY are historical or dropped diagnostics unless Kirk
+  explicitly opens a new research lane.
 - **Window:** 2025-05-11 → 2026-05-10 (1y, dense feature coverage; the actual
   built export covers that range). The newer Databento OHLCV-1s 2315d
   download is reserved for a future v10 long-horizon ensemble card, NOT
   Core (would NaN 2/3 of feature surface).
-- **Feature surface (`ML_FEATURES=79`, `MODEL_FEATURES=85`):**
-  locked V9 Core input features plus the six trade-discoverable combo fields
-  added by `build_trade_dataset` (`sl_atr_mult`, `tp_ratio`,
-  `tp_family_code`, `target_distance_points`, `stop_distance_points`,
-  `rr_ratio`). AG trains on non-fib/non-color indicator settings and the
-  corresponding MA/RSI/liquidity/XA/footprint signal surface; protected
-  fib-engine logic/settings and color/visual inputs are excluded from AG
-  features. DXY/VIX/ZN/HG fields remain retired from the active feature set;
-  NQ + 6E context is admitted as model features only.
+- **Feature surface:** the trainer, Core ETL export schema, tests, and manifest
+  are aligned to the current active families: non-fib/non-color settings plus
+  MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence. `ML_FEATURES = 75`;
+  the six trade-discoverable combo fields added by
+  `build_trade_dataset` remain `sl_atr_mult`, `tp_ratio`, `tp_family_code`,
+  `target_distance_points`, `stop_distance_points`, and `rr_ratio`, making
+  `MODEL_FEATURES = 81`. Protected fib-engine logic/settings and color/visual
+  inputs are excluded from AG features. Risk Mode and candlestick fields are
+  excluded from the active V9 feature contract. NQ + 6E and `ml_htf_conf_total`
+  are admitted as Pine-emitted model evidence; any non-Pine Databento side
+  context must be explicitly declared by manifest.
+- HTF confluence parity is included in this recovery scope: Pine and Core ETL
+  must both use direction-aware, corresponding-level `.382/.500/.618` hits with
+  `htf1hLookback=8` mirrored as `knob_htf_1h_lookback`.
 - **Label (triple barrier):** `winner_tp_before_sl` = 1 if **this combo's**
   TP price touched before its SL price within `FORWARD_SCAN_BARS = 10`
   (2.5h on 15m, 50m on 5m); 0 if SL touched first OR if TP and SL touched on

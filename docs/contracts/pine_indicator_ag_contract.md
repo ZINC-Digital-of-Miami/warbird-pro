@@ -53,11 +53,13 @@ Training rows may come only from manifest-backed active-lane sources:
 
 No external feature stack is admitted.
 
-`warbird_pro_v9` may load ES exports across 5m/15m from the same
-active Warbird Pro V9 training lane. MES/NQ/MNQ rows are ignored. No external
+`warbird_pro_v9` may load ES exports across 5m/15m from the same active Warbird
+Pro V9 training lane. MES/NQ/MNQ rows are ignored. No undeclared external
 cross-symbol join, cloud table, or external feature stack is admitted into this
-lane. Pine-native NQ/ZN/DXY/VIX values emitted by the active indicator are part
-of the indicator behavior. Databento may supply ES market-data training
+lane. Pine-native NQ + 6E values emitted by the active indicator are part of the
+indicator behavior. Approved local Databento model-context side features must be
+manifest-declared and must not be represented as Pine gates, Pine exports, or
+TradingView indicator CSV data. Databento may supply ES market-data training
 rows, but it is not the Pine indicator, not a trigger family, and not a
 TradingView indicator CSV export.
 
@@ -79,13 +81,14 @@ Do not mix trigger families inside one run.
 - `LIVE_ANCHOR_FOOTPRINT`: live Warbird Pro trigger from
   `indicators/warbird-pro-v9.pine`. Entries are
   `entryLongTrigger` / `entryShortTrigger`, built from the selected fib
-  execution-anchor reclaim, structure context, winning candlestick confirmation,
-  EMA/MA crossover alignment, optional ML RSI filtering, optional
-  liquidity-sweep confirmation, one-shot gating, ladder validity, and the active
-  NQ/ZN/DXY/VIX cross-asset agreement gate when enabled. NQ is same-direction,
-  DXY is inverse-risk, VIX is ATR-normalized movement pressure, and ZN follows
-  the explicit Pine setting `ZN Gate Direction`. (The trigger-family name is
-  legacy and retained for continuity.)
+  execution-anchor reclaim, structure context, EMA/MA crossover alignment,
+  optional liquidity influence, one-shot gating, ladder validity, and the
+  active NQ + 6E cross-asset influence when enabled. NQ is same-direction; 6E
+  up is USD-weak/long-favorable and 6E down is USD-strong/short-favorable. Risk
+  Mode and candlestick logic are removed from the active Pine contract: no Risk
+  Mode input/table block, no candlestick input/gate, no candlestick detector
+  block, and no `ml_pat_*` Pine exports. (The trigger-family name is legacy and
+  retained for continuity.)
 - `NEXUS_FOOTPRINT_DELTA`: Nexus lower-pane footprint-delta trigger from
   `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`. Rows
   must come from TradingView/Pine `request.footprint()` evidence containing
@@ -119,7 +122,7 @@ Allowed tuning scope while lock is active:
 
 - non-fib thresholds and safety gates
 - lookback/cooldown controls outside fib anchor math
-- pattern/EMA-MA/ML gating strictness and execution toggles
+- EMA-MA/RSI/liquidity/XA/footprint thresholds and execution toggles
 - footprint/order-flow feature exports and diagnostic table rows, as long as
   the single `request.footprint()` path is reused and the Pine output budget is
   explicitly repriced
@@ -146,6 +149,13 @@ primary `len=21`, `src=close`, `offset=1`, smoothing `maTypeInput=EMA`, and
 `maLengthInput=9`. The old `useMaGate`, `lengthMA=50`, and `lengthEMA=21`
 EMA/SMA HPO surface is retired for active V9/Core work.
 
+HTF confluence is a hidden model/export feature, not a visible fib-ladder
+change. It must project the 1H `.382/.500/.618` levels in the resolved
+chart-fib direction and count only corresponding-level hits:
+chart `.382` to HTF `.382`, chart `.500` to HTF `.500`, and chart `.618` to
+HTF `.618`. The active 1H lookback knob is `htf1hLookback=8` and must be
+mirrored by Core ETL as `knob_htf_1h_lookback`.
+
 ## Explicit Exclusions
 
 The active modeling dataset must not join:
@@ -153,12 +163,15 @@ The active modeling dataset must not join:
 - FRED or macro data
 - economic calendar data
 - news/options data
-- external cross-asset futures data outside active Pine exports
+- undeclared external cross-asset futures data outside active Pine exports or
+  approved manifest-declared Databento model context
 - Supabase cloud tables
 - Databento rows mislabeled as TradingView indicator exports or Pine indicator
   sources
 - local `ag_training` rows
 - Python reconstructed fib interactions
+- Risk Mode fields or candlestick pattern columns; those are not active V9 Pine
+  execution/export surfaces
 
 ## Required Export Manifest
 

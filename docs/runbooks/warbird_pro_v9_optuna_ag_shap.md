@@ -101,44 +101,24 @@ Hub URLs:
 
 ## 2. Pine ml_* feature surface
 
-The V9 indicator emits these hidden plot columns for every confirmed bar (50
-features + 5 trade-state outputs). All are Optuna/AG/SHAP fodder.
+The active V9 feature contract is defined in
+`scripts/ag/train_v9_locked.py::ML_FEATURES` and enforced by the Core ETL
+manifest. As of the 2026-05-21 parity recovery:
 
-### Structural / regime
-`ml_atr14`, `ml_dir`, `ml_fib_range`, `ml_pivot_dist_atr`, `ml_p618_dist_atr`,
-`ml_in_zone`, `ml_bars_since_break`, `ml_break_in_dir`, `ml_reject_at_zone`
+- `ML_FEATURES = 75`
+- `TRADE_DISCOVERABLE_FEATURES = 6`
+- `MODEL_FEATURES = 81`
 
-### Momentum
-`ml_rsi_value`, `ml_rsi_stance_code`, `ml_ma_bias`
+The admitted training families are non-fib/non-color settings plus
+MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence. `ml_htf_conf_total` is an
+active Pine-emitted model feature. The full fib TP ladder
+`ml_trade_tp1..ml_trade_tp5` is required for label construction only and is not
+part of `ML_FEATURES`.
 
-### Candlestick patterns (top handful, 7 bull + 7 bear)
-Bullish: `ml_pat_hammer`, `ml_pat_inv_hammer`, `ml_pat_dragonfly`,
-`ml_pat_bull_engulf`, `ml_pat_piercing`, `ml_pat_morning_star`,
-`ml_pat_three_white`
-Bearish: `ml_pat_shooting_star`, `ml_pat_hanging_man`, `ml_pat_gravestone`,
-`ml_pat_bear_engulf`, `ml_pat_dark_cloud`, `ml_pat_evening_star`,
-`ml_pat_three_black`
-
-### Liquidity (BSL/SSL, 2-bar reclaim)
-`ml_bsl_dist_atr`, `ml_ssl_dist_atr`, `ml_swept_bsl`, `ml_swept_ssl`,
-`ml_reclaimed_bsl`, `ml_reclaimed_ssl`
-
-### Volume delta (proportional close-position split)
-`ml_bar_delta`, `ml_net_delta_20`
-
-### Cross-asset 15m trend codes ({-2,-1,0,1,2})
-`ml_xa_nq_code`, `ml_xa_zn_code`, `ml_xa_dx_code`
-
-### Exhaustion heads-up
-`ml_exhaust_long`, `ml_exhaust_short`
-
-### Entry routing + HTF agreement
-`ml_entry_route_code`, `ml_htf_conf_total`
-
-### Triggers + trade state
-`ml_entry_long_trigger`, `ml_entry_short_trigger`, `ml_trade_entry`,
-`ml_trade_stop`, `ml_trade_tp`, `ml_last_exit_outcome` (0=none, 1=target,
--1=stop, 2=time-exit)
+Retired from the active V9/Core contract: Risk Mode fields, candlestick pattern
+fields, DXY, ZN/VIX Pine requests or exports, proportional body/wick synthetic
+delta (`ml_bar_delta`, `ml_net_delta_20`), exhaustion heads-up fields, and the
+single legacy `ml_trade_tp` field.
 
 ## 3. Databento MES 5m export pipeline
 

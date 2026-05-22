@@ -103,15 +103,20 @@ Primary metrics:
   - TradingView indicator name: **Warbird Pro V9**
   - TradingView short title: **Warbird V9**
   - live entry trigger: `entryLongTrigger` / `entryShortTrigger` from the
-    selected fib execution-anchor reclaim plus structure context, winning
-    candlestick confirmation, EMA/MA crossover alignment, optional ML RSI
-    filter, optional liquidity-sweep confirm, cooldown, and the active
-    NQ/ZN/DXY/VIX cross-asset agreement gate when enabled; NQ is same-direction,
-    DXY is inverse-risk, VIX is ATR-normalized movement pressure, and ZN uses
-    the explicit Pine setting `ZN Gate Direction`
+    selected fib execution-anchor reclaim plus structure context, EMA/MA
+    crossover alignment, optional liquidity influence, and the active NQ + 6E
+    cross-asset influence when enabled; NQ is same-direction, and 6E is the
+    USD-pressure proxy. Risk Mode and candlestick logic are removed from the
+    active Pine execution contract: no Risk Mode input/table block, no
+    candlestick input/gate, no candlestick detector block, and no `ml_pat_*`
+    Pine exports
   - MA gate is price above/below BOTH the primary EMA21 and smoothing EMA9;
     the old `useMaGate`, `lengthMA=50`, and `lengthEMA=21` EMA/SMA HPO
     surface is retired for active V9/Core work
+  - HTF confluence is direction-aware and corresponding-level only:
+    chart `.382/.500/.618` compare to 1H `.382/.500/.618` projected in the
+    resolved chart-fib direction, with live `htf1hLookback=8` mirrored by
+    Core ETL as `knob_htf_1h_lookback`
   - footprint/order-flow hidden exports now include Pine-native delta
     imbalance, delta acceleration, aggressor pulse, volume-spike ratio, POC
     shift, absorption candidate, and flush candidate fields for Core parity and
@@ -161,7 +166,7 @@ Protected fib-core scope in `indicators/warbird-pro-v9.pine`:
 Allowed tuning scope while locked:
 
 - non-fib risk gates, trigger thresholds, reclaim/sweep lookbacks, and cooldowns
-- candlestick/EMA-MA/ML filter strictness and execution-safety parameters
+- EMA-MA/RSI/liquidity/XA/footprint thresholds and execution-safety parameters
 - module on/off decisions that do not alter fib math or anchor state ownership
 
 ## Feature Scope
@@ -169,9 +174,10 @@ Allowed tuning scope while locked:
 Feature scope is indicator-only.
 
 Current V9 Core AG feature policy: train on non-fib/non-color indicator
-settings and MA/RSI/liquidity/NQ+6E/footprint signal evidence. Do **not** train
-on protected fib-engine settings, fib internals, or visual/color inputs. Pine
-fib ladder prices remain required label-construction inputs only.
+settings and MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence emitted by
+the approved source surface. Do **not** train on protected fib-engine settings,
+fib internals, visual/color inputs, Risk Mode, or candlestick pattern fields.
+Pine fib ladder prices remain required label-construction inputs only.
 
 Admitted feature families:
 
@@ -189,9 +195,13 @@ Not admitted:
 
 - server-side macro/fundamental context
 - FRED/economic calendar fields
-- Databento cross-asset context unless a separate contract explicitly reopens it;
-  Pine-native NQ/ZN/DXY/VIX values emitted by the active indicator are part of
-  the indicator behavior
+- unapproved Databento cross-asset context. Approved local Databento
+  model-context side features must be manifest-declared, limited to the active
+  contract set, and never represented as Pine gates or Pine exports. Pine-native
+  NQ + 6E values emitted by the active indicator are part of the indicator
+  behavior
+- candlestick pattern columns unless a future research lane explicitly reopens
+  them; they are not in the current active Pine export contract
 - Supabase/cloud serving tables
 - local warehouse reconstructed fib rows
 - Databento rows recorded as `TRADINGVIEW_INDICATOR_CSV` or as a Pine indicator

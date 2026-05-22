@@ -10,7 +10,7 @@ REQUIRED_KNOBS = {
     "knob_min_fib_range_atr",
     "knob_fib_hysteresis_pct",
     "knob_htf_conf_tol_pct",
-    "knob_use_pattern_confirm",
+    "knob_htf_1h_lookback",
     "knob_use_liq_gate",
     "knob_liq_recency_bars",
     "knob_trade_stop_atr_mult",
@@ -29,15 +29,9 @@ REQUIRED_KNOBS = {
     "knob_use_session_vwap",
     "knob_use_xa_gate",
     "knob_nq_symbol",
-    "knob_zn_symbol",
     "knob_6e_symbol",
-    "knob_vix_symbol",
     "knob_corr_length",
-    "knob_vix_move_bars",
-    "knob_vix_atr_length",
-    "knob_vix_pressure_band",
     "knob_xa_min_agreement",
-    "knob_zn_gate_direction",
     "knob_use_footprint",
     "knob_fp_ticks_per_row",
     "knob_fp_va_pct",
@@ -69,6 +63,8 @@ REQUIRED_FEATURES = {
     "ml_xa_6e_code",
     "ml_xa_nq_rel_strength_atr",
     "ml_xa_6e_momentum_zscore",
+    # Direction-aware .382/.500/.618 HTF confluence is Pine-emitted signal evidence.
+    "ml_htf_conf_total",
     # Footprint/order-flow surface retained as non-fib signal evidence.
     "ml_fp_delta_pct",
     "ml_fp_poc_dist_atr",
@@ -90,6 +86,7 @@ PROTECTED_FIB_FEATURES_MUST_BE_ABSENT = {
     "knob_min_fib_range_atr",
     "knob_fib_hysteresis_pct",
     "knob_htf_conf_tol_pct",
+    "knob_htf_1h_lookback",
     "ml_fib_touch_level_code",
     "ml_fib_entry_dist_atr",
     "ml_fib_pierce_atr",
@@ -104,7 +101,6 @@ PROTECTED_FIB_FEATURES_MUST_BE_ABSENT = {
     "ml_p618_dist_atr",
     "ml_bars_since_break",
     "ml_break_in_dir",
-    "ml_htf_conf_total",
 }
 
 
@@ -148,8 +144,8 @@ def test_trade_discoverables_are_in_model_feature_surface():
 
 
 def test_v9_feature_surface_counts_are_locked():
-    assert len(ML_FEATURES) == 79
-    assert len(MODEL_FEATURES) == 85
+    assert len(ML_FEATURES) == 75
+    assert len(MODEL_FEATURES) == 81
 
 
 def test_protected_fib_logic_is_not_in_ag_feature_surface():
@@ -175,6 +171,5 @@ def test_manifest_declares_indicator_knobs_and_feature_columns():
     profile = profiles[0]
     assert REQUIRED_KNOBS.issubset(profile.keys())
     assert profile["knob_nq_symbol"] == "CME_MINI:NQ1!"
-    assert profile["knob_zn_symbol"] == "CBOT:ZN1!"
+    assert profile["knob_htf_1h_lookback"] == 8
     assert profile["knob_6e_symbol"] == "CME:6E1!"
-    assert profile["knob_vix_symbol"] == "CBOE:VIX"

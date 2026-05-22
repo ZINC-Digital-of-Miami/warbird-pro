@@ -77,7 +77,7 @@ OUTPUT_ROOT = REPO_ROOT / "models/warbird_pro_v9"
 # trainer can score TP families, but they are not ML_FEATURES.
 ML_FEATURES = [
     # Non-fib, non-color Pine input knobs (NQ + 6E only after 2026-05-12 cut).
-    "knob_use_pattern_confirm", "knob_use_liq_gate",
+    "knob_use_liq_gate",
     "knob_liq_recency_bars", "knob_trade_stop_atr_mult",
     "knob_trade_max_hold_bars",
     "knob_use_ma_gate", "knob_length_ema", "knob_length_ma",
@@ -109,9 +109,6 @@ ML_FEATURES = [
     "ml_ma_slow_dist_atr", "ml_ma_fast_dist_atr",
     # ADX
     "ml_adx_value", "ml_adx_plus_di", "ml_adx_minus_di",
-    # candlestick patterns (curated 4 from real backtest performance)
-    "ml_pat_rising_window",
-    "ml_pat_bear_engulf", "ml_pat_marubozu_black", "ml_pat_tweezer_top",
     # liquidity primitives (BSL/SSL sweep+reclaim)
     "ml_bsl_dist_atr", "ml_ssl_dist_atr",
     "ml_swept_bsl", "ml_swept_ssl",
@@ -125,6 +122,8 @@ ML_FEATURES = [
     # ZN and VIX dropped, DXY already removed 2026-05-11).
     "ml_xa_nq_code", "ml_xa_6e_code",
     "ml_xa_corr_nq",
+    # HTF confluence (direction-aware .382/.500/.618 corresponding-level hits).
+    "ml_htf_conf_total",
     # cross-asset agreement — recomputed over NQ + 6E only (0..2 counts).
     # Cheap composite of trend codes, useful regime feature.
     "ml_xa_long_agreement", "ml_xa_short_agreement",
@@ -213,7 +212,26 @@ def validate_input_schema(df: pd.DataFrame) -> None:
             "Core training CSV is missing required columns: "
             + ", ".join(missing)
         )
-    stale = [col for col in ("ml_xa_dx_code", "ml_bar_delta", "ml_net_delta_20") if col in df.columns]
+    stale = [
+        col
+        for col in (
+            "ml_xa_dx_code",
+            "ml_bar_delta",
+            "ml_net_delta_20",
+            "knob_use_pattern_confirm",
+            "ml_pat_rising_window",
+            "ml_pat_bear_engulf",
+            "ml_pat_marubozu_black",
+            "ml_pat_tweezer_top",
+            "knob_zn_symbol",
+            "knob_zn_gate_direction",
+            "knob_vix_symbol",
+            "knob_vix_move_bars",
+            "knob_vix_atr_length",
+            "knob_vix_pressure_band",
+        )
+        if col in df.columns
+    ]
     if stale:
         raise RuntimeError(
             "Core training CSV still contains stale/banned columns: "

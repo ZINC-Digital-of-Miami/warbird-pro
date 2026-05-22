@@ -4,6 +4,13 @@ This runbook is the reproducible evidence path for small Core ETL smoke
 windows. It is not a full 1y Core build, not AG training, and not a champion
 gate.
 
+> **2026-05-21 status:** This smoke packet is historical evidence only. It
+> predates the active V9/Core parity surface (`ML_FEATURES=75`,
+> `MODEL_FEATURES=81`), the NQ+6E-only Pine cross-asset contract, and the
+> removal of candlestick/Risk Mode/DXY/ZN/VIX Pine feature surfaces. Do not use
+> the May 2025 MES smoke counts below as current acceptance evidence; run a new
+> ES 15m/5m Core smoke with the current manifest contract before citing metrics.
+
 ## Build Smoke CSV
 
 ```bash
@@ -35,7 +42,8 @@ Use the emitted JSON as the source of truth for row counts, entry counts,
 feature nonzero counts, label counts, and CSV/manifest checksums. Do not cite
 chat-transcribed smoke metrics without this JSON output.
 
-Current reference run from 2026-05-10 after the order-flow threshold refactor:
+Legacy reference run from 2026-05-10 after the order-flow threshold refactor
+(superseded for active V9/Core parity):
 
 - CSV SHA256: `e867cf17e500eb653a2345ae1642266c34381245348a6817fae797aecf88bd4d`
 - Manifest SHA256: `8a230d08f9abbb4bc90f62b481e88c44cb6db79d436c522a0c24908f7039bc29`

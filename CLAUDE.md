@@ -45,15 +45,25 @@ Training/modeling uses manifest-backed source data for the active lane:
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
 
-No daily/hourly runtime ingestion tables, FRED, macro, cross-asset, news,
-options, Supabase, or mislabeled Databento/TradingView artifacts are admitted
-into the active modeling dataset.
+No daily/hourly runtime ingestion tables, FRED, macro, unapproved cross-asset,
+news, options, Supabase, or mislabeled Databento/TradingView artifacts are
+admitted into the active modeling dataset.
 
 ### Active Pine Surfaces
 
 - `indicators/warbird-pro-v9.pine` — only active main chart indicator;
   TradingView indicator name `Warbird Pro V9`; trigger family
   `LIVE_ANCHOR_FOOTPRINT`
+  - Current live entries use fib reclaim/structure, EMA/smoothing-MA alignment,
+    optional liquidity influence, and NQ + 6E influence gates. Risk Mode and
+    candlestick logic are removed from the active Pine execution path; there is
+    no Risk Mode input/table block, no candlestick input/gate, no candlestick
+    detector block, and no `ml_pat_*` Pine export surface.
+  - Session VWAP remains hidden model/export context through
+    `ml_liq_vwap_dist_atr`; it is not a live entry gate, not an overlay, and not
+    an operator-facing setting.
+  - HTF confluence is direction-aware and corresponding-level only; Core ETL
+    mirrors live `htf1hLookback=8` as `knob_htf_1h_lookback`.
 - `indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine` —
   retained Nexus footprint research/tuning lane; trigger family
   `NEXUS_FOOTPRINT_DELTA`
@@ -67,14 +77,15 @@ Retired/removed Pine variants:
 - `indicators/v7-warbird-institutional-backtest-strategy.pine`
 - `indicators/fibs-only.pine`
 
-Budget verification from 2026-05-10 by `scripts/guards/pine-lint.sh`:
+Budget verification from 2026-05-21 by `scripts/guards/pine-lint.sh` after the
+Risk Mode/candlestick/VWAP settings cleanup:
 
-- Warbird Pro V9: 60 output-consuming calls
-  (58 `plot()` + 2 `alertcondition()`), 9 `request.security()` after
+- Warbird Pro V9: 54 output-consuming calls
+  (52 `plot()` + 2 `alertcondition()`), 11 `request.security()` after
   comment-line normalization, 1 `request.footprint()`, 19 `line.new()`,
   1 `box.new()`, and 1 `table.new()`. Session VWAP remains modeling/export-only
   via `ml_liq_vwap_dist_atr`; the settings label must not imply a visible VWAP
-  overlay. The new footprint diagnostics leave only 4 output slots; price every
+  overlay. The current V9 build leaves 10 output slots; price every
   additional plot before editing Pine.
 
 Checkpoint summary from 2026-04-27 operator TradingView snapshots:
@@ -168,12 +179,12 @@ split uses `EMBARGO_BARS = 11` (= FORWARD_SCAN_BARS + 1), enforced by
 so the classifier conditions on combo, not on average win rate across
 combos.
 
-**Feature-count surfaces (locked 2026-05-12):**
-- `ML_FEATURES = 79` — CSV-emitted columns AG trains on (manifest's
+**Feature-count surfaces (locked 2026-05-21 parity recovery):**
+- `ML_FEATURES = 75` — CSV-emitted columns AG trains on (manifest's
   `feature_count_locked` / `feature_columns_locked` describe this set).
 - `TRADE_DISCOVERABLE_FEATURES = 6` — appended per combo row at label-build
   time by `build_trade_dataset` (the combo identifiers above).
-- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 85` —
+- `MODEL_FEATURES = ML_FEATURES + TRADE_DISCOVERABLE_FEATURES = 81` —
   full AG input width per training row.
 - `LABEL_INPUT_TP_COLUMNS = ("ml_trade_tp1", "ml_trade_tp2",
   "ml_trade_tp3", "ml_trade_tp4", "ml_trade_tp5")` — required CSV inputs for label construction; NOT in
@@ -189,24 +200,30 @@ coverage). Footprint reconstruction from Databento ES Trades 365d. The newer
 OHLCV-1s 2315d (~6.3y) Databento download is reserved for a future v10
 long-horizon ensemble card, NOT Core (would NaN out 2/3 of feature surface).
 
-**Feature surface:** `ML_FEATURES=79` locked input features. `MODEL_FEATURES=85`
-after the six trade-discoverable combo fields
-(`sl_atr_mult`, `tp_ratio`, `tp_family_code`, `target_distance_points`,
-`stop_distance_points`, `rr_ratio`) are added by `build_trade_dataset`.
-AG trains on non-fib/non-color indicator settings plus MA/RSI/liquidity/XA/
-footprint signal evidence; protected fib-engine logic/settings and color/visual
-inputs are excluded from `ML_FEATURES`.
+**Feature surface:** `train_v9_locked.py`, Core ETL exports, tests, and
+manifests are aligned to the active families: non-fib/non-color settings plus
+MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence. `ml_htf_conf_total` is
+included as Pine-emitted signal evidence; the corresponding HTF lookback knob
+is tracked only as profile provenance. Protected fib-engine logic/settings,
+visual/color inputs, Risk Mode, and candlestick fields are excluded.
 
-**V9 Pine pattern set:** 4 curated patterns —
-Bull: `patRisingWindow`. Bear: `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`.
-Dropped 2026-05-09: `patBullEngulf`, `patPiercing`, `patHaramiBull`, `patHaramiBear`.
+**Candlestick status:** Candlestick logic is retired from active V9 Pine. Do not
+describe candlestick confirmation as a live gate, operator setting, hidden Pine
+feature, or exported Pine field. The removed legacy surface included
+`patRisingWindow`, `patBearEngulf`, `patMarubozuBlack`, `patTweezerTop`, the
+older dropped patterns, the removed candlestick confirmation gate, and all
+`ml_pat_*` plots. Any future candlestick research must be proposed as a new,
+separately approved research lane; it is not part of the current V9 execution or
+export contract.
 
-**DXY status:** DXY was removed from the V9 Core feature set on the 2026-05-11
-gate-as-feature pivot. Do not expect `ml_xa_dxy_code` or
-`ml_xa_dxy_diverge` in the active V9 Core trainer.
-
-**Three Line Strike pattern:** HELD for v10. 84% citation is unverified vendor
-claim — validate in Python first before reserving Pine plot budget.
+**Cross-asset status:** Active Pine emits NQ + 6E only. DXY, VIX, and ZN Pine
+requests/inputs/exports are retired. 6E is interpreted as the CME-native USD
+pressure proxy: 6E up = EUR/USD up = USD weakening = long-favorable risk
+support; 6E down = USD strengthening = short-favorable pressure. Any
+manifest-declared Databento side context must stay within the active NQ + 6E
+feature contract and must not be described as a Pine gate or Pine export.
+ZN/HG/VIX/DXY are historical or dropped diagnostics unless Kirk explicitly
+opens a new research lane.
 
 ### Current Blocker
 
@@ -254,6 +271,11 @@ now `len` (primary EMA) and `maLengthInput` (smoothing length).
 `build_v9_dataset.py` must match the table above. The contamination incident
 (2026-05-05) used dev=4.0, depth=20, floor=0.50 — all wrong. Always verify
 live TV settings before building a new dataset.
+
+HTF confluence parity is locked into the current V9/Core contract: Pine and
+Core ETL both project 1H `.382/.500/.618` levels in the resolved chart-fib
+direction and count corresponding-level hits only. Keep future HTF edits
+separate from unrelated Pine operator-surface work.
 
 ### Kirk's Exit Preferences (operator-stated targets — not in training objective)
 

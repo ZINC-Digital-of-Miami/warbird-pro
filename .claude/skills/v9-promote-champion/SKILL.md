@@ -22,8 +22,8 @@ Invoke the `v9-promote-validator` subagent for the provenance check only. It rea
 
 - CSV input path + SHA recorded
 - Train/val/test ranges recorded and non-overlapping
-- Embargo bars = 25
-- `ML_FEATURES = 120`, `MODEL_FEATURES = 126`
+- Embargo bars = 11
+- `ML_FEATURES = 75`, `MODEL_FEATURES = 81`
 - `calibrate = True`
 - `eval_metric = log_loss`
 - `preset = best_quality`

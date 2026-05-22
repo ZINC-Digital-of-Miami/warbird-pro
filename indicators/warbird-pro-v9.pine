@@ -147,8 +147,8 @@ string groupExecution = "Trade Management"
 // "Auto" still maps to (TP=1.236, SL=1.5) until a promoted AG combo replaces it.
 string tpRatioMode = input.string("1.618", "TP Ratio (combo)", options=["Auto", "1.000", "1.236", "1.618", "2.000", "2.236"], group=groupExecution)
 string slMultMode = input.string("1.0", "SL ATR Mult (combo)", options=["Auto", "1.0", "1.5", "2.0"], group=groupExecution)
-float tradeTpRatio = tpRatioMode == "1.000" ? 1.000 : tpRatioMode == "1.618" ? 1.618 : tpRatioMode == "2.000" ? 2.000 : tpRatioMode == "2.236" ? 2.236 : 1.236
-float tradeStopAtrMult = slMultMode == "1.0" ? 1.0 : slMultMode == "2.0" ? 2.0 : 1.5
+float tradeTpRatio = tpRatioMode == "1.000" ? 1.000 : tpRatioMode == "1.236" ? 1.236 : tpRatioMode == "1.618" ? 1.618 : tpRatioMode == "2.000" ? 2.000 : tpRatioMode == "2.236" ? 2.236 : 1.236
+float tradeStopAtrMult = slMultMode == "1.0" ? 1.0 : slMultMode == "1.5" ? 1.5 : slMultMode == "2.0" ? 2.0 : 1.5
 int tradeMaxHoldBars = input.int(10, "Max Hold (bars)", minval=0, maxval=500, group=groupExecution)
 
 //=====================
@@ -596,28 +596,41 @@ var float tradeTotalWinPoints = 0.0
 var float tradeTotalLossPoints = 0.0
 
 //=====================
-// Qualified signal — pullback retest of {0.500, 0.618, 0.786} + structural gates
+// Qualified signal — pullback retest of {0.382, 0.500, 0.618, 0.786} + structural gates
 // Long: bull context, price pulls back DOWN to touch level
 // Short: bear context, price pulls back UP to touch level
+// Priority: shallower retracement first (0.382 > 0.500 > 0.618 > 0.786).
+// A bounce at 0.382 signals stronger trend than a dip to 0.786.
 //=====================
+float level382 = fibPrice(FIB_382)
 float level500 = fibPrice(FIB_PIVOT)
 float level618 = fibPrice(FIB_618)
 float level786 = fibPrice(FIB_786)
 
+bool touched382Long = confirmed and dir == 1 and not na(level382) and close[1] > level382 and low <= level382 and close >= level382
 bool touched500Long = confirmed and dir == 1 and not na(level500) and close[1] > level500 and low <= level500 and close >= level500
 bool touched618Long = confirmed and dir == 1 and not na(level618) and close[1] > level618 and low <= level618 and close >= level618
 bool touched786Long = confirmed and dir == 1 and not na(level786) and close[1] > level786 and low <= level786 and close >= level786
-bool triggerLong = touched500Long or touched618Long or touched786Long
+bool triggerLong = touched382Long or touched500Long or touched618Long or touched786Long
 
+bool touched382Short = confirmed and dir == -1 and not na(level382) and close[1] < level382 and high >= level382 and close <= level382
 bool touched500Short = confirmed and dir == -1 and not na(level500) and close[1] < level500 and high >= level500 and close <= level500
 bool touched618Short = confirmed and dir == -1 and not na(level618) and close[1] < level618 and high >= level618 and close <= level618
 bool touched786Short = confirmed and dir == -1 and not na(level786) and close[1] < level786 and high >= level786 and close <= level786
-bool triggerShort = touched500Short or touched618Short or touched786Short
+bool triggerShort = touched382Short or touched500Short or touched618Short or touched786Short
 
-float entryLevel = touched786Long ? level786 : touched618Long ? level618 : touched500Long ? level500 : touched786Short ? level786 : touched618Short ? level618 : touched500Short ? level500 : na
+// Entry level — shallower first (shallower = stronger trend signal)
+float entryLevel = touched382Long ? level382 : touched500Long ? level500 : touched618Long ? level618 : touched786Long ? level786 : touched382Short ? level382 : touched500Short ? level500 : touched618Short ? level618 : touched786Short ? level786 : na
 
-bool maLongOk = maBull
-bool maShortOk = maBear
+// Continuous retracement depth — 0 = shallow/strong, 1 = deep/weak
+float retraceDepth = na
+if triggerLong and fibRange > 0
+    retraceDepth := (fibAnchorHigh - low) / fibRange
+else if triggerShort and fibRange > 0
+    retraceDepth := (high - fibAnchorLow) / fibRange
+
+bool maLongOk = not enableMA or maBull
+bool maShortOk = not enableMA or maBear
 
 // 6E up = EUR strong vs USD = USD weakening = long-favorable.
 // 6E down = USD strengthening = short-favorable.
@@ -725,6 +738,7 @@ int tradeBarsActive = tradeActive and not na(tradeEntryBar) ? bar_index - tradeE
 // Single-source-of-truth entry events: rising edge of tradeActive on bar of new trade
 bool entryLongTrigger = tradeActive and not tradeActivePrev and tradeSide == 1
 bool entryShortTrigger = tradeActive and not tradeActivePrev and tradeSide == -1
+bool fibsVisible = not tradeActive and isValid
 
 //=====================
 // Draw fib ladder + trade lifecycle visibility flip
@@ -818,7 +832,6 @@ setFibLevelLabel(label idIn, bool visible, float price, string txt, color col) =
         id := na
     id
 
-bool fibsVisible = not tradeActive and isValid
 
 drawAnchoredLine(lineZero, fibsVisible, pZero, fibAnchorColorInput, fibAnchorWidthInput, drawLeftBar, fibAnchorStyle)
 drawAnchoredLine(lineNeg236, false, pNeg236, fibStopColorInput, fibStopWidthInput, drawLeftBar, fibStopStyle)
@@ -1085,6 +1098,12 @@ plot(float(htfConfTotal), "ml_htf_conf_total", display=display.none, editable=fa
 plot(dailyOpen, "ml_daily_open", display=display.none, editable=false)
 plot(dailyCloseConfirmed, "ml_daily_close", display=display.none, editable=false)
 
+// daily/weekly S/R distance features (PDH/PDL/PWH/PWL ATR-scaled)
+plot(pdhDistAtr, "ml_pdh_dist_atr", display=display.none, editable=false)
+plot(pdlDistAtr, "ml_pdl_dist_atr", display=display.none, editable=false)
+plot(pwhDistAtr, "ml_pwh_dist_atr", display=display.none, editable=false)
+plot(pwlDistAtr, "ml_pwl_dist_atr", display=display.none, editable=false)
+plot(retraceDepth, "ml_retrace_depth", display=display.none, editable=false)
 // footprint (real intrabar bid/ask delta, POC, VA position)
 plot(fpDeltaPct, "ml_fp_delta_pct", display=display.none, editable=false)
 plot(fpPocDistAtr, "ml_fp_poc_dist_atr", display=display.none, editable=false)
@@ -1101,15 +1120,15 @@ plot(entryLongTrigger ? 1.0 : 0.0, "ml_entry_long_trigger", display=display.none
 plot(entryShortTrigger ? 1.0 : 0.0, "ml_entry_short_trigger", display=display.none, editable=false)
 plot(tradeEntryPrice, "ml_trade_entry", display=display.none, editable=false)
 plot(tradeStopPrice, "ml_trade_stop", display=display.none, editable=false)
-// Fib-ladder TPs (always emitted from current fib geometry; not live-trade-only).
-// Replaces the single `ml_trade_tp` plot 2026-05-12. The trainer reads these
-// five columns directly to size each (sl_mult, tp_ratio) combo's TP price
-// without reconstruction via _tp_price_from_ratio. Fib levels 1.000 / 1.236 /
-// 1.618 / 2.000 / 2.236 map to DISCOVERABLE_TP_RATIOS in
+// Fib-ladder TPs — frozen at entry during active trades. The trainer reads
+// these five columns to size each (sl_mult, tp_ratio) combo target price.
+// When a trade is active the entry-bar fib geometry is preserved so the
+// export surface does not drift if zigzag recalculates anchors mid-trade.
+// Fib levels 1.000 / 1.236 / 1.618 / 2.000 / 2.236 map to DISCOVERABLE_TP_RATIOS in
 // scripts/ag/train_v9_locked.py.
-plot(pOne, "ml_trade_tp1", display=display.none, editable=false)
-plot(pT1,  "ml_trade_tp2", display=display.none, editable=false)
-plot(pT2,  "ml_trade_tp3", display=display.none, editable=false)
-plot(pT3,  "ml_trade_tp4", display=display.none, editable=false)
-plot(pT4,  "ml_trade_tp5", display=display.none, editable=false)
+plot(tradeActive ? tradeTp1Price : pOne, "ml_trade_tp1", display=display.none, editable=false)
+plot(tradeActive ? tradeTp2Price : pT1,  "ml_trade_tp2", display=display.none, editable=false)
+plot(tradeActive ? tradeTp3Price : pT2,  "ml_trade_tp3", display=display.none, editable=false)
+plot(tradeActive ? tradeTp4Price : pT3,  "ml_trade_tp4", display=display.none, editable=false)
+plot(tradeActive ? tradeTp5Price : pT4,  "ml_trade_tp5", display=display.none, editable=false)
 plot(float(tradeLastExitOutcome), "ml_last_exit_outcome", display=display.none, editable=false)

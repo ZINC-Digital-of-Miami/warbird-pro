@@ -1,6 +1,6 @@
 # Phase 2: Custom Skill Migration
 
-Status: in progress (batch-1 started 2026-05-22).
+Status: in progress (batch-3 completed 2026-05-22).
 
 ## Objective
 
@@ -35,6 +35,17 @@ keep/drop decisions.
 3. Training pipeline and model-governance helpers
    - candidate surfaces: `training-*`, `preflight-training`,
      `optuna-*`, `pine-tuning-optimizations`
+   - 2026-05-22 outcome:
+     - rebuilt active V9/Core training guidance as
+       `v9-core-training-governance`
+     - rebuilt V9 post-fit SHAP/Monte Carlo promotion gates as
+       `v9-postfit-shap-monte-carlo-gates`
+     - rebuilt tuning-path selection guidance as `warbird-tuning-router`
+     - did not migrate stale wrapper guidance verbatim when it still routed
+       active training through `train_ag_baseline.py`, local Postgres
+       `ag_training`, cloud/macro features, or stale `scripts/optuna` paths
+     - preserved valid AG/Optuna implementations, runners, workspaces, and
+       artifacts; batch-3 changes only the canonical skill guidance surface
 4. Domain-specific or legacy-only wrappers
    - candidate surfaces: `_tc_raw`, `quality-playbook`, `supabase-ml-ops`
 

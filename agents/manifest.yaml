@@ -17,6 +17,9 @@ skills:
     - agents/skills/verify-tv-slot/SKILL.md
     - agents/skills/pine-script-ai-coding-agent/SKILL.md
     - agents/skills/tradingview-indicator-assembler-optuna-ready/SKILL.md
+    - agents/skills/v9-core-training-governance/SKILL.md
+    - agents/skills/v9-postfit-shap-monte-carlo-gates/SKILL.md
+    - agents/skills/warbird-tuning-router/SKILL.md
   curation_policy:
     - agents/skills/README.md
 

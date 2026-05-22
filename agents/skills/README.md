@@ -22,6 +22,10 @@ Keep (active, curated):
 - Pine engineering skills migrated under `agents/skills/`:
   - `pine-script-ai-coding-agent`
   - `tradingview-indicator-assembler-optuna-ready`
+- Training and model-governance skills rebuilt under `agents/skills/`:
+  - `v9-core-training-governance`
+  - `v9-postfit-shap-monte-carlo-gates`
+  - `warbird-tuning-router`
 - read-only MCP-oriented helpers that are not tied to Hermes runtime
 
 Retire or migrate from legacy mirrors:
@@ -32,11 +36,16 @@ Retire or migrate from legacy mirrors:
   `.claude/skills` (removed from `.claude/skills` in 2026-05-22 de-dup pass)
 - empty `tc-*` placeholder directories in `.claude/skills` (retired in phase-2
   batch-2)
+- legacy training/Optuna wrapper guidance that still routes active work through
+  Postgres, `train_ag_baseline.py`, or stale `scripts/optuna` paths (not
+  migrated verbatim; valid AG/Optuna implementations, runners, workspaces, and
+  artifacts remain preserved)
 
 Audit record: `docs/audits/2026-05-22-skill-overlap-pruning.md`.
 Phase-2 plan: `agents/skills/phase-2-custom-skill-migration.md`.
 Batch-1 audit: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md`.
 Batch-2 audit: `docs/audits/2026-05-22-phase2-batch2-pine-foundations-skills.md`.
+Batch-3 audit: `docs/audits/2026-05-22-phase2-batch3-training-model-governance-skills.md`.
 
 ## Required Audit Rules
 

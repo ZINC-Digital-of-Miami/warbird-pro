@@ -25,19 +25,28 @@ the blocker — do NOT silently substitute GitHub web fetch as source of truth.
 This root `AGENTS.md` is the workspace instruction surface. `.github/copilot-instructions.md`
 is a thin redirector only; do not expand it into a competing source.
 
+### Global Agent Umbrella (2026-05-22)
+
+- Canonical multi-IDE agent assets live under `agents/`.
+- Start with `agents/README.md` for current role/skill/MCP registries.
+- New role, skill, and MCP additions must be authored in `agents/` first.
+- Legacy mirrors (`.github/agents`, `.github/skills`, `.claude/skills`) are
+  migration surfaces only.
+
 ### Read Order
 
 1. `AGENTS.md`
-2. `docs/INDEX.md`
-3. `docs/MASTER_PLAN.md`
-4. `docs/contracts/README.md`
-5. `docs/contracts/pine_indicator_ag_contract.md`
-6. `docs/runbooks/README.md`
-7. `docs/runbooks/startup_repo_review.md`
-8. `docs/cloud_scope.md`
-9. `WARBIRD_MODEL_SPEC.md`
-10. `CLAUDE.md`
-11. `docs/agent-safety-gates.md`
+2. `agents/README.md`
+3. `docs/INDEX.md`
+4. `docs/MASTER_PLAN.md`
+5. `docs/contracts/README.md`
+6. `docs/contracts/pine_indicator_ag_contract.md`
+7. `docs/runbooks/README.md`
+8. `docs/runbooks/startup_repo_review.md`
+9. `docs/cloud_scope.md`
+10. `WARBIRD_MODEL_SPEC.md`
+11. `CLAUDE.md`
+12. `docs/agent-safety-gates.md`
 
 ### Governance Precedence (Conflict Resolver)
 
@@ -407,15 +416,18 @@ If any `.pine` file is touched, run:
 - Update `AGENTS.md` only when repo rules or hard workflow constraints change.
 - Update memory when a phase or contract locks.
 
-## Hermes Quality Surface
+## Global Quality Surface
 
-- Active quality lane is Hermes-first guardrails + repo-native validators.
-- Hermes validator routing authority: `.hermes/rules/validation-matrix.md`.
-- Hermes policy authority: `.hermes/rules/hermes-quality-policy.md`.
-- Kilo is not part of the Hermes validation or execution path. Do not run Kilo
-  checks for Hermes-only work.
-- Warbird terminal/validator hooks live in `~/.hermes/agent-hooks/` and must
-  stay enabled for Warbird sessions.
+- Active quality lane is repo-native validators plus `agents/` automation.
+- Canonical agent/runtime quality references:
+  - `agents/README.md`
+  - `agents/manifest.yaml`
+  - `agents/skills/README.md`
+  - `agents/roles/README.md`
+  - `agents/mcp/README.md`
+- Hermes/Kilo/Claude runtime overlays are retired for active execution.
+- No-manual cleanup lane lives at `agents/scripts/process_reaper.py` and is
+  wired into `scripts/guards/warbird-agent-precheck.sh`.
 - Quality workbook runtime/artifact surfaces were removed; do not route new work
   through quality-playbook workflows.
 - When touching V9 Core trainer/ETL/provenance surfaces, run impacted
@@ -427,8 +439,8 @@ If any `.pine` file is touched, run:
 
 - `.remember/` files are append-only.
 - Durable memory lives under `/Volumes/Satechi Hub/warbird-pro-state/`.
-- Persistent cross-session memories resolve through
-  `/Users/zincdigital/.claude/projects/-Volumes-Satechi-Hub-warbird-pro/memory/`.
+- Persistent cross-session memory must be indexed through `MEMORY.md` and the
+  active IDE memory store configured for this workspace.
 - Always add a pointer line to `MEMORY.md` for durable project memories.
 
 ## No Hand-Rolling

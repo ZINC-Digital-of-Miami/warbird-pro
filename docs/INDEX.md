@@ -1,6 +1,6 @@
 # Warbird Documentation Index
 
-**Date:** 2026-05-05
+**Date:** 2026-05-22
 **Status:** Active Documentation Authority
 **Active Plan:** Warbird Indicator-Only DuckDB Local Modeling Plan v6
 
@@ -68,10 +68,11 @@ overrides stale push wording in older `docs/plans/` artifacts.
 7. `docs/contracts/schema_migration_policy.md`
 8. `docs/cloud_scope.md`
 9. `WARBIRD_MODEL_SPEC.md`
-10. `CLAUDE.md`
-11. `docs/agent-safety-gates.md`
-12. `Powerdrill/reports/2026-04-06-powerdrill-findings.md`
-13. `docs/research/2026-05-02-optuna-unified-platform.md` - Nexus/legacy research reference only (non-authority for V9 Core)
+10. `agents/README.md`
+11. `CLAUDE.md`
+12. `docs/agent-safety-gates.md`
+13. `Powerdrill/reports/2026-04-06-powerdrill-findings.md`
+14. `docs/research/2026-05-02-optuna-unified-platform.md` - Nexus/legacy research reference only (non-authority for V9 Core)
 
 ## Authority Split
 
@@ -91,9 +92,14 @@ overrides stale push wording in older `docs/plans/` artifacts.
   - reusable phase-gated workflow requiring indicator/chart validation before
     modeling, short-window exploratory baselines before full-year training, and
     SHAP/Monte Carlo feature triage before promotion claims
+- `agents/README.md`
+  - canonical multi-IDE agent umbrella (roles, skills, MCP registry, cleanup lane)
+- `agents/manifest.yaml`
+  - single canonical registry for active role/skill/MCP surfaces
+- `agents/skills/phase-2-custom-skill-migration.md`
+  - sequential phase-2 plan for migrating remaining custom-only legacy skills
 - quality workbook runtime/artifact surfaces were removed from the active repo
-  surface; Hermes policy/routing lives under `.hermes/rules/` and is not routed
-  through Kilo
+  surface; canonical agent runtime policy now lives under `agents/`
 - `docs/runbooks/v9_core_smoke_verification.md`
   - reproducible Core ETL smoke verification commands and exact metric reporting
 - `CLAUDE.md`

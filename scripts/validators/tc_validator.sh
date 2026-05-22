@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tc_validator: Warbird task-completion validator with Hermes-owned checks.
+# tc_validator: Warbird task-completion validator with agents-surface checks.
 
 set -euo pipefail
 
@@ -7,7 +7,7 @@ SCOPE="auto"
 BASE_REF=""
 INTENSITY="full"
 SKIP_QUALITY=0
-SKIP_HERMES=0
+SKIP_RUNTIME=0
 
 usage() {
   cat <<'USAGE'
@@ -19,7 +19,8 @@ Options:
   --fast                               Run fast quality lane (skip npm lint/build + pytest lane)
   --full                               Run full quality lane (default)
   --skip-quality-lane                  Skip scripts/guards/check-local-quality-lane.sh
-  --skip-hermes                        Skip Hermes config/doctor checks
+  --skip-runtime                       Skip agents runtime surface checks
+  --skip-hermes                        Deprecated alias for --skip-runtime
   -h, --help                           Show this help
 USAGE
 }
@@ -59,8 +60,8 @@ while [[ $# -gt 0 ]]; do
       SKIP_QUALITY=1
       shift
       ;;
-    --skip-hermes)
-      SKIP_HERMES=1
+    --skip-runtime|--skip-hermes)
+      SKIP_RUNTIME=1
       shift
       ;;
     -h|--help)
@@ -123,24 +124,16 @@ else
   echo "INFO: skipping local quality lane (--skip-quality-lane)"
 fi
 
-if [[ "$SKIP_HERMES" -eq 0 ]]; then
-  command -v hermes >/dev/null 2>&1 || die "hermes command not found"
-  run_step "Hermes config check" hermes config check
-  run_step "Hermes doctor" hermes doctor
-  run_step "Hermes memory status" hermes memory status
-  run_step "Hermes lsp status" hermes lsp status
-  run_step "Hermes hooks doctor" hermes hooks doctor
+if [[ "$SKIP_RUNTIME" -eq 0 ]]; then
+  run_step "Agents umbrella surface check" test -f "agents/README.md"
+  run_step "Agents manifest check" test -f "agents/manifest.yaml"
+  run_step "Agents skills registry check" test -f "agents/skills/README.md"
+  run_step "Agents roles registry check" test -f "agents/roles/README.md"
+  run_step "Quant Analyst role check" test -f "agents/roles/quant-analyst.agent.md"
+  run_step "Process reaper lane check" test -f "agents/scripts/process_reaper.py"
 else
-  echo "INFO: skipping Hermes checks (--skip-hermes)"
+  echo "INFO: skipping runtime surface checks (--skip-runtime)"
 fi
-
-run_step "Hermes tc-tracker skill presence check" test -f ".hermes/skills/tc-tracker/SKILL.md"
-
-run_step "Hermes-owned skill path check" bash -lc '
-  test -d .hermes/skills
-  test ! -e .hermes/skills/.kilocode
-  echo "Hermes skill path present: .hermes/skills"
-'
 
 echo
 echo "PASS: tc_validator completed successfully"

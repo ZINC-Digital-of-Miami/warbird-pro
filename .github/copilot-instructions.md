@@ -7,13 +7,15 @@
 1. Open [`AGENTS.md`](../AGENTS.md) at repo root — this is the primary instruction file. Every rule, read order, plan reference, and verification gate lives there.
 2. Follow the "Read Order" section in AGENTS.md (docs index, master plan, contracts, runbooks, CLAUDE.md, etc.).
 3. For TRAINING work (AutoGluon, Monte Carlo, SHAP, indicator optimization, pre-training audits), consult the Training Skills Registry at the bottom of AGENTS.md, then open the relevant `SKILL.md` file:
-   - `.github/skills/<skill-name>/SKILL.md` ← Copilot-native location
-   - `.claude/skills/<skill-name>/SKILL.md` ← identical copy
-   - `.kilocode/skills/<skill-name>/SKILL.md` ← identical copy
+   - `.github/skills/<skill-name>/SKILL.md` ← active training-skill location during migration
+   - `.claude/skills/<skill-name>/SKILL.md` ← legacy mirror during migration only
+   - `agents/skills/<skill-name>/SKILL.md` ← canonical target for newly migrated skills
 
 ## Training skills available in this workspace
 
-Eleven skills, mirrored across the three locations above. Full descriptions in each `SKILL.md`:
+Eleven training skills are currently sourced from `.github/skills/` (with
+legacy `.claude/skills/` mirrors) during migration. Full descriptions are in
+each `SKILL.md`:
 
 - `training-pre-audit` — pre-launch checklist
 - `training-gbm-only` — fast GBM iteration
@@ -39,6 +41,7 @@ These come from AGENTS.md and CLAUDE.md — they are non-negotiable regardless o
 6. **Local warehouse migrations** live in `local_warehouse/migrations/` with the `local_schema_migrations` ledger — NOT `supabase/migrations/`.
 7. **Time-series discipline is absolute.** No random shuffle, minimum 1-session embargo, AutoGluon `--num-bag-folds 0` mandatory for time-series. See `training-quant-trading`.
 8. **`.remember/` files are append-only.** Never overwrite.
+9. **`agents/` is canonical for agent assets.** New roles/skills/MCP surfaces must be authored there first.
 
 ## When Copilot Chat is asked to suggest code
 

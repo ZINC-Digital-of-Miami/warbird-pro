@@ -116,12 +116,12 @@ At minimum, understand:
 - Pine surfaces under `indicators/`
 - active tuning and automation scripts under `scripts/duckdb_local/` and `scripts/ag/`
 - contract and runbook authority under `docs/`
-- Hermes quality integrity:
-  - confirm `.hermes/rules/validation-matrix.md` and
-    `.hermes/rules/hermes-quality-policy.md` exist and align with `AGENTS.md`
-  - confirm Hermes validation is not routed through Kilo
-  - confirm Warbird quality runtime is Hermes-first (no active quality-playbook
-    phase-runner workflow)
+- global agents quality integrity:
+  - confirm `agents/README.md` and role/skill registries exist and align with
+    `AGENTS.md`
+  - confirm no active runtime relies on retired Hermes-only surfaces
+  - confirm Warbird quality runtime stays on repo-native guards plus
+    `agents/` automation (no active quality-playbook phase-runner workflow)
   - confirm no active `quality/` runtime artifact surface is expected
 - runtime/dashboard support under `app/`, `components/`, `lib/`, and `supabase/`
 - memory pointers in `MEMORY.md`

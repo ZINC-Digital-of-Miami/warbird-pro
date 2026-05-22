@@ -1,5 +1,9 @@
 Read and follow `AGENTS.md` at the repository root.
 
+2026-05-22 operational override: `agents/` is now the canonical multi-IDE
+agent umbrella. Any Hermes-first or Claude-only routing notes in this file are
+legacy context and must not override `AGENTS.md` + `agents/README.md`.
+
 ## Quick Reference
 
 - **Canonical docs index:** `/Volumes/Satechi Hub/warbird-pro/docs/INDEX.md`
@@ -402,42 +406,19 @@ full local quality lane over `@{upstream}...HEAD`. Hooks must not run Vercel,
 GitHub hosted checks, Claude, or nested Codex reviews. Quality enforcement is
 local.
 
-### Hermes Quality Fail-Closed Rule
+### Global Agents Quality Rule
 
 Quality workbook runtime lanes are decommissioned. Warbird quality now runs
-through Hermes guardrails and native repo validators only.
+through repo-native guards and the canonical `agents/` umbrella.
 
-### Hermes ACP Status (2026-05-18)
+Before claiming completion on guardrail work, run:
 
-- Hermes is installed locally and managed at `~/.hermes/hermes-agent`.
-- The VS Code ACP Client extension `formulahendry.acp-client` is installed.
-- Workspace `.vscode/settings.json` registers `acp.agents.Hermes Agent` with
-  the absolute Hermes path and the 109-skill preload string.
-- `hermes acp --check`, `hermes config check`, `hermes doctor`,
-  `hermes hooks doctor`, and `tc_validator --fast` pass in the current
-  environment.
-- Current primary lane: OpenAI Codex OAuth with `openai-codex / gpt-5.5`.
-  OpenRouter remains available but is not the default Hermes primary or fallback
-  route for Warbird.
-- Current gap: VS Code ACP panel connection is still unverified. Do not claim
-  Hermes ACP is end-to-end ready until an ACP session returns the exact reply
-  `VSCODE_ACP_READY`.
+1. `./scripts/guards/warbird-agent-precheck.sh --mode manual`
+2. `tc_validator --fast`
+3. any surface-specific checks required by `AGENTS.md` (for example Pine or
+   V9 Core contract lanes)
 
-Before claiming completion on Hermes/guardrail work, run:
-
-1. `hermes config check`
-2. `hermes doctor`
-3. `hermes memory status`
-4. `hermes lsp status`
-5. `hermes hooks doctor`
-6. `tc_validator --fast` for docs/config-only Hermes work
-7. For primary-model readiness claims, run the exact Hermes smoke path being
-   claimed and confirm it does not fall back.
-8. For VS Code ACP readiness claims, verify the ACP Client panel connects and
-   returns `VSCODE_ACP_READY`.
-
-Kilo is not part of the Hermes validation or execution path; do not run any
-Kilo check for Hermes-only work.
+Hermes runtime overlays are retired for active execution.
 
 Quality workbook runtime/artifact surfaces were removed. Do not route new
 execution through quality-playbook phase runners.

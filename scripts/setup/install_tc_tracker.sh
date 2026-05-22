@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Installs tc-tracker skills into .kilocode/skills and installs tc_validator into ~/bin.
+# Installs tc-tracker skills into agents/skills and installs tc_validator into ~/bin.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC_DIR="$ROOT_DIR/.claude/skills"
-DEST_DIR="$ROOT_DIR/.kilocode/skills"
+DEST_DIR="$ROOT_DIR/agents/skills"
 VALIDATOR_SRC="$ROOT_DIR/scripts/validators/tc_validator.sh"
 VALIDATOR_DEST="$HOME/bin/tc_validator"
 
@@ -85,5 +85,5 @@ fi
 echo
 echo "tc-tracker install complete."
 echo "Next checks:"
-echo "  1) hermes skills list | rg 'tc-|tc-tracker'"
+echo "  1) ls -1 $DEST_DIR | rg 'tc-|tc-README'"
 echo "  2) tc_validator --fast"

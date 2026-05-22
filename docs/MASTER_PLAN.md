@@ -93,18 +93,17 @@ Data-layer + sequencing update (locked 2026-05-11):
 | V9 ML/trading research operating system          | `docs/runbooks/v9_ml_trading_research_operating_system.md`                                             |
 | Legacy (do not use without architecture reopen)  | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |
 
-## Hermes-First Quality Surface (2026-05-17)
+## Global Agents Quality Surface (2026-05-22)
 
 The quality-playbook runtime is retired for active Warbird execution. The
-active quality lane is Hermes guardrails plus repo-native validators.
+active quality lane is repo-native validators plus `agents/` automation.
 
 Canonical active surfaces:
 
-- `.hermes/rules/validation-matrix.md` (Hermes validator routing)
-- `.hermes/rules/hermes-quality-policy.md` (Hermes security/operations policy)
-- Kilo is not part of the Hermes validation or execution path
-- `~/.hermes/config.yaml` + Warbird hook scripts under
-  `~/.hermes/agent-hooks/`
+- `agents/README.md` (agent umbrella authority)
+- `agents/skills/README.md` (skill curation and overlap policy)
+- `agents/roles/README.md` (role curation and hardening plan)
+- `agents/scripts/process_reaper.py` (no-manual process cleanup lane)
 - `tests/ag/**` and existing guard scripts for code-path validation
 
 Operational requirement for V9 Core changes (trainer/ETL/provenance/MC/SHAP):

@@ -3,10 +3,8 @@ name: 'Quant Analyst'
 description: 'Warbird quant analyst for V9 indicator-only modeling, DuckDB/Core ETL, and AutoGluon evidence analysis under strict safety gates.'
 model: 'GPT-5'
 target: 'vscode'
-tools: ['codebase', 'search', 'edit/editFiles', 'read/readFile', 'read/problems', 'execute/runTests', 'execute/runInTerminal', 'web/fetch']
+tools: ['codebase', 'search', 'read/readFile', 'read/problems', 'edit/editFiles', 'execute/runTests', 'execute/runInTerminal', 'web/fetch']
 ---
-
-Canonical source: `agents/roles/quant-analyst.agent.md`.
 
 # Quant Analyst
 

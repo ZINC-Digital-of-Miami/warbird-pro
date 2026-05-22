@@ -62,6 +62,29 @@ fail() {
   exit 1
 }
 
+run_agents_process_reaper() {
+  local reaper_script="$ROOT_DIR/agents/scripts/process_reaper.py"
+  local python_cmd=""
+
+  [[ -f "$reaper_script" ]] || return 0
+
+  if [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
+    python_cmd="$ROOT_DIR/.venv/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    python_cmd="$(command -v python3)"
+  else
+    echo "WARN: skipped agents process cleanup (python runtime not found)."
+    return 0
+  fi
+
+  "$python_cmd" "$reaper_script" \
+    --orphan-only \
+    --max-age-seconds 1200 \
+    --port-start 8090 \
+    --port-end 8120 \
+    --quiet >/dev/null 2>&1 || echo "WARN: agents process cleanup reported non-zero exit."
+}
+
 require_hooks_path() {
   local hooks_path
   hooks_path="$(git config --get core.hooksPath || true)"
@@ -87,6 +110,7 @@ Log:  $LOG_FILE
 EOF
 
 require_hooks_path
+run_agents_process_reaper
 
 echo "INFO: branch $(git rev-parse --abbrev-ref HEAD)"
 echo "INFO: head $(git rev-parse --short HEAD)"

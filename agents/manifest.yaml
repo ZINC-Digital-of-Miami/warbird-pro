@@ -1,0 +1,39 @@
+version: 1
+updated_at: 2026-05-22
+canonical_root: agents/
+
+roles:
+  active:
+    - agents/roles/quant-analyst.agent.md
+  pending_hardening:
+    - agents/roles/role-inventory-2026-05-22.md
+
+skills:
+  active:
+    - agents/skills/cdp-down-recovery/SKILL.md
+    - agents/skills/tv-preflight/SKILL.md
+    - agents/skills/senior-quant-mindset/SKILL.md
+    - agents/skills/v9-promote-champion/SKILL.md
+  curation_policy:
+    - agents/skills/README.md
+
+mcp:
+  active:
+    - agents/mcp/warbird-status/server.py
+    - agents/mcp/warbird-fetch/server.py
+    - agents/mcp/warbird-filesystem/server.py
+    - agents/mcp/warbird-github/server.py
+    - agents/mcp/warbird-supabase-ro/server.py
+
+automation:
+  process_cleanup:
+    script: agents/scripts/process_reaper.py
+    launchd_template: agents/launchd/com.warbird.agents.process-reaper.plist
+    install_script: agents/scripts/install_reaper_launchagent.sh
+    uninstall_script: agents/scripts/uninstall_reaper_launchagent.sh
+  decommission:
+    hermes: agents/scripts/decommission_hermes.sh
+
+retired:
+  - .hermes/**
+  - .kilocode/skills/**

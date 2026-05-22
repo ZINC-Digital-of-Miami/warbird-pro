@@ -18,6 +18,7 @@ Keep (active, curated):
   - `tv-preflight`
   - `senior-quant-mindset`
   - `v9-promote-champion`
+  - `verify-tv-slot`
 - read-only MCP-oriented helpers that are not tied to Hermes runtime
 
 Retire or migrate from legacy mirrors:
@@ -29,6 +30,7 @@ Retire or migrate from legacy mirrors:
 
 Audit record: `docs/audits/2026-05-22-skill-overlap-pruning.md`.
 Phase-2 plan: `agents/skills/phase-2-custom-skill-migration.md`.
+Batch-1 audit: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md`.
 
 ## Required Audit Rules
 

@@ -1,6 +1,6 @@
 # Phase 2: Custom Skill Migration
 
-Status: planned (post phase-1 de-dup checkpoint).
+Status: in progress (batch-1 started 2026-05-22).
 
 ## Objective
 
@@ -18,6 +18,11 @@ keep/drop decisions.
 
 1. TradingView safety and workflow wrappers
    - candidate surfaces: `verify-tv-slot`, `tradingview-chart-control`
+   - 2026-05-22 outcome:
+     - migrated `verify-tv-slot` to `agents/skills/verify-tv-slot/SKILL.md`
+     - retired legacy `.claude/skills/verify-tv-slot/`
+     - dropped `.claude/skills/tradingview-chart-control/` (empty directory,
+       no skill body to migrate)
 2. Pine foundations and advanced helpers
    - candidate surfaces: `tc-*`, `pine-script-ai-coding-agent`,
      `tradingview-indicator-assembler-optuna-ready`

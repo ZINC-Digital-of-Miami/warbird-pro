@@ -1,6 +1,7 @@
 # Memory Index
 
 - 2026-05-22: `/memories/repo/2026-05-22-agents-umbrella-canonicalization.md` - durable repo-memory checkpoint for canonical `agents/` umbrella, single manifest registry, phase-1 mirror retirements, Quant-only active role, and automated process-reaper quality lane.
+- 2026-05-22: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md` - phase-2 batch-1 checkpoint: migrated `verify-tv-slot` into canonical `agents/skills`, retired legacy `.claude` source, and dropped empty `tradingview-chart-control` legacy surface.
 - 2026-05-22: `agents/skills/phase-2-custom-skill-migration.md` - phase-2 sequential migration plan for remaining custom-only `.claude/skills` surfaces into canonical `agents/skills` with per-batch verification and audit gates.
 - 2026-05-22: `docs/audits/2026-05-22-agents-umbrella-phase-1.md` - phase-1 checkpoint for canonical `agents/` umbrella bootstrap, robust Quant role rebuild, portable MCP migration, Hermes decommission tooling, and automated process-reaper integration.
 - 2026-05-22: `docs/audits/2026-05-22-skill-overlap-pruning.md` - cross-IDE skill overlap audit and pruning checkpoint (Hermes and Kilocode mirrors retired, canonical `agents/skills` curation active).

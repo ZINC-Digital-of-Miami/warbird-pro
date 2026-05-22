@@ -1,5 +1,6 @@
 # Memory Index
 
+- 2026-05-22: `docs/audits/2026-05-22-phase2-batch4-domain-legacy-skills.md` - phase-2 batch-4 checkpoint: retired legacy-only `.claude/skills` surfaces (`_tc_raw`, `quality-playbook`, `supabase-ml-ops`) with audit evidence and marked phase-2 custom skill migration complete.
 - 2026-05-22: `/memories/repo/2026-05-22-agents-umbrella-canonicalization.md` - durable repo-memory checkpoint for canonical `agents/` umbrella, single manifest registry, phase-1 mirror retirements, Quant-only active role, and automated process-reaper quality lane.
 - 2026-05-22: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md` - phase-2 batch-1 checkpoint: migrated `verify-tv-slot` into canonical `agents/skills`, retired legacy `.claude` source, and dropped empty `tradingview-chart-control` legacy surface.
 - 2026-05-22: `docs/audits/2026-05-22-phase2-batch2-pine-foundations-skills.md` - phase-2 batch-2 checkpoint: migrated Pine foundation assembler skills into canonical `agents/skills` and retired empty legacy `tc-*` placeholders.

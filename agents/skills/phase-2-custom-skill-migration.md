@@ -1,6 +1,6 @@
 # Phase 2: Custom Skill Migration
 
-Status: in progress (batch-3 completed 2026-05-22).
+Status: complete (batch-4 completed 2026-05-22).
 
 ## Objective
 
@@ -48,6 +48,17 @@ keep/drop decisions.
        artifacts; batch-3 changes only the canonical skill guidance surface
 4. Domain-specific or legacy-only wrappers
    - candidate surfaces: `_tc_raw`, `quality-playbook`, `supabase-ml-ops`
+   - 2026-05-22 outcome:
+     - retired `_tc_raw` and flat TradingCode snippet material as legacy
+       reference only; current Pine work routes through canonical Pine skills
+       and official/current docs
+     - retired `quality-playbook`; active Warbird quality execution is
+       repo-native precheck, `tc_validator`, and `agents/` automation
+     - retired `supabase-ml-ops`; it mixed stale v7/MES/macro/Supabase/ML
+       assumptions that conflict with current V9/Core and cloud-scope rules
+     - no new active canonical skill was added for batch-4 because existing
+       canonical skills and repo authority docs already cover the valid
+       surviving behavior
 
 ## Keep/Drop Gate Per Skill
 
@@ -84,3 +95,10 @@ Each batch must append a dated audit note in `docs/audits/` covering:
 - Remaining `.claude/skills/` entries are either migrated with parity or
   retired with audit evidence.
 - No duplicate skill-name ownership remains across active surfaces.
+
+Completed 2026-05-22. See:
+
+- `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md`
+- `docs/audits/2026-05-22-phase2-batch2-pine-foundations-skills.md`
+- `docs/audits/2026-05-22-phase2-batch3-training-model-governance-skills.md`
+- `docs/audits/2026-05-22-phase2-batch4-domain-legacy-skills.md`

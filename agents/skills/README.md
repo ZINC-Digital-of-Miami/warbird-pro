@@ -28,7 +28,7 @@ Keep (active, curated):
   - `warbird-tuning-router`
 - read-only MCP-oriented helpers that are not tied to Hermes runtime
 
-Retire or migrate from legacy mirrors:
+Retired from legacy mirrors:
 
 - `.hermes/skills/**` (removed in 2026-05-22 phase-1)
 - duplicate Pine primer stacks mirrored in multiple locations
@@ -40,12 +40,21 @@ Retire or migrate from legacy mirrors:
   Postgres, `train_ag_baseline.py`, or stale `scripts/optuna` paths (not
   migrated verbatim; valid AG/Optuna implementations, runners, workspaces, and
   artifacts remain preserved)
+- raw `_tc_raw` and flat TradingCode Pine snippets from `.claude/skills`
+  (retired in phase-2 batch-4; canonical Pine work uses current Pine skills and
+  active Warbird rules)
+- `.claude/skills/quality-playbook` (retired in phase-2 batch-4; active quality
+  execution is repo-native precheck, `tc_validator`, and `agents/` automation)
+- `.claude/skills/supabase-ml-ops` (retired in phase-2 batch-4; active cloud,
+  Pine, and V9/Core ML rules live in repo authority docs and focused canonical
+  skills)
 
 Audit record: `docs/audits/2026-05-22-skill-overlap-pruning.md`.
 Phase-2 plan: `agents/skills/phase-2-custom-skill-migration.md`.
 Batch-1 audit: `docs/audits/2026-05-22-phase2-batch1-tv-safety-skills.md`.
 Batch-2 audit: `docs/audits/2026-05-22-phase2-batch2-pine-foundations-skills.md`.
 Batch-3 audit: `docs/audits/2026-05-22-phase2-batch3-training-model-governance-skills.md`.
+Batch-4 audit: `docs/audits/2026-05-22-phase2-batch4-domain-legacy-skills.md`.
 
 ## Required Audit Rules
 

@@ -42,9 +42,12 @@ Current migration status:
 
 - `.hermes/**` retired in phase-1.
 - `.kilocode/skills/**` retired in phase-1.
-- `.claude/skills/**` remains pending phase-2 curation.
+- `.claude/skills/**` completed phase-2 curation on 2026-05-22; remaining
+  ignored local files are migration evidence only, not active registry
+  surfaces.
 
 ## Checkpoints
 
 - `docs/audits/2026-05-22-agents-umbrella-phase-1.md`
 - `agents/roles/phase-2-role-hardening.md`
+- `agents/skills/phase-2-custom-skill-migration.md`

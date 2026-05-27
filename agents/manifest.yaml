@@ -42,5 +42,4 @@ automation:
 
 retired:
   - .hermes/**
-  - .kilocode/skills/**
   - .claude/skills/**

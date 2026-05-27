@@ -69,7 +69,6 @@ venv/
 # tradingview mcp (local tool, not project code)
 .tradingview-mcp/
 .playwright-mcp/
-.kilo/
 .remember
 .remember/
 data/local-db-backups/

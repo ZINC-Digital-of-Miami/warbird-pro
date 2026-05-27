@@ -1,0 +1,6 @@
+# Codacy CLI
+tools-configs/*
+!tools-configs/
+!tools-configs/eslint.config.mjs
+cli-config.yaml
+logs/

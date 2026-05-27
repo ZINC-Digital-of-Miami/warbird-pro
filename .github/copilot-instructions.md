@@ -56,4 +56,4 @@ These come from AGENTS.md and CLAUDE.md — they are non-negotiable regardless o
 - Active plan wording (that lives in `docs/MASTER_PLAN.md` and changes during testing)
 - Skill bodies (those live in `.github/skills/<name>/SKILL.md` and their mirrors)
 
-Keep this file thin. Its only job is to redirect Copilot Chat to the authoritative surface so Copilot loads the same context Claude Code / Kilocode / Codex already load.
+Keep this file thin. Its only job is to redirect Copilot Chat to the authoritative surface so Copilot loads the same context Claude Code / Codex already load.

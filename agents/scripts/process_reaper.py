@@ -25,7 +25,6 @@ SIGNATURES = (
     "warbird_optuna_hub.py",
     "tv_bridge_worker.mjs",
     "/.hermes/",
-    "/.kilocode/",
     "next dev",
     "next-server",
 )

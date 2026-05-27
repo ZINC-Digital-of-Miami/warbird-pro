@@ -125,12 +125,30 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 ## Default Preflight
 
 - Run `git status --short` before edits.
+- For Codacy, AI-review, or rogue-agent cleanup work, run
+  `git status --short --untracked-files=all` and include every modified,
+  staged, untracked, and ignored-but-relevant file in the inventory. Do not
+  avoid dirty or untracked files; classify ownership and risk before editing.
 - Use `rg --files` and `rg -n` to scope touched surfaces.
 - Read the active docs for the touched surface before changing files.
 - Never trust prior summaries, stale docs, or build success as proof of current truth.
 - Before any TradingView CDP/MCP operation, run
   `python3 scripts/ag/tv_connection_doctor.py --json` (read-only). Treat
   `ready: true` as the only "safe to proceed" signal.
+
+## Codacy / AI Reviewer Guardrail
+
+Codacy is an investigation and review surface for Warbird. It may annotate,
+summarize, flag risk, and suggest fixes. It is not approval to edit.
+
+- Codacy AI reviewer and suggested fixes are advisory only.
+- Do not use Codacy's "Fix issues" or any suggested-fix output as an automatic
+  write path.
+- When Codacy reports issues, first return a defect map: path, issue class,
+  severity, owning surface, likely root cause, and disproof/verification step.
+- Apply fixes only after Kirk explicitly approves the exact remediation scope.
+- If Codacy MCP is unavailable but Codacy CLI works, say so plainly and use the
+  CLI only for read-only analysis. Do not invent MCP wiring.
 
 ## Repo Map
 
@@ -425,7 +443,7 @@ If any `.pine` file is touched, run:
   - `agents/skills/README.md`
   - `agents/roles/README.md`
   - `agents/mcp/README.md`
-- Hermes/Kilo/Claude runtime overlays are retired for active execution.
+- Legacy IDE/runtime overlays are retired for active execution.
 - No-manual cleanup lane lives at `agents/scripts/process_reaper.py` and is
   wired into `scripts/guards/warbird-agent-precheck.sh`.
 - Quality workbook runtime/artifact surfaces were removed; do not route new work

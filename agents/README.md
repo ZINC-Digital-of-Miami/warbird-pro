@@ -8,7 +8,7 @@ automation scripts must land here first.
 
 ## Why this exists
 
-- Remove drift across `.github`, `.claude`, `.hermes`, and `.kilocode`.
+- Remove drift across legacy IDE-agent mirrors.
 - Keep one intentional registry for roles and skills.
 - Eliminate manual daily cleanup by running low-cost process cleanup
   automatically.
@@ -35,13 +35,13 @@ automation scripts must land here first.
    - rebuild kept roles for current 2026-05 Warbird workflow
    - remove shell/template role content
 3. Phase 3:
-   - migrate or retire legacy mirror surfaces (`.github/.claude/.hermes/.kilocode`)
+   - migrate or retire legacy mirror surfaces
    - keep only compatibility shims that are still needed
 
 Current migration status:
 
 - `.hermes/**` retired in phase-1.
-- `.kilocode/skills/**` retired in phase-1.
+- Legacy IDE mirror surfaces removed from the active repo.
 - `.claude/skills/**` completed phase-2 curation on 2026-05-22; remaining
   ignored local files are migration evidence only, not active registry
   surfaces.

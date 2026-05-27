@@ -13,7 +13,7 @@ legacy context and must not override `AGENTS.md` + `agents/README.md`.
 - **TradingView readiness doctor (read-only):**
   `/Volumes/Satechi Hub/warbird-pro/scripts/ag/tv_connection_doctor.py`
 - **Claude phased guardrails:** `/Volumes/Satechi Hub/warbird-pro/docs/runbooks/claude_rogue_proof_phase_contract.md`
-- **Repo:** github.com/zincdigitalofmiami/warbird-pro
+- **Repo:** github.com/ZINC-Digital-of-Miami/warbird-pro
 
 ## Current Status
 

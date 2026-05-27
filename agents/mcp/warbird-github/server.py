@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 
-DEFAULT_OWNER = "zincdigitalofmiami"
+DEFAULT_OWNER = "ZINC-Digital-of-Miami"
 DEFAULT_REPO = "warbird-pro"
 
 mcp = FastMCP(

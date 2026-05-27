@@ -12,7 +12,7 @@ The authoritative warbird-pro repository is the **local clone** at:
 
 This local path is the source of truth for every code, file, script, study DB,
 runbook, `.remember/` note, and migration question. ALWAYS read or grep the
-local clone first. The GitHub remote (`github.com/zincdigitalofmiami/warbird-pro`)
+local clone first. The GitHub remote (`github.com/ZINC-Digital-of-Miami/warbird-pro`)
 is secondary — use it only for PRs, Issues, Actions, and remote-only state.
 
 This rule applies to every Claude surface: Claude Code on the Mac, claude.ai

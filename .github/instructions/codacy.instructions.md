@@ -13,7 +13,7 @@ issues, summarize risk, and provide evidence. It is not approval to edit.
 When Codacy tools ask for repository metadata, use:
 
 - `provider`: `gh`
-- `organization`: `zincdigitalofmiami`
+- `organization`: `ZINC-Digital-of-Miami`
 - `repository`: `warbird-pro`
 
 ## Required Behavior

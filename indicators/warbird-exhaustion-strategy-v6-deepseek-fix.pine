@@ -1,0 +1,258 @@
+//@version=6
+// Warbird Exhaustion Strategy v6 — DeepSeek Fix (standalone)
+// Backtest + research strategy using one global footprint request.
+strategy(
+     title = "Warbird Exhaustion Strategy v6 DeepSeek Fix",
+     shorttitle = "WB EXH v6 DS",
+     overlay = true,
+     initial_capital = 10000,
+     default_qty_type = strategy.percent_of_equity,
+     default_qty_value = 100,
+     pyramiding = 0,
+     commission_type = strategy.commission.cash_per_contract,
+     commission_value = 2.5,
+     process_orders_on_close = true)
+
+// ══════════════════════════════════════════════════════════
+// Inputs
+// ══════════════════════════════════════════════════════════
+string groupCore = "Exhaustion Core"
+int tdLookback = input.int(4, "TD Lookback", minval = 2, group = groupCore)
+int setupLength = input.int(9, "Setup Length", minval = 5, group = groupCore)
+int countdownLength = input.int(13, "Countdown Length", minval = 9, group = groupCore)
+bool requirePerfect = input.bool(true, "Require Perfect Setup", group = groupCore)
+
+string groupConfirm = "Signal Confirmation"
+string confirmationMode = input.string("Price Flip", "Confirmation Mode", options = ["Immediate", "Price Flip"], group = groupConfirm)
+int flipLookbackBars = input.int(5, "Flip Lookback Bars", minval = 1, group = groupConfirm)
+bool useVolumeFilter = input.bool(true, "Volume > Average", group = groupConfirm)
+int volumeAvgLen = input.int(20, "Volume Average Length", minval = 2, group = groupConfirm)
+
+string groupFp = "Footprint / Pressure"
+int fpTicksPerRow = input.int(4, "Footprint Ticks Per Row", minval = 1, group = groupFp)
+int fpVaPercent = input.int(70, "Value Area %", minval = 1, maxval = 100, group = groupFp)
+int fpImbalancePercent = input.int(200, "Imbalance %", minval = 1, group = groupFp)
+int fpSmoothLen = input.int(5, "Footprint Smoothing", minval = 1, group = groupFp)
+bool requireDeltaConfirm = input.bool(true, "Require Footprint Delta Confirmation", group = groupFp)
+float longPressureFloor = input.float(70.0, "Long Pressure Floor", minval = 0, maxval = 100, group = groupFp)
+float shortPressureCeil = input.float(30.0, "Short Pressure Ceiling", minval = 0, maxval = 100, group = groupFp)
+
+string groupMtf = "Higher-Timeframe Confluence"
+bool useMtfFilter = input.bool(true, "Enable HTF Trend Filter", group = groupMtf)
+string htf = input.timeframe("60", "HTF", group = groupMtf)
+int htfFastLen = input.int(21, "HTF EMA Fast", minval = 2, group = groupMtf)
+int htfSlowLen = input.int(55, "HTF EMA Slow", minval = 3, group = groupMtf)
+
+string groupRisk = "Risk / Exit"
+float stopAtrMult = input.float(1.5, "Stop ATR Mult", minval = 0.25, step = 0.05, group = groupRisk)
+float targetAtrMult = input.float(2.0, "Target ATR Mult", minval = 0.25, step = 0.05, group = groupRisk)
+
+string groupExec = "Execution"
+bool allowLong = input.bool(true, "Allow Long", group = groupExec)
+bool allowShort = input.bool(true, "Allow Short", group = groupExec)
+
+string groupDash = "Research Dashboard"
+bool showDashboard = input.bool(true, "Show Dashboard", group = groupDash)
+
+// ══════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════
+f_clamp(float x, float lo, float hi) =>
+    math.max(lo, math.min(hi, x))
+
+f_div(float num, float den, float fallback) =>
+    den != 0 and not na(num) and not na(den) ? num / den : fallback
+
+// ══════════════════════════════════════════════════════════
+// Footprint (single call only by contract)
+// ══════════════════════════════════════════════════════════
+footprint fp = request.footprint(fpTicksPerRow, fpVaPercent, fpImbalancePercent)
+bool hasFp = not na(fp)
+float fpTotal = hasFp ? fp.total_volume() : na
+float fpDelta = hasFp ? fp.delta() : na
+float fpDeltaRatio = hasFp and fpTotal > 0 ? f_clamp(f_div(fpDelta, fpTotal, 0.0), -1.0, 1.0) : 0.0
+float pressure = f_clamp(50.0 + 50.0 * ta.ema(fpDeltaRatio, fpSmoothLen), 0.0, 100.0)
+
+// ══════════════════════════════════════════════════════════
+// Setup counts
+// ══════════════════════════════════════════════════════════
+bool setupBullCond = close < close[tdLookback]
+
+var int bullSetupCount = 0
+var int bearSetupCount = 0
+if setupBullCond
+    bullSetupCount := bullSetupCount == setupLength ? 1 : bullSetupCount + 1
+    bearSetupCount := 0
+else
+    bearSetupCount := bearSetupCount == setupLength ? 1 : bearSetupCount + 1
+    bullSetupCount := 0
+
+bool bullPerfect = (low <= low[3] and low <= low[2]) or (low[1] <= low[3] and low[1] <= low[2])
+bool bearPerfect = (high >= high[3] and high >= high[2]) or (high[1] >= high[3] and high[1] >= high[2])
+
+bool bullSetupDone = bullSetupCount == setupLength and (not requirePerfect or bullPerfect)
+bool bearSetupDone = bearSetupCount == setupLength and (not requirePerfect or bearPerfect)
+
+// ══════════════════════════════════════════════════════════
+// Exhaustion countdown
+// ══════════════════════════════════════════════════════════
+var bool bullCountdownActive = false
+var bool bearCountdownActive = false
+var int bullCountdown = 0
+var int bearCountdown = 0
+
+if bullSetupDone and not bearCountdownActive
+    bullCountdownActive := true
+    bullCountdown := 0
+if bearSetupDone and not bullCountdownActive
+    bearCountdownActive := true
+    bearCountdown := 0
+
+bool bullExhaustionRaw = false
+bool bearExhaustionRaw = false
+
+if bullCountdownActive
+    if close <= low[2]
+        bullCountdown += 1
+    if bullCountdown >= countdownLength
+        bullExhaustionRaw := true
+        bullCountdownActive := false
+        bullCountdown := 0
+    if bearSetupDone
+        bullCountdownActive := false
+        bullCountdown := 0
+
+if bearCountdownActive
+    if close >= high[2]
+        bearCountdown += 1
+    if bearCountdown >= countdownLength
+        bearExhaustionRaw := true
+        bearCountdownActive := false
+        bearCountdown := 0
+    if bullSetupDone
+        bearCountdownActive := false
+        bearCountdown := 0
+
+// ══════════════════════════════════════════════════════════
+// Price-flip confirmation
+// ══════════════════════════════════════════════════════════
+var bool bullPending = false
+var bool bearPending = false
+var float bullExhHigh = na
+var float bearExhLow = na
+var int bullExhBar = na
+var int bearExhBar = na
+
+if bullExhaustionRaw
+    bullPending := true
+    bullExhHigh := high
+    bullExhBar := bar_index
+if bearExhaustionRaw
+    bearPending := true
+    bearExhLow := low
+    bearExhBar := bar_index
+
+bool bullConfirmed = false
+bool bearConfirmed = false
+if confirmationMode == "Immediate"
+    bullConfirmed := bullExhaustionRaw
+    bearConfirmed := bearExhaustionRaw
+else
+    if bullPending
+        if (bar_index - bullExhBar) <= flipLookbackBars and close > bullExhHigh
+            bullConfirmed := true
+            bullPending := false
+        if (bar_index - bullExhBar) > flipLookbackBars
+            bullPending := false
+    if bearPending
+        if (bar_index - bearExhBar) <= flipLookbackBars and close < bearExhLow
+            bearConfirmed := true
+            bearPending := false
+        if (bar_index - bearExhBar) > flipLookbackBars
+            bearPending := false
+
+// ══════════════════════════════════════════════════════════
+// Filters
+// ══════════════════════════════════════════════════════════
+float volAvg = ta.sma(volume, volumeAvgLen)
+bool volumeOk = not useVolumeFilter or volume > volAvg
+
+bool deltaLongOk = not requireDeltaConfirm or (hasFp and fpDeltaRatio > 0)
+bool deltaShortOk = not requireDeltaConfirm or (hasFp and fpDeltaRatio < 0)
+
+bool pressureLongOk = pressure >= longPressureFloor
+bool pressureShortOk = pressure <= shortPressureCeil
+
+float htfEmaFast = request.security(syminfo.tickerid, htf, ta.ema(close, htfFastLen), gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+float htfEmaSlow = request.security(syminfo.tickerid, htf, ta.ema(close, htfSlowLen), gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+bool htfLongOk = not useMtfFilter or htfEmaFast > htfEmaSlow
+bool htfShortOk = not useMtfFilter or htfEmaFast < htfEmaSlow
+
+bool longSignal = allowLong and bullConfirmed and volumeOk and deltaLongOk and pressureLongOk and htfLongOk
+bool shortSignal = allowShort and bearConfirmed and volumeOk and deltaShortOk and pressureShortOk and htfShortOk
+
+// ══════════════════════════════════════════════════════════
+// Strategy execution
+// ══════════════════════════════════════════════════════════
+float atr14 = ta.atr(14)
+if longSignal
+    strategy.entry("Long", strategy.long)
+if shortSignal
+    strategy.entry("Short", strategy.short)
+
+if strategy.position_size > 0
+    strategy.exit("Long Exit", from_entry = "Long", stop = strategy.position_avg_price - atr14 * stopAtrMult, limit = strategy.position_avg_price + atr14 * targetAtrMult)
+if strategy.position_size < 0
+    strategy.exit("Short Exit", from_entry = "Short", stop = strategy.position_avg_price + atr14 * stopAtrMult, limit = strategy.position_avg_price - atr14 * targetAtrMult)
+
+// ══════════════════════════════════════════════════════════
+// Research visuals
+// ══════════════════════════════════════════════════════════
+plotshape(longSignal, "Bullish Exhaustion", shape.circle, location.belowbar, color.new(#00c087, 0), size = size.large)
+plotshape(shortSignal, "Bearish Exhaustion", shape.circle, location.abovebar, color.new(#f23645, 0), size = size.large)
+
+bgcolor(color.from_gradient(pressure, 0, 100, color.new(#f23645, 90), color.new(#00c087, 90)), title = "Pressure Background")
+
+plot(pressure, "wb_exh_pressure", display = display.none)
+plot(fpDelta, "wb_exh_fp_delta", display = display.none)
+plot(float(bullSetupCount), "wb_exh_bull_setup", display = display.none)
+plot(float(bearSetupCount), "wb_exh_bear_setup", display = display.none)
+
+// ══════════════════════════════════════════════════════════
+// Dashboard (stable strategy metrics)
+// ══════════════════════════════════════════════════════════
+var table dash = table.new(position.bottom_right, 2, 7, bgcolor = color.new(color.black, 85), frame_color = color.new(color.gray, 20), frame_width = 1)
+if barstate.islast
+    if showDashboard
+        float netProfit = strategy.netprofit
+        float grossProfit = strategy.grossprofit
+        float grossLoss = strategy.grossloss
+        int closedTrades = strategy.closedtrades
+        int winTrades = strategy.wintrades
+        float winRate = closedTrades > 0 ? (winTrades / closedTrades) * 100.0 : 0.0
+        float profitFactor = grossLoss != 0 ? grossProfit / math.abs(grossLoss) : na
+
+        table.cell(dash, 0, 0, "Net PnL", text_color = color.gray)
+        table.cell(dash, 1, 0, str.tostring(netProfit, "#.##"), text_color = netProfit >= 0 ? color.green : color.red)
+        table.cell(dash, 0, 1, "Profit Factor", text_color = color.gray)
+        table.cell(dash, 1, 1, str.tostring(profitFactor, "#.##"), text_color = profitFactor >= 1.0 ? color.green : color.red)
+        table.cell(dash, 0, 2, "Win Rate", text_color = color.gray)
+        table.cell(dash, 1, 2, str.tostring(winRate, "#.##") + "%", text_color = winRate >= 50 ? color.green : color.red)
+        table.cell(dash, 0, 3, "Closed", text_color = color.gray)
+        table.cell(dash, 1, 3, str.tostring(closedTrades), text_color = color.white)
+        table.cell(dash, 0, 4, "Pressure", text_color = color.gray)
+        table.cell(dash, 1, 4, str.tostring(pressure, "#") + "/100", text_color = color.white)
+        table.cell(dash, 0, 5, "FP Delta", text_color = color.gray)
+        table.cell(dash, 1, 5, str.tostring(fpDelta, "#"), text_color = fpDelta >= 0 ? color.green : color.red)
+        table.cell(dash, 0, 6, "HTF Trend", text_color = color.gray)
+        table.cell(dash, 1, 6, htfEmaFast > htfEmaSlow ? "UP" : htfEmaFast < htfEmaSlow ? "DOWN" : "FLAT", text_color = htfEmaFast > htfEmaSlow ? color.green : htfEmaFast < htfEmaSlow ? color.red : color.orange)
+    else
+        for c = 0 to 1
+            for r = 0 to 6
+                table.cell(dash, c, r, "", bgcolor = color.new(color.black, 100))
+
+// ══════════════════════════════════════════════════════════
+// Alerts
+// ══════════════════════════════════════════════════════════
+alertcondition(longSignal, title = "Exhaustion Long", message = "Warbird exhaustion long signal.")
+alertcondition(shortSignal, title = "Exhaustion Short", message = "Warbird exhaustion short signal.")

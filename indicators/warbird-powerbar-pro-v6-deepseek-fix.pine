@@ -1,0 +1,220 @@
+//@version=6
+// Warbird PowerBar Pro v6 — DeepSeek Fix (standalone)
+// Horizontal pressure ribbon with real footprint delta/imbalance/POC inputs.
+indicator(
+     title = "Warbird PowerBar Pro v6 DeepSeek Fix",
+     shorttitle = "WB PB v6 DS",
+     overlay = false,
+     format = format.price,
+     precision = 0,
+     max_bars_back = 500,
+     max_labels_count = 200)
+
+// ══════════════════════════════════════════════════════════
+// Inputs
+// ══════════════════════════════════════════════════════════
+string groupFp = "Footprint Order Flow"
+int fpTicksPerRow = input.int(4, "Footprint Ticks Per Row", minval = 1, group = groupFp)
+int fpVaPercent = input.int(70, "Value Area %", minval = 1, maxval = 100, group = groupFp)
+int fpImbalancePercent = input.int(300, "Imbalance %", minval = 1, group = groupFp)
+int fpSmoothLen = input.int(5, "Footprint Smoothing", minval = 1, group = groupFp)
+float fpDeltaWeight = input.float(1.35, "Delta Weight", minval = 0.0, step = 0.05, group = groupFp)
+float fpImbWeight = input.float(0.45, "Imbalance Weight", minval = 0.0, step = 0.05, group = groupFp)
+float fpPocWeight = input.float(0.25, "POC Delta Weight", minval = 0.0, step = 0.05, group = groupFp)
+
+string groupMom = "Momentum / Trend"
+int rsiLen = input.int(14, "RSI Length", minval = 2, group = groupMom)
+int emaFastLen = input.int(9, "Fast EMA", minval = 1, group = groupMom)
+int emaSlowLen = input.int(21, "Slow EMA", minval = 2, group = groupMom)
+float rsiWeight = input.float(0.80, "RSI Weight", minval = 0.0, step = 0.05, group = groupMom)
+float trendWeight = input.float(0.60, "Trend Weight", minval = 0.0, step = 0.05, group = groupMom)
+
+string groupSignal = "Signal Engine"
+int pressureSmoothLen = input.int(5, "Pressure Smoothing", minval = 1, group = groupSignal)
+string smoothType = input.string("EMA", "Smoothing Type", options = ["EMA", "SMA", "WMA"], group = groupSignal)
+int slowdownLookback = input.int(8, "Slowdown Lookback", minval = 2, group = groupSignal)
+float confidenceTrigger = input.float(70.0, "Confidence Trigger", minval = 1, maxval = 99, group = groupSignal)
+float longPressureFloor = input.float(60.0, "Long Pressure Floor", minval = 0, maxval = 100, group = groupSignal)
+float shortPressureCeil = input.float(40.0, "Short Pressure Ceiling", minval = 0, maxval = 100, group = groupSignal)
+
+string groupVis = "Visual"
+color bullColor = input.color(#00c087, "Bull Color", group = groupVis)
+color bearColor = input.color(#f23645, "Bear Color", group = groupVis)
+color neutralColor = input.color(color.rgb(100, 106, 120), "Neutral Color", group = groupVis)
+bool showHud = input.bool(true, "Show HUD", group = groupVis)
+bool showPressureRibbon = input.bool(true, "Show Full-Width Pressure Ribbon", group = groupVis)
+bool showPressureDot = input.bool(true, "Show Pressure Dot", group = groupVis)
+
+// ══════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════
+f_clamp(float x, float lo, float hi) =>
+    math.max(lo, math.min(hi, x))
+
+f_div(float num, float den, float fallback) =>
+    den != 0 and not na(num) and not na(den) ? num / den : fallback
+
+f_smooth(float src, int len) =>
+    smoothType == "SMA" ? ta.sma(src, len) :
+     smoothType == "WMA" ? ta.wma(src, len) :
+     ta.ema(src, len)
+
+f_slowText(int level) =>
+    level == 2 ? "HIGH" : level == 1 ? "MED" : "LOW"
+
+f_slowColor(int level) =>
+    level == 2 ? bearColor : level == 1 ? color.orange : bullColor
+
+// ══════════════════════════════════════════════════════════
+// Footprint (single call only by contract)
+// ══════════════════════════════════════════════════════════
+footprint fp = request.footprint(fpTicksPerRow, fpVaPercent, fpImbalancePercent)
+bool hasFp = not na(fp)
+
+float fpTotalVol = hasFp ? fp.total_volume() : na
+float fpBuyVol = hasFp ? fp.buy_volume() : na
+float fpSellVol = hasFp ? fp.sell_volume() : na
+float fpDeltaVol = hasFp ? fp.delta() : na
+
+float fpDeltaRatio = hasFp and fpTotalVol > 0 ? f_clamp(f_div(fpDeltaVol, fpTotalVol, 0.0), -1.0, 1.0) : 0.0
+float fpBuyRatio = hasFp and fpTotalVol > 0 ? f_clamp(f_div(fpBuyVol, fpTotalVol, 0.0), 0.0, 1.0) : na
+float fpSellRatio = hasFp and fpTotalVol > 0 ? f_clamp(f_div(fpSellVol, fpTotalVol, 0.0), 0.0, 1.0) : na
+
+int buyImbCount = 0
+int sellImbCount = 0
+int rowCount = 0
+float pocDeltaRatio = 0.0
+if hasFp
+    volume_row poc = fp.poc()
+    float pocDelta = not na(poc) ? poc.delta() : na
+    float pocTotal = not na(poc) ? poc.total_volume() : na
+    pocDeltaRatio := not na(pocTotal) and pocTotal > 0 ? f_clamp(f_div(pocDelta, pocTotal, 0.0), -1.0, 1.0) : 0.0
+
+    array<volume_row> rows = fp.rows()
+    rowCount := array.size(rows)
+    if rowCount > 0
+        for i = 0 to rowCount - 1
+            volume_row row = array.get(rows, i)
+            buyImbCount += row.has_buy_imbalance() ? 1 : 0
+            sellImbCount += row.has_sell_imbalance() ? 1 : 0
+
+float imbalanceRaw = rowCount > 0 ? (buyImbCount - sellImbCount) / rowCount : 0.0
+float imbalanceRatio = f_clamp(imbalanceRaw, -1.0, 1.0)
+
+float fpDeltaComponent = f_smooth(fpDeltaRatio, fpSmoothLen)
+float fpImbComponent = f_smooth(imbalanceRatio, fpSmoothLen)
+float fpPocComponent = f_smooth(pocDeltaRatio, fpSmoothLen)
+
+// ══════════════════════════════════════════════════════════
+// Momentum / trend components
+// ══════════════════════════════════════════════════════════
+float rsiValue = ta.rsi(close, rsiLen)
+float rsiComponent = f_clamp((rsiValue - 50.0) / 50.0, -1.0, 1.0)
+
+float emaFast = ta.ema(close, emaFastLen)
+float emaSlow = ta.ema(close, emaSlowLen)
+float atr14 = ta.atr(14)
+float trendComponent = f_clamp(f_div(emaFast - emaSlow, atr14 + 1e-10, 0.0), -1.0, 1.0)
+float trendLongScore = f_clamp(50.0 + 50.0 * trendComponent, 0.0, 100.0)
+float trendShortScore = 100.0 - trendLongScore
+
+// ══════════════════════════════════════════════════════════
+// Pressure / gas / confidence
+// ══════════════════════════════════════════════════════════
+float weightSum = math.max(fpDeltaWeight + fpImbWeight + fpPocWeight + rsiWeight + trendWeight, 1e-10)
+float rawSigned =
+     (fpDeltaWeight * fpDeltaComponent +
+      fpImbWeight * fpImbComponent +
+      fpPocWeight * fpPocComponent +
+      rsiWeight * rsiComponent +
+      trendWeight * trendComponent) / weightSum
+
+float signedPressure = f_smooth(f_clamp(rawSigned, -1.0, 1.0), pressureSmoothLen)
+float pressure = f_clamp(50.0 + 50.0 * signedPressure, 0.0, 100.0)
+
+float volBase = ta.sma(hasFp and not na(fpTotalVol) and fpTotalVol > 0 ? fpTotalVol : volume, 20)
+float volImpulse = volBase > 0 ? f_clamp(f_div(hasFp and not na(fpTotalVol) and fpTotalVol > 0 ? fpTotalVol : volume, volBase, 1.0), 0.0, 2.5) : 1.0
+float volBoost = (volImpulse - 1.0) * 10.0
+
+float buyerGasBase = hasFp and not na(fpBuyRatio) ? fpBuyRatio * 100.0 : pressure
+float sellerGasBase = hasFp and not na(fpSellRatio) ? fpSellRatio * 100.0 : 100.0 - pressure
+
+float buyerGas = f_clamp(0.60 * buyerGasBase + 0.40 * pressure + (pressure >= 50 ? volBoost : -volBoost * 0.25), 0.0, 100.0)
+float sellerGas = f_clamp(0.60 * sellerGasBase + 0.40 * (100.0 - pressure) + (pressure < 50 ? volBoost : -volBoost * 0.25), 0.0, 100.0)
+
+float confLong = f_clamp(0.42 * pressure + 0.33 * buyerGas + 0.15 * trendLongScore + 0.10 * f_clamp(50.0 + 50.0 * imbalanceRatio, 0.0, 100.0), 0.0, 100.0)
+float confShort = f_clamp(0.42 * (100.0 - pressure) + 0.33 * sellerGas + 0.15 * trendShortScore + 0.10 * f_clamp(50.0 - 50.0 * imbalanceRatio, 0.0, 100.0), 0.0, 100.0)
+
+float dominance = pressure >= 50 ? pressure : 100.0 - pressure
+bool buyerFade = not na(buyerGas[slowdownLookback]) and close > close[slowdownLookback] and buyerGas < buyerGas[slowdownLookback]
+bool sellerFade = not na(sellerGas[slowdownLookback]) and close < close[slowdownLookback] and sellerGas < sellerGas[slowdownLookback]
+bool pressureFade = not na(pressure[slowdownLookback]) and math.abs(pressure - 50.0) < math.abs(pressure[slowdownLookback] - 50.0)
+bool dominantFade = pressure >= 50 ? buyerFade : sellerFade
+bool slowdownHigh = dominance > 62 and dominantFade and pressureFade
+bool slowdownMed = not slowdownHigh and dominance > 56 and pressureFade
+int slowdownLevel = slowdownHigh ? 2 : slowdownMed ? 1 : 0
+
+bool longEdge = hasFp and confLong >= confidenceTrigger and pressure >= longPressureFloor and buyerGas > sellerGas and slowdownLevel < 2
+bool shortEdge = hasFp and confShort >= confidenceTrigger and pressure <= shortPressureCeil and sellerGas > buyerGas and slowdownLevel < 2
+
+// ══════════════════════════════════════════════════════════
+// Horizontal ribbon output (no oscillator columns/lines)
+// ══════════════════════════════════════════════════════════
+color pressureColor = color.from_gradient(pressure, 0, 100, bearColor, bullColor)
+bgcolor(showPressureRibbon ? color.new(pressureColor, 78) : na, title = "Full-Width Pressure Ribbon")
+
+plot(showPressureDot ? pressure : na, "Pressure Dot", color = color.white, style = plot.style_circles, linewidth = 2)
+
+hline(80, "Gas-Out Watch", color = color.new(bearColor, 20), linestyle = hline.style_dashed)
+hline(50, "Neutral", color = color.new(neutralColor, 30), linestyle = hline.style_dashed)
+hline(20, "Compression", color = color.new(bullColor, 25), linestyle = hline.style_dashed)
+
+plot(100, "Scale Top", display = display.none)
+plot(0, "Scale Bottom", display = display.none)
+
+// Hidden research outputs
+plot(pressure, "wb_pressure", display = display.none)
+plot(confLong, "wb_conf_long", display = display.none)
+plot(confShort, "wb_conf_short", display = display.none)
+plot(buyerGas, "wb_buyer_gas", display = display.none)
+plot(sellerGas, "wb_seller_gas", display = display.none)
+plot(float(slowdownLevel), "wb_slowdown_level", display = display.none)
+plot(fpDeltaVol, "wb_fp_delta", display = display.none)
+plot(float(rowCount), "wb_fp_rows", display = display.none)
+
+// ══════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════
+var table hud = table.new(position.top_center, 4, 4, bgcolor = color.new(color.black, 85), frame_color = color.new(neutralColor, 60), frame_width = 1)
+if barstate.islast
+    if showHud
+        table.cell(hud, 0, 0, "PRESSURE", text_color = color.white)
+        table.cell(hud, 1, 0, str.tostring(pressure, "#"), text_color = pressure >= 50 ? bullColor : bearColor)
+        table.cell(hud, 2, 0, "SLOW", text_color = color.white)
+        table.cell(hud, 3, 0, f_slowText(slowdownLevel), text_color = f_slowColor(slowdownLevel))
+
+        table.cell(hud, 0, 1, "CONF L", text_color = color.aqua)
+        table.cell(hud, 1, 1, str.tostring(confLong, "#"), text_color = color.aqua)
+        table.cell(hud, 2, 1, "CONF S", text_color = bearColor)
+        table.cell(hud, 3, 1, str.tostring(confShort, "#"), text_color = bearColor)
+
+        table.cell(hud, 0, 2, "BUY GAS", text_color = bullColor)
+        table.cell(hud, 1, 2, str.tostring(buyerGas, "#"), text_color = bullColor)
+        table.cell(hud, 2, 2, "SELL GAS", text_color = bearColor)
+        table.cell(hud, 3, 2, str.tostring(sellerGas, "#"), text_color = bearColor)
+
+        table.cell(hud, 0, 3, "FP", text_color = hasFp ? bullColor : bearColor)
+        table.cell(hud, 1, 3, hasFp ? "OK" : "MISSING", text_color = hasFp ? bullColor : bearColor)
+        table.cell(hud, 2, 3, "ROWS", text_color = color.white)
+        table.cell(hud, 3, 3, str.tostring(rowCount), text_color = color.white)
+    else
+        for c = 0 to 3
+            for r = 0 to 3
+                table.cell(hud, c, r, "", bgcolor = color.new(color.black, 100))
+
+// ══════════════════════════════════════════════════════════
+// Alerts
+// ══════════════════════════════════════════════════════════
+alertcondition(longEdge, title = "PowerBar Long Confidence", message = "PowerBar long confidence is active.")
+alertcondition(shortEdge, title = "PowerBar Short Confidence", message = "PowerBar short confidence is active.")
+alertcondition(slowdownHigh, title = "PowerBar High Slowdown", message = "PowerBar dominant-side fuel is fading.")

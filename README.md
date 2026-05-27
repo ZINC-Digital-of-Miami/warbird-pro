@@ -1,7 +1,7 @@
 # Warbird Pro
 
-Warbird Pro is now an indicator-only PineScript modeling workspace for MES
-TradingView indicator development.
+Warbird Pro is PineScript modeling workspace for the ES
+TradingView indicator development and AutoGluon Modeling.
 
 The active work is to perfect the TradingView indicator: settings, signal
 logic, stop/target policy, filters, visual/operator state, and exported
@@ -109,3 +109,6 @@ npm run build
 ```
 
 Before committing Pine edits, run the Pine verification flow in `CLAUDE.md`.
+
+
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/bfdbabac88cd4d949176fb4f4e86fb9c)](https://app.codacy.com?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)

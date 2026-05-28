@@ -49,9 +49,11 @@ Training/modeling uses manifest-backed source data for the active lane:
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
 
-No daily/hourly runtime ingestion tables, FRED, macro, unapproved cross-asset,
-news, options, Supabase, or mislabeled Databento/TradingView artifacts are
-admitted into the active modeling dataset.
+**Local-first data policy (2026-05-28 pivot):** FRED, macro, news, options, and
+cross-asset data are now approved for the local modeling dataset. The prior
+TradingView-era restriction is revoked — local-first removes all TV data
+constraints. All sources must be manifest-backed with honest labeling.
+Mislabeled Databento/TradingView artifacts are still prohibited.
 
 ### Active Pine Surfaces
 

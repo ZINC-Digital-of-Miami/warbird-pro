@@ -813,6 +813,8 @@
             });
           }
         }
+      }
+
       if (msg.type === "ai") {
         latestAi = msg.analysis;
         updateAiCard();

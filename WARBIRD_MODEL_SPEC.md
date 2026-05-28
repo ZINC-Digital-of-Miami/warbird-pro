@@ -298,6 +298,7 @@ The following are legacy for active modeling:
 - `ag_fib_outcomes`
 - `ag_training`
 - local warehouse lineage tables
-- FRED/macro feature scope
+- FRED/macro warehouse join tables (data itself approved under local-first
+  policy when manifest-backed)
 - Python reconstruction as canonical training generator
 - server-side model packet promotion

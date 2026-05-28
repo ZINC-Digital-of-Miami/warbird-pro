@@ -35,16 +35,17 @@ skills unless Kirk explicitly reopens that architecture.
 - Do not change Pine, fib anchors, label semantics, or export fields without
   explicit Pine approval and the Pine verification gate.
 
-## Locked AG contract
+## AG contract (2026-05-28 — UNLOCKED, TBD)
 
-V9/Core uses:
+Model selection (AutoGluon families, hyperparameters) is TBD pending deep
+research. The prior full-zoo config below is reference only:
 
 - `eval_metric="log_loss"`
 - `calibrate=True`
 - `num_bag_folds=0`
 - `num_stack_levels=0`
 - `dynamic_stacking=False`
-- full explicit zoo: GBM, CAT, XGB, RF, XT, NN_TORCH, FASTAI
+- prior zoo: GBM, CAT, XGB, RF, XT, NN_TORCH, FASTAI
 - OpenMP/BLAS thread guards before AutoGluon imports
 - chronological split with embargo, not IID bagging
 
@@ -78,7 +79,9 @@ not run, report the task as incomplete.
 
 - Every feature must be available at prediction time and tied to an approved
   manifest-backed source.
-- No FRED, macro, news, options, cloud joins, or unapproved cross-asset features.
+- FRED, macro, news, options, and cross-asset data are approved under
+  local-first policy (2026-05-28) when manifest-backed. No cloud joins or
+  non-manifest-backed features.
 - Active Pine-native cross-asset context is NQ + 6E only.
 - TP ladder prices are label-construction inputs, not model features.
 - Update docs/contracts/tests in the same change when feature or label truth

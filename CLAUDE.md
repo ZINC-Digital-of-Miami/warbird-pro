@@ -337,7 +337,8 @@ separate from unrelated Pine operator-surface work.
   `python3 scripts/ag/tv_connection_doctor.py --json`. If `ready` is false,
   do not proceed with live TV calls.
 - Pine is the modeling source of truth.
-- Optimize indicator settings and build quality, not external feature stacks.
+- Optimize indicator settings and build quality. External feature stacks must
+  be manifest-backed under local-first data policy.
 - Databento is an approved training data supplier when manifests label it as
   Databento source data. It is not the Pine indicator and must not be recorded
   as a TradingView indicator CSV.

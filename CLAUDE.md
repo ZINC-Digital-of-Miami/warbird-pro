@@ -7,7 +7,7 @@ legacy context and must not override `AGENTS.md` + `agents/README.md`.
 ## Quick Reference
 
 - **Canonical docs index:** `/Volumes/Satechi Hub/warbird-pro/docs/INDEX.md`
-- **Active architecture plan:** `/Volumes/Satechi Hub/warbird-pro/docs/MASTER_PLAN.md` — Warbird Indicator-Only DuckDB Local Modeling Plan v6, narrowed 2026-04-30 to Warbird Pro + Nexus only; V9 Core uses the DuckDB-backed file pipeline
+- **Active architecture plan:** `/Volumes/Satechi Hub/warbird-pro/docs/MASTER_PLAN.md` — Local-first platform (2026-05-28 pivot); V9 Core uses DuckDB-backed file pipeline; model selection TBD
 - **Indicator contract:** `/Volumes/Satechi Hub/warbird-pro/docs/contracts/pine_indicator_ag_contract.md`
 - **Startup review runbook:** `/Volumes/Satechi Hub/warbird-pro/docs/runbooks/startup_repo_review.md`
 - **TradingView readiness doctor (read-only):**
@@ -31,8 +31,11 @@ Do not run builds/tests/training or modify files during the startup review.
 
 ### Active Contract
 
-Warbird is an indicator-only PineScript modeling project backed by a local
-DuckDB / Pandera / fg-data-profiling file pipeline. Cloud Supabase is
+**Local-first pivot (2026-05-28):** Warbird has shifted from indicator-only
+PineScript modeling to a local-first platform. The local dashboard (TV
+Lightweight Charts on localhost) is the primary platform; the Pine indicator
+is the reference implementation, not the live trigger. DuckDB / Pandera /
+fg-data-profiling file pipeline for offline modeling. Cloud Supabase is
 runtime/support only — no raw training trials or labels (see Locked Rules).
 
 This status is a live tuning snapshot. Trigger families, settings, thresholds,

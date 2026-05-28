@@ -623,7 +623,10 @@ lane with its own audit, export budget, and AG contract.
 | `scripts/ag/train_v9_locked.py`                                                     | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
 | `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records local validation evidence; does NOT invoke AG)            | Live                    |
 
-**AG config (locked):**
+**AG config (2026-05-28 — UNLOCKED, TBD):**
+
+The prior full-zoo locked config is retained below as reference only — model
+selection is TBD pending deep research. Do not assume this is the active config.
 
 - `preset='best_quality'`
 - Full zoo (7 families) via explicit `hyperparameters` dict:

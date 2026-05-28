@@ -1,15 +1,18 @@
-# Warbird Model Spec — Indicator-Only v6
+# Warbird Model Spec — Local-First v7
 
-**Date:** 2026-05-05
+**Date:** 2026-05-05 (updated 2026-05-28 for local-first pivot)
 **Status:** Active, subordinate to `docs/MASTER_PLAN.md`
 
 ## Contract
 
-Warbird modeling is now pure PineScript indicator modeling.
+**Local-first pivot (2026-05-28):** Warbird has shifted from pure PineScript
+indicator modeling to a local-first platform. The local dashboard (TV
+Lightweight Charts on localhost) is the primary platform for charting,
+triggers, and trade recording. The Pine indicator remains the reference
+implementation but is not the live trigger platform.
 
-The model program exists to improve the TradingView indicator settings and
-build. It does not create a separate live prediction engine and it does not
-train from external data stacks.
+Model selection (AutoGluon families, hyperparameters) is TBD pending deep
+research — the prior full-zoo locked config is no longer assumed active.
 
 ## Iteration Policy
 
@@ -59,13 +62,15 @@ there first before moving to the noisier 5m lane.
 
 Disallowed active training inputs:
 
-- FRED or macro joins
-- news/options data
-- external cross-asset joins outside the active Pine indicator
 - Supabase daily/hourly runtime ingestion as a training feature source
 - local `ag_training` warehouse rows
 - Python OHLCV reconstruction as the canonical label source
 - Databento rows mislabeled as TradingView/Pine indicator exports
+- any non-manifest-backed or mislabeled data source
+
+**Approved under local-first data policy (2026-05-28):** FRED, macro, news,
+options, and cross-asset data are now allowed for the local modeling dataset.
+All sources must be manifest-backed with honest labeling.
 
 Historical warehouse tables may remain on disk for lineage. They are not active
 model truth unless Kirk explicitly reopens that architecture.

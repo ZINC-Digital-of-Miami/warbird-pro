@@ -39,7 +39,7 @@ MIN_FIB_RANGE_ATR: float = 0.5
 MIDPOINT_HYSTERESIS_PCT: float = 2.0
 
 FIB_RATIOS: list[float] = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
-FIB_EXTENSIONS: list[float] = [1.236, 1.618, 2.0]
+FIB_EXTENSIONS: list[float] = [1.236, 1.382, 1.5, 1.618, 2.0, 2.236]
 
 # ── MA Gate (V9 canonical — 2026-05-13) ───────────────────────────────────────
 PRIMARY_EMA_LENGTH: int = 21

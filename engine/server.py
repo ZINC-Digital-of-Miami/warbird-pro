@@ -26,7 +26,7 @@ from engine.config import HOST, PORT
 from engine.databento_feed import start_feed
 from engine.fib_engine import FibState, compute_fibs
 from engine.ai_analysis import get_ai_analysis
-from engine.indicators import PressureResult, compute_pressure, nexus_series
+from engine.indicators import PressureResult, compute_pressure, ema_series, nexus_series
 from engine.trigger_engine import TriggerResult, evaluate_trigger
 
 logger = logging.getLogger("warbird.server")

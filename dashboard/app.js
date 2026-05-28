@@ -9,19 +9,28 @@
   // Bar period in seconds for each TF (used for fib line extension).
   const TF_SECONDS = { "1m": 60, "3m": 180, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400 };
 
-  // V10 fib line styles matching the indicator settings panel.
+  // Fib line styles — V9 Pine defaults with Kirk's live V10 overrides.
+  // Pine constants: COLOR_ANCHOR=#FFFFFF, COLOR_RETRACEMENT=#808080, COLOR_TARGET=#0097A7
+  // Kirk's V10 live overrides: .382/.618 accent = RED (#cc0000)
   const FIB_STYLES = {
-    "0":     { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 1 },  // dotted
-    ".236":  { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 0 },  // solid gray
-    ".382":  { color: "#cc0000",                width: 2, lineStyle: 0 },  // RED solid
-    "Pivot": { color: "rgba(255,255,255,0.55)", width: 1, lineStyle: 2 },  // dashed white
-    ".618":  { color: "#cc0000",                width: 2, lineStyle: 0 },  // RED solid
-    ".786":  { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 0 },  // solid gray
-    "1":     { color: "rgba(255,255,255,0.6)",  width: 2, lineStyle: 1 },  // dotted white
-    "TP1":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
-    "TP2":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
-    "TP3":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
+    "0":      { color: "#FFFFFF",   width: 2, lineStyle: 0, dash: [] },           // Zero — anchor white solid
+    "-.236":  { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // Neg .236 stop
+    ".236":   { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // retracement gray solid
+    ".382":   { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // accent (V9 default white, Kirk may override RED)
+    "Pivot":  { color: "#FFFFFF",   width: 1, lineStyle: 2, dash: [5, 5] },      // .500 pivot — white dashed
+    ".618":   { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // accent (V9 default white, Kirk may override RED)
+    ".786":   { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // retracement gray solid
+    "1":      { color: "#FFFFFF",   width: 2, lineStyle: 0, dash: [] },           // 1.000 — anchor white solid
+    "TP1":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 1.236 target teal
+    "1.382":  { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // waypoint gray
+    "1.5":    { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // waypoint gray
+    "TP2":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 1.618 target teal
+    "TP3":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 2.000 target teal
+    "TP4":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 2.236 target teal
   };
+
+  // Golden zone fill colors (.382–.618)
+  const ZONE_FILL_COLOR = "rgba(156, 163, 175, 0.15)";  // subtle gray fill
 
   /* ── State ── */
   let ws = null;
@@ -36,6 +45,8 @@
   let latestNexus = null; // full nexus series [{time, osc, signal, vf}]
   let latestAi = null; // AI analysis text
   let fibSeriesList = []; // LWC LineSeries objects for bounded fib lines
+  let ema21Series = null; // EMA 21 line series
+  let ema9Series = null;  // EMA 9 (smoothing MA) line series
   let markersPrimitive = null; // LWC v5 SeriesMarkers primitive
 
   // Nexus sub-chart state.
@@ -54,39 +65,56 @@
       width: container.clientWidth,
       height: container.clientHeight,
       layout: {
-        background: { type: "solid", color: "#131722" },
-        textColor: "rgba(255,255,255,0.45)",
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 10,
+        background: { type: "solid", color: "transparent" },
+        textColor: "rgba(255,255,255,0.4)",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        fontSize: 11,
+        attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.03)" },
-        horzLines: { color: "rgba(255,255,255,0.03)" },
+        vertLines: { color: "rgba(255,255,255,0.04)" },
+        horzLines: { color: "rgba(255,255,255,0.04)" },
       },
       crosshair: {
-        mode: LightweightCharts.CrosshairMode.Normal,
-        vertLine: { color: "rgba(255,255,255,0.1)", style: 3 },
-        horzLine: { color: "rgba(255,255,255,0.1)", style: 3 },
+        vertLine: {
+          color: "rgba(255,255,255,0.55)",
+          width: 1,
+          style: LightweightCharts.LineStyle.Solid,
+          labelBackgroundColor: "rgba(20,10,40,0.9)",
+        },
+        horzLine: {
+          color: "rgba(255,255,255,0.55)",
+          width: 1,
+          style: LightweightCharts.LineStyle.Solid,
+          labelBackgroundColor: "rgba(20,10,40,0.9)",
+        },
       },
       rightPriceScale: {
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: "transparent",
+        autoScale: true,
         scaleMargins: { top: 0.05, bottom: 0.15 },
       },
       timeScale: {
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: "transparent",
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 8,
+        fixLeftEdge: false,
+        fixRightEdge: false,
+        rightOffset: 16,
+        barSpacing: 10,
+        minBarSpacing: 8,
+        lockVisibleTimeRangeOnResize: true,
       },
     });
 
     candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
       upColor: "#26C6DA",
-      downColor: "#F23645",
-      borderUpColor: "#26C6DA",
-      borderDownColor: "#F23645",
-      wickUpColor: "#26C6DA",
-      wickDownColor: "#F23645",
+      downColor: "#FF0000",
+      borderUpColor: "transparent",
+      borderDownColor: "transparent",
+      wickUpColor: "#FFFFFF",
+      wickDownColor: "rgba(178,181,190,0.83)",
+      priceLineVisible: true,
     });
 
     volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
@@ -96,6 +124,26 @@
 
     chart.priceScale("volume").applyOptions({
       scaleMargins: { top: 0.85, bottom: 0 },
+    });
+
+    // EMA 21 — primary trend (white, width 2, matches V9 Pine EMA plot)
+    ema21Series = chart.addSeries(LightweightCharts.LineSeries, {
+      color: "#FFFFFF",
+      lineWidth: 2,
+      lineStyle: LightweightCharts.LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    // EMA 9 — smoothing MA (teal, width 2, matches V9 Pine smoothingMA plot)
+    ema9Series = chart.addSeries(LightweightCharts.LineSeries, {
+      color: "#26A69A",
+      lineWidth: 2,
+      lineStyle: LightweightCharts.LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
     });
 
     window.addEventListener("resize", () => {
@@ -225,8 +273,11 @@
       value: b.volume,
       color: b.close >= b.open
         ? "rgba(38,198,218,0.15)"
-        : "rgba(242,54,69,0.15)",
+        : "rgba(255,0,0,0.15)",
     })));
+
+    // Compute and render EMA 21 + EMA 9 overlays
+    renderEmaOverlays(bars);
 
     renderFibLines();
     renderTriggerMarker();
@@ -234,30 +285,58 @@
     updateTopbar(bars[bars.length - 1]);
   }
 
-  /* ── Fib Lines (bounded LineSeries matching V10 styles) ── */
+  /* ── EMA Overlays (EMA21 primary + EMA9 smoothing, matching V9 Pine) ── */
+  function renderEmaOverlays(bars) {
+    if (!ema21Series || !ema9Series || bars.length < 2) return;
+    const closes = bars.map(b => b.close);
+    const ema21Data = computeEmaSeries(closes, 21, bars);
+    const ema9Data = computeEmaSeries(closes, 9, bars);
+    ema21Series.setData(ema21Data);
+    ema9Series.setData(ema9Data);
+  }
+
+  function computeEmaSeries(closes, period, bars) {
+    if (closes.length < period) return [];
+    const k = 2.0 / (period + 1);
+    const result = [];
+    let emaVal = 0;
+    for (let i = 0; i < period; i++) { emaVal += closes[i]; }
+    emaVal /= period;
+    result.push({ time: bars[period - 1].time, value: emaVal });
+    for (let i = period; i < closes.length; i++) {
+      emaVal = closes[i] * k + emaVal * (1 - k);
+      result.push({ time: bars[i].time, value: emaVal });
+    }
+    return result;
+  }
+
+  /* ── Fib Lines + Golden Zone Fill (canvas-based primitive) ── */
+  let fibPrimitive = null;
+
   function renderFibLines() {
-    // Remove old fib series.
+    // Remove old LineSeries-based fibs (legacy cleanup).
     for (const fs of fibSeriesList) {
       try { chart.removeSeries(fs); } catch (e) {}
     }
     fibSeriesList = [];
 
     if (!latestFibs || !latestFibs.levels) return;
-
     const bars = barsByTf[activeTf] || [];
     if (!bars.length) return;
 
     const lastBarTime = bars[bars.length - 1].time;
     const barPeriod = TF_SECONDS[activeTf] || 300;
     const endTime = lastBarTime + 8 * barPeriod;
-
-    // Anchor start = earlier of the high/low swing point.
     const anchorHighTime = latestFibs.anchorHighTime || bars[0].time;
     const anchorLowTime = latestFibs.anchorLowTime || bars[0].time;
     const startTime = Math.min(anchorHighTime, anchorLowTime);
 
+    // Use LineSeries for each fib level (bounded from anchor to 8 bars right).
+    // Also add zone fill via a dedicated area series pair.
+    let p382 = null, p618 = null;
+
     for (const lv of latestFibs.levels) {
-      const style = FIB_STYLES[lv.label] || { color: "rgba(255,255,255,0.1)", width: 1, lineStyle: 0 };
+      const style = FIB_STYLES[lv.label] || { color: "rgba(255,255,255,0.08)", width: 1, lineStyle: 0 };
 
       const series = chart.addSeries(LightweightCharts.LineSeries, {
         color: style.color,
@@ -268,7 +347,9 @@
         crosshairMarkerVisible: false,
         priceFormat: {
           type: "custom",
-          formatter: function(price) { return lv.label + " " + price.toFixed(2); },
+          formatter: (function(label) {
+            return function(price) { return label + "  " + price.toFixed(2); };
+          })(lv.label),
         },
       });
 
@@ -276,9 +357,76 @@
         { time: startTime, value: lv.price },
         { time: endTime, value: lv.price },
       ]);
-
       fibSeriesList.push(series);
+
+      if (lv.label === ".382") p382 = lv.price;
+      if (lv.label === ".618") p618 = lv.price;
     }
+
+    // Golden zone fill between .382 and .618 using canvas overlay.
+    renderGoldenZoneFill(p382, p618, startTime, endTime);
+  }
+
+  let zoneCanvas = null;
+  function renderGoldenZoneFill(p382, p618, startTime, endTime) {
+    // Remove previous zone canvas.
+    if (zoneCanvas && zoneCanvas.parentNode) {
+      zoneCanvas.parentNode.removeChild(zoneCanvas);
+    }
+    zoneCanvas = null;
+
+    if (p382 == null || p618 == null || !chart) return;
+
+    const chartContainer = document.getElementById("chart-container");
+    if (!chartContainer) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "1";
+    canvas.width = chartContainer.clientWidth;
+    canvas.height = chartContainer.clientHeight;
+    chartContainer.style.position = "relative";
+    chartContainer.appendChild(canvas);
+    zoneCanvas = canvas;
+
+    function drawZone() {
+      if (!chart || !canvas.parentNode) return;
+      const ctx = canvas.getContext("2d");
+      canvas.width = chartContainer.clientWidth;
+      canvas.height = chartContainer.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const ts = chart.timeScale();
+      const ps = candleSeries.priceScale();
+
+      // Get Y coordinates for the two price levels.
+      const y382 = candleSeries.priceToCoordinate(p382);
+      const y618 = candleSeries.priceToCoordinate(p618);
+      if (y382 == null || y618 == null) return;
+
+      // Get X coordinates for start and end.
+      const x0 = ts.timeToCoordinate(startTime);
+      const x1 = ts.timeToCoordinate(endTime);
+      if (x0 == null && x1 == null) return;
+
+      const xStart = x0 != null ? Math.max(0, x0) : 0;
+      const xEnd = x1 != null ? Math.min(canvas.width, x1) : canvas.width;
+
+      const yTop = Math.min(y382, y618);
+      const yBot = Math.max(y382, y618);
+      const h = yBot - yTop;
+
+      ctx.fillStyle = ZONE_FILL_COLOR;
+      ctx.fillRect(xStart, yTop, xEnd - xStart, h);
+    }
+
+    drawZone();
+
+    // Redraw on scroll/zoom.
+    chart.timeScale().subscribeVisibleLogicalRangeChange(drawZone);
   }
 
   /* ── Entry Markers (LWC v5 SeriesMarkers primitive) ── */

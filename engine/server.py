@@ -25,6 +25,7 @@ from engine.bar_store import Bar, BarStore
 from engine.config import HOST, PORT
 from engine.databento_feed import start_feed
 from engine.fib_engine import FibState, compute_fibs
+from engine.indicators import PressureResult, compute_pressure, nexus_series
 from engine.trigger_engine import TriggerResult, evaluate_trigger
 
 logger = logging.getLogger("warbird.server")
@@ -37,13 +38,15 @@ _feed_thread: threading.Thread | None = None
 _feed_stop: threading.Event | None = None
 _latest_fibs: FibState | None = None
 _latest_trigger: TriggerResult | None = None
+_latest_pressure: PressureResult | None = None
+_latest_nexus: list[dict] | None = None
 
 
 # ── Bar callback — push to all connected WebSocket clients ────────────────────
 
 def _on_bar(tf: str, bar: Bar) -> None:
     """Called from the Databento feed thread whenever a bar closes."""
-    global _latest_fibs, _latest_trigger
+    global _latest_fibs, _latest_trigger, _latest_pressure, _latest_nexus
 
     msg: dict[str, Any] = {
         "type": "bar",
@@ -67,9 +70,39 @@ def _on_bar(tf: str, bar: Bar) -> None:
             _latest_trigger = evaluate_trigger(bars_1m, _latest_fibs, direction)
             msg["trigger"] = _latest_trigger.to_dict()
 
+    # Compute pressure on every 1m bar (independent of fib proximity).
+    if tf == "1m":
+        bars_1m = store.get_bars("1m")
+        if len(bars_1m) >= 20:
+            closes = [b.close for b in bars_1m]
+            highs = [b.high for b in bars_1m]
+            lows = [b.low for b in bars_1m]
+            volumes = [float(b.volume) for b in bars_1m]
+            dirs = [1 if b.close >= b.open else -1 for b in bars_1m]
+            _latest_pressure = compute_pressure(closes, highs, lows, volumes, dirs)
+            msg["pressure"] = _latest_pressure.to_dict()
+
+    # Recompute nexus on 5m bar close (matches default chart TF).
+    if tf == "5m":
+        bars_5m = store.get_bars("5m")
+        if len(bars_5m) >= 120:
+            _latest_nexus = _compute_nexus_for_bars(bars_5m)
+            if _latest_nexus:
+                msg["nexus"] = _latest_nexus[-1:]  # send only latest point
+
     # Broadcast to WebSocket clients.
     payload = json.dumps(msg)
     _broadcast(payload)
+
+
+def _compute_nexus_for_bars(bars: list[Bar]) -> list[dict]:
+    times = [int(b.ts.timestamp()) for b in bars]
+    opens = [b.open for b in bars]
+    highs = [b.high for b in bars]
+    lows = [b.low for b in bars]
+    closes = [b.close for b in bars]
+    volumes = [float(b.volume) for b in bars]
+    return nexus_series(times, opens, highs, lows, closes, volumes)
 
 
 def _broadcast(payload: str) -> None:
@@ -103,10 +136,25 @@ async def lifespan(app: FastAPI):
     _feed_thread, _feed_stop = start_feed(store)
 
     # Compute initial fibs from backfilled data.
-    global _latest_fibs
+    global _latest_fibs, _latest_pressure, _latest_nexus
     bars_1h = store.get_bars("1h")
     if len(bars_1h) >= 8:
         _latest_fibs = compute_fibs(bars_1h)
+
+    # Compute initial pressure from backfilled data.
+    bars_1m = store.get_bars("1m")
+    if len(bars_1m) >= 20:
+        closes = [b.close for b in bars_1m]
+        highs = [b.high for b in bars_1m]
+        lows = [b.low for b in bars_1m]
+        volumes = [float(b.volume) for b in bars_1m]
+        dirs = [1 if b.close >= b.open else -1 for b in bars_1m]
+        _latest_pressure = compute_pressure(closes, highs, lows, volumes, dirs)
+
+    # Compute initial nexus from backfilled 5m data.
+    bars_5m = store.get_bars("5m")
+    if len(bars_5m) >= 120:
+        _latest_nexus = _compute_nexus_for_bars(bars_5m)
 
     logger.info("Warbird engine ready — listening on %s:%d", HOST, PORT)
     yield
@@ -201,6 +249,10 @@ async def websocket_endpoint(ws: WebSocket):
             snapshot["fibs"] = _latest_fibs.to_dict()
         if _latest_trigger:
             snapshot["trigger"] = _latest_trigger.to_dict()
+        if _latest_pressure:
+            snapshot["pressure"] = _latest_pressure.to_dict()
+        if _latest_nexus:
+            snapshot["nexus"] = _latest_nexus
 
         await ws.send_text(json.dumps(snapshot))
 

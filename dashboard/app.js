@@ -6,6 +6,23 @@
   const WS_URL = `ws://${location.host}/ws`;
   const RECONNECT_DELAY = 2000;
 
+  // Bar period in seconds for each TF (used for fib line extension).
+  const TF_SECONDS = { "1m": 60, "3m": 180, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400 };
+
+  // V10 fib line styles matching the indicator settings panel.
+  const FIB_STYLES = {
+    "0":     { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 1 },  // dotted
+    ".236":  { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 0 },  // solid gray
+    ".382":  { color: "#cc0000",                width: 2, lineStyle: 0 },  // RED solid
+    "Pivot": { color: "rgba(255,255,255,0.55)", width: 1, lineStyle: 2 },  // dashed white
+    ".618":  { color: "#cc0000",                width: 2, lineStyle: 0 },  // RED solid
+    ".786":  { color: "rgba(255,255,255,0.35)", width: 1, lineStyle: 0 },  // solid gray
+    "1":     { color: "rgba(255,255,255,0.6)",  width: 2, lineStyle: 1 },  // dotted white
+    "TP1":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
+    "TP2":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
+    "TP3":   { color: "#cc0000",                width: 2, lineStyle: 2 },  // RED dashed
+  };
+
   /* ── State ── */
   let ws = null;
   let chart = null;
@@ -15,8 +32,19 @@
   let barsByTf = {};     // { tf: [{time, open, high, low, close, volume}] }
   let latestFibs = null;
   let latestTrigger = null;
-  let fibLines = [];     // lightweight-charts price line objects
+  let latestPressure = null;
+  let latestNexus = null; // full nexus series [{time, osc, signal, vf}]
+  let fibSeriesList = []; // LWC LineSeries objects for bounded fib lines
   let markersPrimitive = null; // LWC v5 SeriesMarkers primitive
+
+  // Nexus sub-chart state.
+  let nexusChart = null;
+  let nexusOscSeries = null;
+  let nexusSigSeries = null;
+  let nexusVfSeries = null;
+  let nexusObLine = null;
+  let nexusOsLine = null;
+  let nexusMidLine = null;
 
   /* ── Chart Init ── */
   function initChart() {
@@ -47,7 +75,7 @@
         borderColor: "rgba(255,255,255,0.06)",
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 5,
+        rightOffset: 8,
       },
     });
 
@@ -74,6 +102,107 @@
         width: container.clientWidth,
         height: container.clientHeight,
       });
+      if (nexusChart) {
+        const nc = document.getElementById("nexus-container");
+        nexusChart.applyOptions({ width: nc.clientWidth, height: nc.clientHeight });
+      }
+    });
+  }
+
+  /* ── Nexus Sub-Chart Init ── */
+  function initNexusChart() {
+    const container = document.getElementById("nexus-container");
+    if (!container) return;
+
+    nexusChart = LightweightCharts.createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
+      layout: {
+        background: { type: "solid", color: "#0d0d14" },
+        textColor: "rgba(255,255,255,0.35)",
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 9,
+      },
+      grid: {
+        vertLines: { color: "rgba(255,255,255,0.02)" },
+        horzLines: { color: "rgba(255,255,255,0.02)" },
+      },
+      crosshair: {
+        mode: LightweightCharts.CrosshairMode.Normal,
+        vertLine: { color: "rgba(255,255,255,0.08)", style: 3 },
+        horzLine: { color: "rgba(255,255,255,0.08)", style: 3 },
+      },
+      rightPriceScale: {
+        borderColor: "rgba(255,255,255,0.04)",
+        scaleMargins: { top: 0.05, bottom: 0.05 },
+      },
+      timeScale: {
+        borderColor: "rgba(255,255,255,0.04)",
+        timeVisible: true,
+        secondsVisible: false,
+        rightOffset: 8,
+        visible: false,
+      },
+    });
+
+    // Volume flow histogram (behind osc line).
+    nexusVfSeries = nexusChart.addSeries(LightweightCharts.HistogramSeries, {
+      priceScaleId: "nexus",
+      priceFormat: { type: "price", precision: 1, minMove: 0.1 },
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+
+    // Oscillator line.
+    nexusOscSeries = nexusChart.addSeries(LightweightCharts.LineSeries, {
+      color: "#26C6DA",
+      lineWidth: 2,
+      priceScaleId: "nexus",
+      priceFormat: { type: "price", precision: 1, minMove: 0.1 },
+      lastValueVisible: true,
+      priceLineVisible: false,
+    });
+
+    // Signal line.
+    nexusSigSeries = nexusChart.addSeries(LightweightCharts.LineSeries, {
+      color: "rgba(255,255,255,0.25)",
+      lineWidth: 1,
+      lineStyle: 2,
+      priceScaleId: "nexus",
+      priceFormat: { type: "price", precision: 1, minMove: 0.1 },
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+
+    nexusChart.priceScale("nexus").applyOptions({
+      scaleMargins: { top: 0.05, bottom: 0.05 },
+      autoScale: false,
+    });
+
+    // OB/OS/mid reference lines.
+    nexusObLine = nexusOscSeries.createPriceLine({
+      price: 71.84, color: "rgba(204,0,0,0.25)", lineWidth: 1, lineStyle: 2,
+      axisLabelVisible: true, title: "OB",
+    });
+    nexusOsLine = nexusOscSeries.createPriceLine({
+      price: 19.59, color: "rgba(38,198,218,0.25)", lineWidth: 1, lineStyle: 2,
+      axisLabelVisible: true, title: "OS",
+    });
+    nexusMidLine = nexusOscSeries.createPriceLine({
+      price: 50, color: "rgba(255,255,255,0.08)", lineWidth: 1, lineStyle: 1,
+      axisLabelVisible: false, title: "",
+    });
+
+    // Sync time scales between main chart and nexus.
+    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      if (range && nexusChart) {
+        nexusChart.timeScale().setVisibleLogicalRange(range);
+      }
+    });
+    nexusChart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      if (range && chart) {
+        chart.timeScale().setVisibleLogicalRange(range);
+      }
     });
   }
 
@@ -100,44 +229,54 @@
 
     renderFibLines();
     renderTriggerMarker();
+    renderNexus();
     updateTopbar(bars[bars.length - 1]);
   }
 
-  /* ── Fib Lines ── */
+  /* ── Fib Lines (bounded LineSeries matching V10 styles) ── */
   function renderFibLines() {
-    // Remove old lines.
-    for (const line of fibLines) {
-      try { candleSeries.removePriceLine(line); } catch (e) {}
+    // Remove old fib series.
+    for (const fs of fibSeriesList) {
+      try { chart.removeSeries(fs); } catch (e) {}
     }
-    fibLines = [];
+    fibSeriesList = [];
 
     if (!latestFibs || !latestFibs.levels) return;
 
-    const ratioColors = {
-      "0": "rgba(255,255,255,0.08)",
-      ".236": "rgba(255,255,255,0.12)",
-      ".382": "#26C6DA",
-      "Pivot": "#FF9800",
-      ".618": "#26C6DA",
-      ".786": "rgba(255,255,255,0.12)",
-      "1": "rgba(255,255,255,0.08)",
-      "TP1": "rgba(0,230,118,0.3)",
-      "TP2": "rgba(0,230,118,0.2)",
-      "TP3": "rgba(0,230,118,0.15)",
-    };
+    const bars = barsByTf[activeTf] || [];
+    if (!bars.length) return;
+
+    const lastBarTime = bars[bars.length - 1].time;
+    const barPeriod = TF_SECONDS[activeTf] || 300;
+    const endTime = lastBarTime + 8 * barPeriod;
+
+    // Anchor start = earlier of the high/low swing point.
+    const anchorHighTime = latestFibs.anchorHighTime || bars[0].time;
+    const anchorLowTime = latestFibs.anchorLowTime || bars[0].time;
+    const startTime = Math.min(anchorHighTime, anchorLowTime);
 
     for (const lv of latestFibs.levels) {
-      const color = ratioColors[lv.label] || "rgba(255,255,255,0.06)";
-      const line = candleSeries.createPriceLine({
-        price: lv.price,
-        color: color,
-        lineWidth: lv.label === ".382" || lv.label === ".618" ? 1 : 1,
-        lineStyle: lv.isExtension ? 2 : 0,
-        axisLabelVisible: true,
-        title: lv.label,
-        lineVisible: true,
+      const style = FIB_STYLES[lv.label] || { color: "rgba(255,255,255,0.1)", width: 1, lineStyle: 0 };
+
+      const series = chart.addSeries(LightweightCharts.LineSeries, {
+        color: style.color,
+        lineWidth: style.width,
+        lineStyle: style.lineStyle,
+        lastValueVisible: true,
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        priceFormat: {
+          type: "custom",
+          formatter: function(price) { return lv.label + " " + price.toFixed(2); },
+        },
       });
-      fibLines.push(line);
+
+      series.setData([
+        { time: startTime, value: lv.price },
+        { time: endTime, value: lv.price },
+      ]);
+
+      fibSeriesList.push(series);
     }
   }
 
@@ -168,6 +307,27 @@
     } else {
       markersPrimitive.setMarkers(markers);
     }
+  }
+
+  /* ── Render Nexus Oscillator ── */
+  function renderNexus() {
+    if (!nexusChart || !latestNexus || !latestNexus.length) return;
+
+    nexusOscSeries.setData(latestNexus.map(p => ({
+      time: p.time,
+      value: p.osc,
+    })));
+
+    nexusSigSeries.setData(latestNexus.map(p => ({
+      time: p.time,
+      value: p.signal,
+    })));
+
+    nexusVfSeries.setData(latestNexus.map(p => ({
+      time: p.time,
+      value: p.vf - 50, // center around 0
+      color: p.vf >= 50 ? "rgba(38,198,218,0.12)" : "rgba(204,0,0,0.12)",
+    })));
   }
 
   /* ── Update UI Elements ── */
@@ -274,6 +434,51 @@
   }
 
   function updatePressureBar() {
+    // Use real pressure data from the server if available.
+    if (latestPressure) {
+      const p = latestPressure;
+      const bullPct = Math.round(p.bullPct);
+      const bearPct = Math.round(p.bearPct);
+
+      document.getElementById("pressure-bull").style.width = bullPct + "%";
+      document.getElementById("pressure-bear").style.width = bearPct + "%";
+
+      const pctEl = document.getElementById("pressure-pct");
+      if (bullPct > bearPct) {
+        pctEl.textContent = bullPct + "% BULL";
+        pctEl.style.color = "#26C6DA";
+      } else {
+        pctEl.textContent = bearPct + "% BEAR";
+        pctEl.style.color = "#F23645";
+      }
+
+      const sqDot = document.getElementById("squeeze-dot");
+      const sqText = document.getElementById("squeeze-text");
+      if (p.squeezeOn) {
+        sqDot.style.display = "inline-block";
+        sqText.textContent = "ON";
+        sqText.style.color = "#FF9800";
+      } else {
+        sqDot.style.display = "none";
+        sqText.textContent = "OFF";
+        sqText.style.color = "rgba(255,255,255,0.2)";
+      }
+
+      const momEl = document.getElementById("momentum-text");
+      const mom = p.squeezeMomentum;
+      momEl.textContent = (mom > 0 ? "+" : "") + mom.toFixed(1) + (mom > 0 ? " ▲" : " ▼");
+      momEl.style.color = mom > 0 ? "#26C6DA" : "#F23645";
+
+      // RSI value display.
+      const rsiEl = document.getElementById("rsi-text");
+      if (rsiEl) {
+        rsiEl.textContent = p.rsiValue.toFixed(1);
+        rsiEl.style.color = p.rsiValue > 60 ? "#26C6DA" : p.rsiValue < 40 ? "#F23645" : "rgba(255,255,255,0.5)";
+      }
+      return;
+    }
+
+    // Fallback: derive from trigger if no pressure data yet.
     if (!latestTrigger) return;
     const t = latestTrigger;
     const bullPct = t.direction === "LONG" ? Math.round(50 + t.score * 30) : Math.round(50 - t.score * 30);
@@ -290,23 +495,6 @@
       pctEl.textContent = bearPct + "% BEAR";
       pctEl.style.color = "#F23645";
     }
-
-    const sqDot = document.getElementById("squeeze-dot");
-    const sqText = document.getElementById("squeeze-text");
-    if (t.squeezeOn) {
-      sqDot.style.display = "inline-block";
-      sqText.textContent = "ON";
-      sqText.style.color = "#FF9800";
-    } else {
-      sqDot.style.display = "none";
-      sqText.textContent = "OFF";
-      sqText.style.color = "rgba(255,255,255,0.2)";
-    }
-
-    const momEl = document.getElementById("momentum-text");
-    const mom = t.squeezeMomentum;
-    momEl.textContent = (mom > 0 ? "+" : "") + mom.toFixed(1) + (mom > 0 ? " ▲" : " ▼");
-    momEl.style.color = mom > 0 ? "#26C6DA" : "#F23645";
   }
 
   function updateVolumeCard() {
@@ -345,12 +533,16 @@
     levelsEl.innerHTML = latestFibs.levels
       .filter(lv => !lv.isExtension)
       .reverse()
-      .map(lv => `
-        <div class="fib-row">
-          <span class="fib-ratio">${lv.label}</span>
-          <span class="fib-price" style="color:${lv.label === '.382' || lv.label === '.618' ? '#26C6DA' : 'rgba(255,255,255,0.5)'}">${lv.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-        </div>
-      `).join("");
+      .map(lv => {
+        const fibStyle = FIB_STYLES[lv.label];
+        const lvColor = fibStyle ? fibStyle.color : "rgba(255,255,255,0.5)";
+        return `
+          <div class="fib-row">
+            <span class="fib-ratio">${lv.label}</span>
+            <span class="fib-price" style="color:${lvColor}">${lv.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+          </div>
+        `;
+      }).join("");
   }
 
   function updateSystemCard() {
@@ -389,6 +581,8 @@
         barsByTf = msg.bars || {};
         if (msg.fibs) latestFibs = msg.fibs;
         if (msg.trigger) latestTrigger = msg.trigger;
+        if (msg.pressure) latestPressure = msg.pressure;
+        if (msg.nexus) latestNexus = msg.nexus;
         renderChart();
         updateSignalCard();
         updateConvictionCard();
@@ -436,8 +630,33 @@
           latestTrigger = msg.trigger;
           updateSignalCard();
           updateConvictionCard();
-          updatePressureBar();
           renderTriggerMarker();
+        }
+
+        if (msg.pressure) {
+          latestPressure = msg.pressure;
+          updatePressureBar();
+        }
+
+        if (msg.nexus && msg.nexus.length) {
+          if (!latestNexus) latestNexus = [];
+          for (const pt of msg.nexus) {
+            latestNexus.push(pt);
+          }
+          // Keep bounded.
+          if (latestNexus.length > 5000) latestNexus = latestNexus.slice(-4500);
+
+          // Update nexus sub-chart incrementally.
+          if (nexusOscSeries) {
+            const last = msg.nexus[msg.nexus.length - 1];
+            nexusOscSeries.update({ time: last.time, value: last.osc });
+            nexusSigSeries.update({ time: last.time, value: last.signal });
+            nexusVfSeries.update({
+              time: last.time,
+              value: last.vf - 50,
+              color: last.vf >= 50 ? "rgba(38,198,218,0.12)" : "rgba(204,0,0,0.12)",
+            });
+          }
         }
       }
     };
@@ -457,6 +676,7 @@
 
   /* ── Boot ── */
   initChart();
+  initNexusChart();
   connect();
 
   // Periodic system status update.

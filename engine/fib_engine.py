@@ -35,6 +35,8 @@ class FibState:
     levels: list[FibLevel]
     anchor_high: float
     anchor_low: float
+    anchor_high_time: int  # unix timestamp of the bar with the high
+    anchor_low_time: int   # unix timestamp of the bar with the low
     is_bullish: bool
     fib_range: float
 
@@ -46,6 +48,8 @@ class FibState:
             ],
             "anchorHigh": self.anchor_high,
             "anchorLow": self.anchor_low,
+            "anchorHighTime": self.anchor_high_time,
+            "anchorLowTime": self.anchor_low_time,
             "isBullish": self.is_bullish,
             "fibRange": self.fib_range,
         }
@@ -116,6 +120,8 @@ def compute_fibs(bars: list[Bar]) -> FibState | None:
         period: int
         high: float
         low: float
+        high_idx: int
+        low_idx: int
         fib_range: float
         mid_levels: list[float]
 
@@ -128,11 +134,15 @@ def compute_fibs(bars: list[Bar]) -> FibState | None:
 
         high = -math.inf
         low = math.inf
+        high_idx = start_idx
+        low_idx = start_idx
         for i in range(start_idx, n):
             if highs[i] > high:
                 high = highs[i]
+                high_idx = i
             if lows[i] < low:
                 low = lows[i]
+                low_idx = i
 
         fib_range = high - low
         if fib_range <= 0 or fib_range < min_range:
@@ -141,6 +151,7 @@ def compute_fibs(bars: list[Bar]) -> FibState | None:
         mid_levels = [low + fib_range * r for r in CONFLUENCE_RATIOS]
         anchors.append(PeriodAnchor(
             period=period, high=high, low=low,
+            high_idx=high_idx, low_idx=low_idx,
             fib_range=fib_range, mid_levels=mid_levels,
         ))
 
@@ -178,10 +189,15 @@ def compute_fibs(bars: list[Bar]) -> FibState | None:
 
     levels = _build_levels(best_anchor.high, best_anchor.low, is_bullish)
 
+    high_time = int(bars[best_anchor.high_idx].ts.timestamp())
+    low_time = int(bars[best_anchor.low_idx].ts.timestamp())
+
     return FibState(
         levels=levels,
         anchor_high=best_anchor.high,
         anchor_low=best_anchor.low,
+        anchor_high_time=high_time,
+        anchor_low_time=low_time,
         is_bullish=is_bullish,
         fib_range=best_anchor.fib_range,
     )

@@ -1,0 +1,14 @@
+[setup]
+# Node.js project with Python ML tooling
+setup_commands = [
+    "npm install",
+]
+
+[lint]
+lint_command = "npm run lint"
+
+[build]
+build_command = "npm run build"
+
+[pre_commit]
+command = "./scripts/guards/warbird-agent-precheck.sh --mode manual"

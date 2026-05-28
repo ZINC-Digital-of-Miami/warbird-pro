@@ -49,9 +49,11 @@ Training/modeling uses manifest-backed source data for the active lane:
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
 
-No daily/hourly runtime ingestion tables, FRED, macro, unapproved cross-asset,
-news, options, Supabase, or mislabeled Databento/TradingView artifacts are
-admitted into the active modeling dataset.
+**Local-first data policy (2026-05-28 pivot):** FRED, macro, news, options, and
+cross-asset data are now approved for the local modeling dataset. The prior
+TradingView-era restriction is revoked — local-first removes all TV data
+constraints. All sources must be manifest-backed with honest labeling.
+Mislabeled Databento/TradingView artifacts are still prohibited.
 
 ### Active Pine Surfaces
 
@@ -151,7 +153,12 @@ for downstream EV layer. Auxiliary smoke-validation card at
 MAE-regression side card scaffolds in `scripts/duckdb_local/cards/side_models/`
 and trains AFTER Core lands.
 
-**AG config (locked):**
+**AG config (2026-05-28 pivot — UNLOCKED, TBD):**
+
+The previous full-zoo locked config is no longer active. Model selection
+(AutoGluon families, hyperparameters, time limits) is TBD after deep research
+on models, data sources, and architecture. The prior 7-family config below is
+retained as reference only — do not assume it is the active production config:
 
 - `preset='best_quality'`
 - Full zoo via explicit `hyperparameters` dict — 7 families:

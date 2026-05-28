@@ -125,7 +125,7 @@ context, or agent-facing notes pointing at an older trigger or training surface.
 ## Default Preflight
 
 - Run `git status --short` before edits.
-- For Codacy, AI-review, or rogue-agent cleanup work, run
+- For AI-review or rogue-agent cleanup work, run
   `git status --short --untracked-files=all` and include every modified,
   staged, untracked, and ignored-but-relevant file in the inventory. Do not
   avoid dirty or untracked files; classify ownership and risk before editing.
@@ -136,19 +136,16 @@ context, or agent-facing notes pointing at an older trigger or training surface.
   `python3 scripts/ag/tv_connection_doctor.py --json` (read-only). Treat
   `ready: true` as the only "safe to proceed" signal.
 
-## Codacy / AI Reviewer Guardrail
+## SonarQube (Sonic) / AI Reviewer Guardrail
 
-Codacy is an investigation and review surface for Warbird. It may annotate,
-summarize, flag risk, and suggest fixes. It is not approval to edit.
+SonarQube (Sonic) is the code quality and review surface for Warbird. It may
+annotate, summarize, flag risk, and suggest fixes. It is not approval to edit.
 
-- Codacy AI reviewer and suggested fixes are advisory only.
-- Do not use Codacy's "Fix issues" or any suggested-fix output as an automatic
-  write path.
-- When Codacy reports issues, first return a defect map: path, issue class,
+- SonarQube findings and suggested fixes are advisory only.
+- Do not use SonarQube's suggested-fix output as an automatic write path.
+- When SonarQube reports issues, first return a defect map: path, issue class,
   severity, owning surface, likely root cause, and disproof/verification step.
 - Apply fixes only after Kirk explicitly approves the exact remediation scope.
-- If Codacy MCP is unavailable but Codacy CLI works, say so plainly and use the
-  CLI only for read-only analysis. Do not invent MCP wiring.
 
 ## Repo Map
 
@@ -231,13 +228,11 @@ primary EMA21 and smoothing EMA9.
 - The active output is a Pine settings/build recommendation, not a live scoring packet.
 - Every modeling run must declare one trigger family:
   `LIVE_ANCHOR_FOOTPRINT` or `NEXUS_FOOTPRINT_DELTA`.
-- No external live feature stacking: no FRED, macro, news, options, cloud
-  joins, or unapproved cross-asset joins in the active modeling dataset. The
-  approved V9/Core cross-asset feature surface is NQ + 6E only: Pine-emitted
-  NQ/6E codes plus manifest-declared Core context for NQ relative strength and
-  6E momentum/pressure. ZN/HG/VIX/DXY may exist only as historical or dropped
-  diagnostics; they are not active ML features, Pine gates, Pine exports, or
-  cloud/server features.
+- **Local-first data policy (2026-05-28 pivot):** FRED, macro, news, options,
+  and cross-asset data are now approved sources for the local modeling dataset.
+  The prior TradingView-era restriction ("no FRED, macro, news, options") is
+  revoked — local-first removes all TV data constraints. All sources must be
+  manifest-backed with honest labeling.
 - Databento is an approved market-data supplier for training rows when the
   manifest honestly declares a Databento capture/source kind. It is not the
   Pine indicator, not a TradingView indicator CSV, and not a substitute for
@@ -270,13 +265,12 @@ primary EMA21 and smoothing EMA9.
 - Training/modeling rows must come from real manifest-backed active-lane
   sources: Warbird Pro V9 Pine/TradingView exports, approved Databento ES
   market-data training rows, or Nexus Pine/TradingView footprint evidence.
-- Do not use daily ingestion, FRED, macro, news, options, or unapproved
-  cross-asset joins as active training features. Approved V9/Core cross-asset
-  model features are limited to NQ + 6E; ZN/HG/VIX/DXY are not active feature
-  columns unless Kirk explicitly opens a new research lane.
-- If an indicator feature is not present in Pine/TradingView output or the
-  approved V9/Core local Databento deterministic feature context, it is not in
-  the active modeling dataset.
+- **Local-first data policy (2026-05-28):** FRED, macro, news, options, and
+  cross-asset data are approved for the local modeling dataset. The prior
+  restriction (no FRED/macro/news/options) was TradingView-specific and is
+  revoked. All sources must be manifest-backed with honest labeling.
+- Past testing results (15m/5m/1h baselines from 2026-04-27) are skewed and
+  should not be relied upon for model or architecture decisions.
 
 ### Pine
 

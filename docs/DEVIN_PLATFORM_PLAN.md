@@ -10,16 +10,18 @@
 
 ### What Changed
 - **Vercel/Next.js dashboard** → DECOMMISSIONED. Replaced by local Python engine + TradingView Lightweight Charts v5
-- **AutoGluon full-zoo "locked" config** → UNLOCKED. Specific model set TBD after deep research on data sources and fib indicator polishing
+- **System is NOT hinged on TradingView live indicator** — the local engine is the primary platform. TV indicator is reference, not the trigger
+- **Data restrictions LIFTED** — FRED, macro, news, options data are now allowed. Local-first removes all TradingView constraints
+- **AutoGluon full-zoo "locked" config** → UNLOCKED. Specific model set TBD after deep research
+- **Past testing results are SKEWED** — 15m/5m/1h baselines from 2026-04-27 should not be relied upon
 - **Codacy** → REMOVED. Replaced by SonarQube (Sonic) for code quality checks
 - **Cloud Supabase for training** → PROHIBITED. DuckDB for all local data/trade recording
-- **V9 indicator** → IS the trigger platform. Same fibs on TradingView AND the local LWC dashboard
+- **Dashboard hosting platform** → TBD. Using TV Lightweight Charts but the hosting/serving platform is not fully chosen
 
 ### What Stays
 - DuckDB 1.5.2 / Pandera 0.31.1 for data pipeline
-- SHAP and Monte Carlo gates as validation concepts
-- ES 15m as the stronger baseline timeframe (PF 1.143 vs 5m PF 0.91)
-- Manifest-backed data from approved sources only
+- SHAP and Monte Carlo gates as validation concepts (approach, not specific configs)
+- Manifest-backed data with honest labeling
 - Databento for live MES streaming (free tier, OHLCV-1m included in subscription)
 - All Pine protection rules (no edits without approval, budget tracking, no fibHtfSnapshot)
 
@@ -52,9 +54,9 @@
 - Tables: `trades`, `trade_tags`, `indicator_state`
 - Ready for recording entries, outcomes, pattern tags, and indicator state
 
-### Key Requirement: Use V9 Indicator's Exact Settings
+### Key Requirement: Slick Dashboard with Fib Logic
 
-Kirk's requirement is that the dashboard uses the **same fib indicator logic and settings as the live TradingView indicator**. Not a reimplementation that looks close — the exact same math.
+The local dashboard is NOT hinged on the TradingView live indicator. The fib engine logic in `engine/fib_engine.py` is a Python port that may evolve independently of the Pine indicator. The chart should be visually clean and professional using TV Lightweight Charts.
 
 **Current chart styling (from PR #11):**
 - Candle theme: up=#26C6DA, down=#FF0000, borderUp/borderDown=transparent
@@ -95,9 +97,9 @@ Kirk's requirement is that the dashboard uses the **same fib indicator logic and
 
 ### Unresolved Dashboard Questions
 
-1. **Should fibs drive actual trade entries?** (fib reclaim + MA gate → GO signal + Entry/SL/TP lines + DuckDB recording)
-2. **Should the chart use the Python fib engine or call the actual Pine indicator somehow?** Kirk asked: "are we able to use the actual indicator, minus the tv inputs, on this new chart?" — the Python port in `engine/fib_engine.py` replicates the math, but it's a reimplementation. Need to confirm this approach vs. some other mechanism.
-3. **Cron architecture** — Kirk wants "the machine to pull crons, local dashboard off Devin." What crons? Databento backfill? Trade log cleanup? Model retraining?
+1. **Hosting platform** — TV Lightweight Charts is the charting library, but what serves/hosts the dashboard? (FastAPI localhost? Electron app? Something else?)
+2. **Should fibs drive actual trade entries?** (fib reclaim + MA gate → GO signal + Entry/SL/TP lines + DuckDB recording)
+3. **Cron architecture** — Kirk wants "the machine to pull crons, local dashboard off Devin." What crons? Databento backfill? FRED data pulls? News feeds? DuckDB maintenance?
 4. **Multiple timeframes on chart** — Currently supports switching between 1m/3m/5m/15m. Is that sufficient or does Kirk want multi-TF overlay?
 
 ---
@@ -115,12 +117,15 @@ Kirk explicitly said: "we have to do deep research on the models/data used/fib i
   - Should we explore online learning / adaptive models for live trading?
 
 ### Data Research
-- Current approved sources: Pine/TV exports + Databento ES market-data
+- **Data restrictions are LIFTED** — local-first means FRED, macro, news, options, and any locally accessible data are now approved sources alongside Pine/TV exports + Databento
+- Past testing on all models was skewed — cannot rely on prior feature importance rankings
 - Questions to answer:
-  - What timeframe granularity produces the best signal? (15m is baseline, but what about 3m, 1m?)
+  - What timeframe granularity produces the best signal? (no reliable baseline exists — 15m PF 1.143 from 2026-04-27 is skewed)
   - Is the 1-year data window (2025-05 to 2026-05) sufficient?
-  - What features from the 75 ML_FEATURES are actually predictive? (SHAP should answer this)
+  - Which FRED/macro indicators have predictive value for ES/MES entries?
+  - What news/events data feeds are available and useful? (Finnhub, others?)
   - Should we add order flow / depth-of-book data from Databento?
+  - What features from the 75 ML_FEATURES are actually predictive? (needs fresh SHAP, not skewed results)
 
 ### Fib Indicator Polishing
 - V9 has 54 output-consuming calls, 10 slots remaining
@@ -222,7 +227,10 @@ This plan captures the current state. Before executing, Kirk should decide:
 | Smoothing Type | EMA |
 | Smoothing Length | 9 |
 
-## Appendix: Baseline Performance (2026-04-27 Operator Snapshots)
+## Appendix: Historical Performance (2026-04-27 Operator Snapshots)
+
+> **WARNING:** These results are SKEWED and should NOT be relied upon for decisions.
+> Past testing on all models was compromised. Fresh testing with clean data is required.
 
 | Timeframe | PnL | Profit Factor | Trades | Max DD |
 |-----------|-----|---------------|--------|--------|

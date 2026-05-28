@@ -1,50 +1,37 @@
 # Project Overview
 
-Warbird Pro is a PineScript trading indicator modeling project for ES/MES futures.
+Warbird Pro is a local-first trading indicator modeling project for ES/MES futures.
 
 ## Active Surfaces
 
-- **Main chart indicator:** `indicators/warbird-pro-v9.pine` (TradingView name: "Warbird Pro V9") — also the trigger platform
-- **Local dashboard:** Python FastAPI engine + TradingView Lightweight Charts v5 at `engine/` + `dashboard/` (PR #11, branch `devin/1779988864-warbird-command-center`)
-- **Data layer:** DuckDB for local data/trade recording; Databento live MES streaming (free tier)
-- **ML stack:** DuckDB 1.5.2 / Pandera 0.31.1 at `scripts/duckdb_local/`; model selection TBD after data research
-- **Nexus:** retained research lane only (`indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`)
+- **Pine indicator:** `indicators/warbird-pro-v9.pine` (TradingView name: "Warbird Pro V9") — reference implementation, NOT the live trigger platform
+- **Local dashboard:** TradingView Lightweight Charts v5 on localhost (hosting platform TBD). Engine at `engine/` (PR #11, branch `devin/1779988864-warbird-command-center`)
+- **Data layer:** DuckDB for local data/trade recording; Databento live MES streaming; FRED, news, macro data all available (local removes TV restrictions)
+- **ML stack:** DuckDB 1.5.2 / Pandera 0.31.1 at `scripts/duckdb_local/`; model selection TBD — NOT using full AutoGluon zoo
+- **Nexus:** retained research lane only
 
 ## Architecture
 
-**Local-first, indicator-driven.** The V9 Pine indicator provides the same fibs on both TradingView and the local Lightweight Charts dashboard. The indicator is the trigger platform — fib reclaim + MA gate → entry signals. Crons run on local machine, dashboard runs off Devin.
+**Local-first.** The system is NOT hinged on the TradingView live indicator. The local dashboard (TV Lightweight Charts on localhost) is the primary platform for charting, triggers, and trade recording. The hosting platform is not fully chosen yet. Crons run on local machine, dashboard pushes from Devin.
 
 **Key shifts (2026-05-28):**
-- AutoGluon full-zoo is **no longer locked** — specific model set TBD after deep research on data sources and fib indicator polishing
-- Vercel/Next.js dashboard is **decommissioned** — replaced by local Python engine + LWC dashboard
-- Cloud Supabase is runtime/support only; DuckDB replaces it for local trade recording
+- **NOT indicator-driven** — the local engine is the trigger platform, not TradingView
+- **FRED, news, macro, options data NOW ALLOWED** — local-first removes all TradingView data restrictions
+- AutoGluon full-zoo is **no longer locked** — specific model set TBD after deep research
+- Past testing results (15m baseline included) are **skewed and unreliable** — do not use as baseline
+- Vercel/Next.js dashboard is **decommissioned**
 - Code quality checks: SonarQube (Sonic)
 
-## Live Pine Settings (Authoritative)
+## Live Pine Settings (Reference)
 
-See `AGENTS.md` lines 181–204 for the canonical live Pine settings table. These values are authoritative and must match any dataset builder constants before every build.
-
-## Current State & Blockers (as of 2026-05-12)
-
-One completed full `--model-suite` artifact at `models/warbird_pro_v9/locked_20260512_083803/`. Not promotion-ready until:
-1. Provenance review against exact manifest/commit/run-command
-2. SHAP gate (Gate 1) — `scripts/ag/shap_v9.py`
-3. Monte Carlo gate (Gate 2) — `scripts/ag/monte_carlo_v9.py`
-
-Both gates must pass before enabling any TradingView alert.
-
-## Baseline Checkpoint (2026-04-27 operator snapshots)
-
-- 15m: +6.74% PnL, PF 1.143, 434 trades, 3.47% max DD
-- 5m: -2.55% PnL, PF 0.91, 295 trades, 3.44% max DD
-- 1h: -9.26% PnL, PF 0.929, 801 trades, 14.33% max DD
+See `AGENTS.md` lines 181–204 for the canonical Pine settings table. These values describe the TradingView indicator state but the local engine may diverge as it evolves independently.
 
 ## Deeper Context
 
 - Full architecture: `docs/MASTER_PLAN.md`
+- Platform plan: `docs/DEVIN_PLATFORM_PLAN.md`
 - Agent rules and hard constraints: `AGENTS.md`
 - Indicator contract: `docs/contracts/pine_indicator_ag_contract.md`
 - Model spec: `WARBIRD_MODEL_SPEC.md`
-- V9 ML research operating system: `docs/runbooks/v9_ml_trading_research_operating_system.md`
 
-Note: `AGENTS.md` and `CLAUDE.md` were written for Claude Code and Copilot. Project knowledge in them is accurate. Behavioral enforcement sections (completion schemas, read-order mandates, rogue-proof contracts) are legacy agent-policing and do not apply to Devin.
+Note: `AGENTS.md` and `CLAUDE.md` were written for Claude Code and Copilot. Project knowledge in them is accurate but some data restrictions (no FRED, no macro, etc.) are superseded by the local-first pivot. Behavioral enforcement sections are legacy agent-policing and do not apply to Devin.

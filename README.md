@@ -81,10 +81,12 @@ The initialization record is
   - `scripts/ag/tv_auto_tune.py`
   - `scripts/ag/tune_strategy_params.py`
 
-## Out Of Scope For Active Training
+## Data Policy (Local-First — 2026-05-28)
 
-- cloud daily/hourly runtime ingestion as a training source
-- FRED, macro, news, options, and cross-asset feature stacking
+FRED, macro, news, options, and cross-asset data are approved for the local
+modeling dataset. All sources must be manifest-backed with honest labeling.
+
+**Still out of scope:**
 - local legacy warehouse rows (`ag_training`)
 - server-side model packets that score live alerts
 - Supabase as a training database

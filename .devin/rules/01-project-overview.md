@@ -18,7 +18,7 @@ Warbird Pro is a PineScript trading indicator modeling project for ES/MES future
 - AutoGluon full-zoo is **no longer locked** — specific model set TBD after deep research on data sources and fib indicator polishing
 - Vercel/Next.js dashboard is **decommissioned** — replaced by local Python engine + LWC dashboard
 - Cloud Supabase is runtime/support only; DuckDB replaces it for local trade recording
-- Code quality checks: SonarQube (Sonic) replacing Codacy
+- Code quality checks: SonarQube (Sonic)
 
 ## Live Pine Settings (Authoritative)
 

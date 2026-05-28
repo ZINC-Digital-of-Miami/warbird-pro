@@ -28,7 +28,7 @@ pytest tests/ag/test_v9_core_training_targets.py -q
 
 ## Code Quality Checks
 
-- **SonarQube (Sonic)** — installed in GitHub as the primary code quality gate. Replacing Codacy.
+- **SonarQube (Sonic)** — installed in GitHub as the primary code quality gate.
 - Review SonarQube findings on PRs alongside lint/build results.
 
 ## Docs-Only Work

@@ -62,17 +62,16 @@ PRESSURE_DOMINANCE_PCT: float = 55.0
 FINNHUB_API_KEY: str = os.environ.get("FINNHUB_API_KEY", "")
 NEWS_POLL_INTERVAL_SEC: int = 30
 
-# ── AI (OpenRouter preferred — cheaper, multi-model access) ───────────────────
+# ── AI (OpenRouter only — no OpenAI in this project) ─────────────────────────
 OPENROUTER_API_KEY: str = os.environ.get("OPENROUTER_API_KEY", "")
-OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
 AI_MODEL: str = os.environ.get("WARBIRD_AI_MODEL", "mistralai/ministral-3b-2512")
 AI_BASE_URL: str = os.environ.get(
     "WARBIRD_AI_BASE_URL",
-    "https://openrouter.ai/api/v1" if OPENROUTER_API_KEY else "https://api.openai.com/v1",
+    "https://openrouter.ai/api/v1",
 )
 
 def get_ai_key() -> str:
-    return OPENROUTER_API_KEY or OPENAI_API_KEY or ""
+    return OPENROUTER_API_KEY or ""
 
 # ── Trade Log ─────────────────────────────────────────────────────────────────
 TRADE_LOG_DB: str = os.environ.get(

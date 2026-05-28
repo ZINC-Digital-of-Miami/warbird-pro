@@ -16,6 +16,7 @@
   let latestFibs = null;
   let latestTrigger = null;
   let fibLines = [];     // lightweight-charts price line objects
+  let markersPrimitive = null; // LWC v5 SeriesMarkers primitive
 
   /* ── Chart Init ── */
   function initChart() {
@@ -140,10 +141,13 @@
     }
   }
 
-  /* ── Entry Markers ── */
+  /* ── Entry Markers (LWC v5 SeriesMarkers primitive) ── */
   function renderTriggerMarker() {
+    if (markersPrimitive) {
+      markersPrimitive.setMarkers([]);
+    }
+
     if (!latestTrigger || latestTrigger.decision === "NO_GO") {
-      candleSeries.setMarkers([]);
       return;
     }
     const bars = barsByTf[activeTf] || [];
@@ -151,13 +155,19 @@
     const lastBar = bars[bars.length - 1];
 
     const isLong = latestTrigger.direction === "LONG";
-    candleSeries.setMarkers([{
+    const markers = [{
       time: lastBar.time,
       position: isLong ? "belowBar" : "aboveBar",
       color: latestTrigger.decision === "GO" ? "#00E676" : "#FF9800",
       shape: isLong ? "arrowUp" : "arrowDown",
       text: `${latestTrigger.direction} ${latestTrigger.score.toFixed(2)}`,
-    }]);
+    }];
+
+    if (!markersPrimitive) {
+      markersPrimitive = LightweightCharts.createSeriesMarkers(candleSeries, markers);
+    } else {
+      markersPrimitive.setMarkers(markers);
+    }
   }
 
   /* ── Update UI Elements ── */

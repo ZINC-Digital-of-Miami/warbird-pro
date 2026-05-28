@@ -193,7 +193,7 @@ async def websocket_endpoint(ws: WebSocket):
             "type": "snapshot",
             "bars": {},
         }
-        for tf in ["1m", "5m", "15m", "1h", "4h"]:
+        for tf in ["1m", "3m", "5m", "15m", "1h", "4h"]:
             bars = store.get_bars(tf)
             snapshot["bars"][tf] = [b.to_dict() for b in bars[-500:]]
 

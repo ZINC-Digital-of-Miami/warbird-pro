@@ -9,24 +9,23 @@
   // Bar period in seconds for each TF (used for fib line extension).
   const TF_SECONDS = { "1m": 60, "3m": 180, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400 };
 
-  // Fib line styles — V9 Pine defaults with Kirk's live V10 overrides.
-  // Pine constants: COLOR_ANCHOR=#FFFFFF, COLOR_RETRACEMENT=#808080, COLOR_TARGET=#0097A7
-  // Kirk's V10 live overrides: .382/.618 accent = RED (#cc0000)
+  // Fib line styles — Kirk's live V10 TradingView settings (from screenshot).
+  // .382/.618 = RED per Kirk's explicit request.
   const FIB_STYLES = {
-    "0":      { color: "#FFFFFF",   width: 2, lineStyle: 0, dash: [] },           // Zero — anchor white solid
-    "-.236":  { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // Neg .236 stop
-    ".236":   { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // retracement gray solid
-    ".382":   { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // accent (V9 default white, Kirk may override RED)
-    "Pivot":  { color: "#FFFFFF",   width: 1, lineStyle: 2, dash: [5, 5] },      // .500 pivot — white dashed
-    ".618":   { color: "#FFFFFF",   width: 1, lineStyle: 0, dash: [] },           // accent (V9 default white, Kirk may override RED)
-    ".786":   { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // retracement gray solid
-    "1":      { color: "#FFFFFF",   width: 2, lineStyle: 0, dash: [] },           // 1.000 — anchor white solid
-    "TP1":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 1.236 target teal
-    "1.382":  { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // waypoint gray
-    "1.5":    { color: "#808080",   width: 1, lineStyle: 0, dash: [] },           // waypoint gray
-    "TP2":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 1.618 target teal
-    "TP3":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 2.000 target teal
-    "TP4":    { color: "#0097A7",   width: 1, lineStyle: 0, dash: [] },           // 2.236 target teal
+    "0":      { color: "#FFFFFF",   width: 2, lineStyle: 0 },  // Zero — anchor white solid
+    "-.236":  { color: "#FFFFFF",   width: 1, lineStyle: 0 },  // Neg .236 / SL
+    ".236":   { color: "#808080",   width: 1, lineStyle: 0 },  // retracement gray solid
+    ".382":   { color: "#cc0000",   width: 2, lineStyle: 0 },  // RED solid (Kirk's V10)
+    "Pivot":  { color: "#FFFFFF",   width: 1, lineStyle: 2 },  // .500 pivot — white dashed
+    ".618":   { color: "#cc0000",   width: 2, lineStyle: 0 },  // RED solid (Kirk's V10)
+    ".786":   { color: "#808080",   width: 1, lineStyle: 0 },  // retracement gray solid
+    "1":      { color: "#FFFFFF",   width: 2, lineStyle: 1 },  // 1.000 — white dotted (Kirk's V10)
+    "TP1":    { color: "#0097A7",   width: 1, lineStyle: 0 },  // 1.236 target teal
+    "1.382":  { color: "#808080",   width: 1, lineStyle: 0 },  // waypoint gray
+    "1.5":    { color: "#808080",   width: 1, lineStyle: 0 },  // waypoint gray
+    "TP2":    { color: "#0097A7",   width: 1, lineStyle: 0 },  // 1.618 target teal
+    "TP3":    { color: "#0097A7",   width: 1, lineStyle: 0 },  // 2.000 target teal
+    "TP4":    { color: "#0097A7",   width: 1, lineStyle: 0 },  // 2.236 target teal
   };
 
   // Golden zone fill colors (.382–.618)

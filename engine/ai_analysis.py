@@ -130,7 +130,9 @@ async def get_ai_analysis(
         if not choices:
             logger.warning("OpenRouter returned no choices: %s", json.dumps(data)[:300])
             return {"text": "AI returned empty response", "model": AI_MODEL, "cached": False}
-        text = choices[0].get("message", {}).get("content", "").strip()
+        msg_obj = choices[0].get("message", {})
+        text = msg_obj.get("content") or msg_obj.get("reasoning") or ""
+        text = text.strip()
         model_used = data.get("model", AI_MODEL)
 
         _last_call_ts = now

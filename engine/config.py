@@ -65,7 +65,7 @@ NEWS_POLL_INTERVAL_SEC: int = 30
 # ── AI (OpenRouter preferred — cheaper, multi-model access) ───────────────────
 OPENROUTER_API_KEY: str = os.environ.get("OPENROUTER_API_KEY", "")
 OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
-AI_MODEL: str = os.environ.get("WARBIRD_AI_MODEL", "mistralai/mistral-medium-3-5")
+AI_MODEL: str = os.environ.get("WARBIRD_AI_MODEL", "mistralai/ministral-3b-2512")
 AI_BASE_URL: str = os.environ.get(
     "WARBIRD_AI_BASE_URL",
     "https://openrouter.ai/api/v1" if OPENROUTER_API_KEY else "https://api.openai.com/v1",

@@ -75,29 +75,33 @@ the review.
 
 ## Active Plan
 
-The active architecture is **Warbird Indicator-Only DuckDB Local Modeling Plan v6**,
-narrowed on 2026-04-30 to one main chart indicator plus the Nexus
-support/research lane. V9 Core uses the DuckDB / Pandera / AutoGluon file
-pipeline at `scripts/duckdb_local/`. Nexus and old Warbird tuning work remain
-separate retained surfaces; do not route current V9 Core work through them.
+**Local-first pivot (2026-05-28):** The architecture has shifted from pure
+PineScript indicator modeling to a local-first platform. The system is NOT
+hinged on the TradingView live indicator. The local dashboard (TV Lightweight
+Charts on localhost) is the primary platform for charting, triggers, and trade
+recording. The Pine indicator at `indicators/warbird-pro-v9.pine` remains the
+reference implementation and is still protected by all Pine rules, but it is
+not the live trigger platform.
 
-The goal is pure PineScript trading-indicator modeling:
+V9 Core uses the DuckDB / Pandera file pipeline at `scripts/duckdb_local/`.
+Model selection (AutoGluon families, hyperparameters) is TBD pending deep
+research — the prior full-zoo locked config is no longer assumed active.
+Nexus and old Warbird tuning work remain separate retained surfaces.
 
-- perfect the TradingView indicator settings
-- improve the indicator build and state machine
-- use the local DuckDB / Pandera / AutoGluon stack as the offline analysis layer
-  over approved Pine + Databento source rows
-- promote settings/build changes back into Pine after approval
-- keep `indicators/warbird-pro-v9.pine` as the only active main chart
-  indicator, named **Warbird Pro V9** in TradingView
-- keep `scripts/ag/train_v9_locked.py` as the production V9 trainer; entry
-  classifier first, optional `--model-suite` for TP/SL touch + MFE/MAE side
-  models
+Active goals:
+
+- build and refine the local dashboard engine (TV Lightweight Charts + Python)
+- use DuckDB for local data and trade recording
+- use the local DuckDB / Pandera stack as the offline analysis layer
+  over manifest-backed source rows (Pine/TV exports, Databento, FRED, macro,
+  news — all approved under local-first data policy)
+- keep `indicators/warbird-pro-v9.pine` as the reference Pine indicator,
+  named **Warbird Pro V9** in TradingView
 - keep the Nexus Pine files as the only active support/research indicator lane
 - retire and remove all other Pine indicator/strategy variants from the active
   `indicators/` surface
 
-The old warehouse/FRED/macro `ag_training` plan is superseded and reference-only.
+The old warehouse `ag_training` plan is superseded and reference-only.
 
 ### Nexus HUD V3 Operating Note (2026-05-16)
 

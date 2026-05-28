@@ -5,13 +5,16 @@
 
 ## Summary
 
-Warbird training is a pure PineScript indicator modeling program.
+**Local-first pivot (2026-05-28):** Warbird has shifted from pure PineScript
+indicator modeling to a local-first platform. The local dashboard (TV
+Lightweight Charts on localhost) is the primary platform for charting,
+triggers, and trade recording. The Pine indicator remains the reference
+implementation but is NOT the live trigger platform.
 
-The active goal is to perfect the TradingView indicator itself: settings, state
-machine, entries, exits, filters, hidden exports, and visual/operator build.
-The local DuckDB / Pandera / AutoGluon stack at `scripts/duckdb_local/` is used
-offline to model and rank PineScript indicator behavior for V9 Core. It does
-not create a separate data-stack decision engine.
+The local DuckDB / Pandera stack at `scripts/duckdb_local/` is used for
+offline modeling, data recording, and analysis. Model selection (AutoGluon
+families, hyperparameters) is TBD pending deep research — the prior full-zoo
+locked config is no longer assumed active.
 
 Single-surface update (2026-05-02): the only active main chart indicator is
 **Warbird Pro V9** at `indicators/warbird-pro-v9.pine`. Nexus remains as the only retained
@@ -29,8 +32,9 @@ exports or Databento market data, ignores MES/NQ/MNQ rows, excludes `-.236` and
 other negative fib extensions as stop candidates, keeps `-.236` only as
 optional context/export data, and freezes fib anchors, fib visuals, and EMA/MA
 setup until a champion is approved for Pine promotion. The production trainer
-is `scripts/ag/train_v9_locked.py` (AutoGluon full-zoo, calibrated log_loss,
-chronological IS/VAL/OOS with embargo).
+is `scripts/ag/train_v9_locked.py` (model config TBD — prior AutoGluon
+full-zoo is reference only; calibrated log_loss, chronological IS/VAL/OOS
+with embargo).
 
 Data-layer + sequencing update (locked 2026-05-11):
 

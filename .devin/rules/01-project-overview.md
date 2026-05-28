@@ -20,11 +20,27 @@ V9 Core uses a file-based pipeline (DuckDB/Pandera/AutoGluon) — no Postgres de
 
 See `AGENTS.md` lines 181–204 for the canonical live Pine settings table. These values are authoritative and must match any dataset builder constants before every build.
 
+## Current State & Blockers (as of 2026-05-12)
+
+One completed full `--model-suite` artifact at `models/warbird_pro_v9/locked_20260512_083803/`. Not promotion-ready until:
+1. Provenance review against exact manifest/commit/run-command
+2. SHAP gate (Gate 1) — `scripts/ag/shap_v9.py`
+3. Monte Carlo gate (Gate 2) — `scripts/ag/monte_carlo_v9.py`
+
+Both gates must pass before enabling any TradingView alert.
+
+## Baseline Checkpoint (2026-04-27 operator snapshots)
+
+- 15m: +6.74% PnL, PF 1.143, 434 trades, 3.47% max DD
+- 5m: -2.55% PnL, PF 0.91, 295 trades, 3.44% max DD
+- 1h: -9.26% PnL, PF 0.929, 801 trades, 14.33% max DD
+
 ## Deeper Context
 
 - Full architecture: `docs/MASTER_PLAN.md`
 - Agent rules and hard constraints: `AGENTS.md`
 - Indicator contract: `docs/contracts/pine_indicator_ag_contract.md`
 - Model spec: `WARBIRD_MODEL_SPEC.md`
+- V9 ML research operating system: `docs/runbooks/v9_ml_trading_research_operating_system.md`
 
 Note: `AGENTS.md` and `CLAUDE.md` were written for Claude Code and Copilot. Project knowledge in them is accurate. Behavioral enforcement sections (completion schemas, read-order mandates, rogue-proof contracts) are legacy agent-policing and do not apply to Devin.

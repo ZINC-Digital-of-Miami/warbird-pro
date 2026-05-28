@@ -34,6 +34,7 @@
   let latestTrigger = null;
   let latestPressure = null;
   let latestNexus = null; // full nexus series [{time, osc, signal, vf}]
+  let latestAi = null; // AI analysis text
   let fibSeriesList = []; // LWC LineSeries objects for bounded fib lines
   let markersPrimitive = null; // LWC v5 SeriesMarkers primitive
 
@@ -583,12 +584,14 @@
         if (msg.trigger) latestTrigger = msg.trigger;
         if (msg.pressure) latestPressure = msg.pressure;
         if (msg.nexus) latestNexus = msg.nexus;
+        if (msg.ai) { latestAi = msg.ai; updateAiCard(); }
         renderChart();
         updateSignalCard();
         updateConvictionCard();
         updatePressureBar();
         updateVolumeCard();
         updateFibCard();
+        updateAiCard();
         updateSystemCard();
         return;
       }
@@ -638,6 +641,11 @@
           updatePressureBar();
         }
 
+        if (msg.pressure) {
+          latestPressure = msg.pressure;
+          updatePressureBar();
+        }
+
         if (msg.nexus && msg.nexus.length) {
           if (!latestNexus) latestNexus = [];
           for (const pt of msg.nexus) {
@@ -658,8 +666,38 @@
             });
           }
         }
+      if (msg.type === "ai") {
+        latestAi = msg.analysis;
+        updateAiCard();
       }
     };
+  }
+
+  function updateAiCard() {
+    const textEl = document.getElementById("ai-text");
+    const metaEl = document.getElementById("ai-meta");
+    const badgeEl = document.getElementById("ai-badge");
+    if (!textEl) return;
+
+    if (!latestAi || !latestAi.text) {
+      textEl.textContent = "Waiting for analysis…";
+      textEl.style.color = "rgba(255,255,255,0.2)";
+      return;
+    }
+
+    textEl.textContent = latestAi.text;
+    textEl.style.color = "rgba(255,255,255,0.7)";
+
+    if (metaEl && latestAi.model) {
+      const cached = latestAi.cached ? " (cached)" : "";
+      metaEl.textContent = latestAi.model + cached;
+    }
+
+    if (badgeEl && latestAi.cached) {
+      badgeEl.style.opacity = "0.5";
+    } else if (badgeEl) {
+      badgeEl.style.opacity = "1";
+    }
   }
 
   /* ── TF Buttons ── */

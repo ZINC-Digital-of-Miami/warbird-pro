@@ -25,6 +25,7 @@ from engine.bar_store import Bar, BarStore
 from engine.config import HOST, PORT
 from engine.databento_feed import start_feed
 from engine.fib_engine import FibState, compute_fibs
+from engine.ai_analysis import get_ai_analysis
 from engine.indicators import PressureResult, compute_pressure, nexus_series
 from engine.trigger_engine import TriggerResult, evaluate_trigger
 
@@ -40,6 +41,8 @@ _latest_fibs: FibState | None = None
 _latest_trigger: TriggerResult | None = None
 _latest_pressure: PressureResult | None = None
 _latest_nexus: list[dict] | None = None
+_latest_ai: dict[str, Any] | None = None
+_ai_bar_counter: int = 0
 
 
 # ── Bar callback — push to all connected WebSocket clients ────────────────────
@@ -90,9 +93,39 @@ def _on_bar(tf: str, bar: Bar) -> None:
             if _latest_nexus:
                 msg["nexus"] = _latest_nexus[-1:]  # send only latest point
 
+    # Run AI analysis every 5 bars (5 minutes on 1m TF) to avoid excessive API calls.
+    if tf == "1m":
+        global _ai_bar_counter
+        _ai_bar_counter += 1
+        if _ai_bar_counter >= 5:
+            _ai_bar_counter = 0
+            _run_ai_analysis(bar)
+
     # Broadcast to WebSocket clients.
     payload = json.dumps(msg)
     _broadcast(payload)
+
+
+def _run_ai_analysis(bar: Bar) -> None:
+    """Kick off async AI analysis and broadcast result."""
+    global _latest_ai
+
+    last_bar_dict = bar.to_dict()
+    fibs_dict = _latest_fibs.to_dict() if _latest_fibs else None
+    trigger_dict = _latest_trigger.to_dict() if _latest_trigger else None
+    pressure_dict = _latest_pressure.to_dict() if _latest_pressure else None
+
+    async def _do_ai():
+        global _latest_ai
+        result = await get_ai_analysis(last_bar_dict, fibs_dict, trigger_dict, pressure_dict)
+        _latest_ai = result
+        ai_msg = json.dumps({"type": "ai", "analysis": result})
+        _broadcast(ai_msg)
+
+    try:
+        asyncio.run_coroutine_threadsafe(_do_ai(), _loop)
+    except Exception as e:
+        logger.warning("AI analysis dispatch failed: %s", e)
 
 
 def _compute_nexus_for_bars(bars: list[Bar]) -> list[dict]:
@@ -203,6 +236,21 @@ async def get_trigger():
     return {"decision": "NO_GO", "score": 0}
 
 
+@app.get("/api/ai")
+async def get_ai():
+    """Return latest AI analysis or trigger a fresh one."""
+    if _latest_ai:
+        return _latest_ai
+    # Compute on demand.
+    bars_1m = store.get_bars("1m")
+    last_bar = bars_1m[-1].to_dict() if bars_1m else None
+    fibs_dict = _latest_fibs.to_dict() if _latest_fibs else None
+    trigger_dict = _latest_trigger.to_dict() if _latest_trigger else None
+    pressure_dict = _latest_pressure.to_dict() if _latest_pressure else None
+    result = await get_ai_analysis(last_bar, fibs_dict, trigger_dict, pressure_dict, force=True)
+    return result
+
+
 @app.get("/api/status")
 async def get_status():
     """Health check with feed status."""
@@ -253,6 +301,8 @@ async def websocket_endpoint(ws: WebSocket):
             snapshot["pressure"] = _latest_pressure.to_dict()
         if _latest_nexus:
             snapshot["nexus"] = _latest_nexus
+        if _latest_ai:
+            snapshot["ai"] = _latest_ai
 
         await ws.send_text(json.dumps(snapshot))
 

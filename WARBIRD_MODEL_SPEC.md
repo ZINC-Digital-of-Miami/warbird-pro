@@ -178,7 +178,7 @@ Allowed tuning scope while locked:
 
 ## Feature Scope
 
-Feature scope is indicator-only.
+Feature scope includes indicator-emitted and manifest-backed local data sources.
 
 Current V9 Core AG feature policy: train on non-fib/non-color indicator
 settings and MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence emitted by
@@ -198,15 +198,15 @@ Admitted feature families:
 - OHLCV columns included in the TradingView export
 - deterministic columns computed only from approved source rows
 
-Not admitted:
+Approved under local-first data policy (2026-05-28):
 
-- server-side macro/fundamental context
-- FRED/economic calendar fields
-- unapproved Databento cross-asset context. Approved local Databento
-  model-context side features must be manifest-declared, limited to the active
-  contract set, and never represented as Pine gates or Pine exports. Pine-native
-  NQ + 6E values emitted by the active indicator are part of the indicator
-  behavior
+- FRED, macro, news, options, and cross-asset data when manifest-backed
+- Databento model-context side features when manifest-declared and limited to
+  the active contract set (never represented as Pine gates or Pine exports).
+  Pine-native NQ + 6E values emitted by the active indicator are part of the
+  indicator behavior
+
+Not admitted:
 - candlestick pattern columns unless a future research lane explicitly reopens
   them; they are not in the current active Pine export contract
 - Supabase/cloud serving tables

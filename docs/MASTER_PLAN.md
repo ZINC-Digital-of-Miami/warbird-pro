@@ -420,7 +420,8 @@ budgets must be repriced before any Nexus edit.
 ## Verification Locks
 
 - No mock data.
-- No external feature stacking.
+- No non-manifest-backed external feature stacking. FRED, macro, news, options,
+  and cross-asset data are approved under local-first policy when manifest-backed.
 - No daily-ingestion training dependency.
 - No Pine edits without explicit approval.
 - Canonical fib and trade-state semantics are locked in

@@ -27,13 +27,15 @@ ready for reuse by another agent.
 
 ## Training Truth
 
-Allowed training inputs are only manifest-backed active-lane sources:
+Allowed training inputs are manifest-backed sources:
 
 - TradingView indicator CSV exports for non-Nexus lanes
 - Databento ES market-data training rows (15m and 5m) when declared as Databento
   source data in the manifest
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
+- FRED, macro, news, options, and cross-asset data (approved under local-first
+  data policy, 2026-05-28)
 
 ## Data Layer (locked 2026-05-11)
 

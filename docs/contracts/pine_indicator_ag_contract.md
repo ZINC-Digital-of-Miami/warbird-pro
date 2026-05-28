@@ -47,7 +47,7 @@ explicitly reopened strategy-harness sessions.
 
 ## Source Of Truth
 
-Training rows may come only from manifest-backed active-lane sources:
+Training rows may come from manifest-backed sources:
 
 - TradingView indicator CSV exports for non-Nexus lanes
 - Databento ES market-data training rows (5m/15m) when the manifest declares a
@@ -55,10 +55,10 @@ Training rows may come only from manifest-backed active-lane sources:
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for
   `NEXUS_FOOTPRINT_DELTA`
 - deterministic columns derived from approved source rows
+- FRED, macro, news, options, and cross-asset data (approved under local-first
+  data policy, 2026-05-28)
 
-**Local-first data policy (2026-05-28):** FRED, macro, news, options, and
-cross-asset data are now approved for the local modeling dataset. All sources
-must be manifest-backed with honest labeling.
+All sources must be manifest-backed with honest labeling.
 
 `warbird_pro_v9` may load ES exports across 5m/15m from the same active Warbird
 Pro V9 training lane. MES/NQ/MNQ rows are ignored. No undeclared external
@@ -177,7 +177,7 @@ The active modeling dataset must not join:
 - any non-manifest-backed or mislabeled data source
 
 **Approved under local-first data policy (2026-05-28):** FRED, macro, news,
-options, economic calendar, and cross-asset data are now allowed for the local
+options, and cross-asset data are now allowed for the local
 modeling dataset. All sources must be manifest-backed with honest labeling.
 
 ## Required Export Manifest

@@ -34,4 +34,4 @@ See `AGENTS.md` lines 181–204 for the canonical Pine settings table. These val
 - Indicator contract: `docs/contracts/pine_indicator_ag_contract.md`
 - Model spec: `WARBIRD_MODEL_SPEC.md`
 
-Note: `AGENTS.md` and `CLAUDE.md` were written for Claude Code and Copilot. Project knowledge in them is accurate but some data restrictions (no FRED, no macro, etc.) are superseded by the local-first pivot. Behavioral enforcement sections are legacy agent-policing and do not apply to Devin.
+Note: `AGENTS.md` and `CLAUDE.md` were written for Claude Code and Copilot. Project knowledge in them is accurate and has been updated for the local-first pivot. Behavioral enforcement sections (completion schemas, read-order mandates, rogue-proof contracts) are Claude/Copilot-specific agent-policing and do not apply to Devin.

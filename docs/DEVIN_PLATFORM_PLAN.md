@@ -210,7 +210,7 @@ This plan captures the current state. Before executing, Kirk should decide:
 
 ---
 
-## Appendix: Pine Settings (Authoritative — 2026-05-13)
+## Appendix: Pine Settings (Authoritative — 2026-05-14)
 
 | Input | Live Value |
 |-------|-----------|

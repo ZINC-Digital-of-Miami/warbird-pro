@@ -56,13 +56,11 @@ Data-layer + sequencing update (locked 2026-05-11):
 - The optimization target is indicator quality: settings, thresholds, module
   toggles, stop/target policy, signal frequency, profit factor, drawdown,
   stability, direction balance, and operator usability.
-- External feature stacking is out of scope for live scoring/gating: no FRED,
-  macro, news, options, Supabase, or mislabeled Databento/TradingView artifacts
-  are admitted into the active modeling dataset. V9/Core may compute deterministic
-  cross-asset context from approved local Databento futures rows when the manifest
-  declares the source honestly: NQ + 6E remain the agreement-count inputs; 6E is
-  the USD-pressure proxy; ZN rate-pressure, HG/copper, and NQ 24h tech-beta
-  features are model context only, not Pine hard gates or cloud/server features.
+- **Local-first data policy (2026-05-28 pivot):** FRED, macro, news, options,
+  and cross-asset data are approved for the local modeling dataset. The prior
+  TradingView-era restriction is revoked — local-first removes all TV data
+  constraints. All sources must be manifest-backed with honest labeling.
+  Mislabeled Databento/TradingView artifacts remain prohibited.
 - Cloud Supabase is runtime/support only. It is not a model-training mirror and
   does not receive raw trials, raw labels, or full research datasets.
 
@@ -174,7 +172,7 @@ The following are explicitly retired from the active plan:
 
 - building a daily-ingestion training warehouse
 - using local legacy warehouse training tables (`ag_training`) as the model source
-- training on FRED, macro, news, options, or unapproved external cross-asset features
+- training on mislabeled or non-manifest-backed data sources
 - reconstructing Pine behavior from Python OHLCV as the canonical label path
 - recording Databento market-data rows as `TRADINGVIEW_INDICATOR_CSV` or as a
   Pine indicator source
@@ -279,7 +277,7 @@ Permitted modeling questions:
 
 Prohibited modeling questions:
 
-- Which macro/FRED/external cross-asset feature should gate trades?
+- Which non-manifest-backed external feature should gate trades?
 - Which server-side model should score live alerts?
 - Which warehouse feature should be joined into the indicator decision?
 - Which external/server-side cross-asset feature should override V9 entries?

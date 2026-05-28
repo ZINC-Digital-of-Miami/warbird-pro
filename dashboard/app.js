@@ -788,11 +788,6 @@
           updatePressureBar();
         }
 
-        if (msg.pressure) {
-          latestPressure = msg.pressure;
-          updatePressureBar();
-        }
-
         if (msg.nexus && msg.nexus.length) {
           if (!latestNexus) latestNexus = [];
           for (const pt of msg.nexus) {

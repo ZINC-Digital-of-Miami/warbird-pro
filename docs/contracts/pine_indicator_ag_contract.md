@@ -5,8 +5,13 @@
 
 ## Purpose
 
-This contract defines the active Warbird training/modeling surface: pure
-PineScript indicator behavior on TradingView.
+This contract defines the active Warbird training/modeling surface.
+
+**Local-first pivot (2026-05-28):** The architecture has shifted to a
+local-first platform. The Pine indicator remains the reference implementation
+but is not the live trigger platform. FRED, macro, news, options, and
+cross-asset data are now approved under the local-first data policy (all
+sources must be manifest-backed with honest labeling).
 
 ## Iteration Policy
 
@@ -51,7 +56,9 @@ Training rows may come only from manifest-backed active-lane sources:
   `NEXUS_FOOTPRINT_DELTA`
 - deterministic columns derived from approved source rows
 
-No external feature stack is admitted.
+**Local-first data policy (2026-05-28):** FRED, macro, news, options, and
+cross-asset data are now approved for the local modeling dataset. All sources
+must be manifest-backed with honest labeling.
 
 `warbird_pro_v9` may load ES exports across 5m/15m from the same active Warbird
 Pro V9 training lane. MES/NQ/MNQ rows are ignored. No undeclared external
@@ -160,11 +167,6 @@ mirrored by Core ETL as `knob_htf_1h_lookback`.
 
 The active modeling dataset must not join:
 
-- FRED or macro data
-- economic calendar data
-- news/options data
-- undeclared external cross-asset futures data outside active Pine exports or
-  approved manifest-declared Databento model context
 - Supabase cloud tables
 - Databento rows mislabeled as TradingView indicator exports or Pine indicator
   sources
@@ -172,6 +174,11 @@ The active modeling dataset must not join:
 - Python reconstructed fib interactions
 - Risk Mode fields or candlestick pattern columns; those are not active V9 Pine
   execution/export surfaces
+- any non-manifest-backed or mislabeled data source
+
+**Approved under local-first data policy (2026-05-28):** FRED, macro, news,
+options, economic calendar, and cross-asset data are now allowed for the local
+modeling dataset. All sources must be manifest-backed with honest labeling.
 
 ## Required Export Manifest
 
@@ -210,7 +217,7 @@ Invalid recommendations:
 
 - server-side feature gates
 - cloud scoring packets
-- macro/FRED gates
+- macro/FRED gates used as Pine live gates (approved for local modeling only)
 - daily-ingestion dependencies
 - invisible data joins not present in Pine output
 - V9 promotion based on NQ/MNQ, negative-fib stop candidates, or Pine edits made

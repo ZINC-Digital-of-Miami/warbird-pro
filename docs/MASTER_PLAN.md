@@ -1,6 +1,6 @@
-# Warbird Indicator-Only DuckDB Local Modeling Plan v6
+# Warbird Local-First DuckDB Platform Plan v7
 
-**Date:** 2026-05-05 (V9 Core data layer locked to DuckDB local stack 2026-05-12)
+**Date:** 2026-05-05 (V9 Core data layer locked to DuckDB local stack 2026-05-12; local-first pivot 2026-05-28)
 **Status:** Active architecture plan
 
 ## Summary

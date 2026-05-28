@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-22
 **Status:** Active Documentation Authority
-**Active Plan:** Warbird Indicator-Only DuckDB Local Modeling Plan v6
+**Active Plan:** Warbird Local-First DuckDB Platform Plan v7 (2026-05-28 pivot)
 
 This file is the single entrypoint for Warbird architecture, contract, and operations documentation.
 
@@ -18,11 +18,11 @@ If documentation conflicts, apply this precedence:
 
 ## Iteration Rule
 
-The indicator-only plan is active, but tuning and training are ongoing. Treat
-current trigger families, settings, thresholds, and search spaces as the latest
-documented evidence snapshot. They may change after new TradingView exports and
-DuckDB/Core training evidence. Any accepted change must update this indexed
-authority set in the same commit.
+The local-first platform plan is active, but tuning, data research, and model
+selection are ongoing. Treat current trigger families, settings, thresholds,
+and search spaces as the latest documented evidence snapshot. They may change
+after new exports, DuckDB/Core training evidence, and data research. Any
+accepted change must update this indexed authority set in the same commit.
 
 Current checkpoint lock (2026-05-02): **Warbird Pro V9**
 (`indicators/warbird-pro-v9.pine`) is the only active main chart indicator,
@@ -59,7 +59,7 @@ overrides stale push wording in older `docs/plans/` artifacts.
 
 ## Read Order
 
-1. `docs/MASTER_PLAN.md` — Warbird Indicator-Only DuckDB Local Modeling Plan v6
+1. `docs/MASTER_PLAN.md` — Warbird Local-First DuckDB Platform Plan v7
 2. `docs/contracts/README.md`
 3. `docs/contracts/pine_indicator_ag_contract.md`
 4. `docs/runbooks/README.md`
@@ -77,7 +77,7 @@ overrides stale push wording in older `docs/plans/` artifacts.
 ## Authority Split
 
 - `docs/MASTER_PLAN.md`
-  - the only planning authority — Warbird Indicator-Only DuckDB Local Modeling Plan v6
+  - the only planning authority — Warbird Local-First DuckDB Platform Plan v7
 - `docs/contracts/`
   - the only interface and payload authority
 - `docs/contracts/pine_indicator_ag_contract.md`
@@ -105,7 +105,7 @@ overrides stale push wording in older `docs/plans/` artifacts.
 - `CLAUDE.md`
   - current operational truth and runtime status
 - `WARBIRD_MODEL_SPEC.md`
-  - subordinate indicator-only model contract and settings artifact semantics
+  - subordinate local-first model contract and settings artifact semantics
 
 ## Canonical Split
 

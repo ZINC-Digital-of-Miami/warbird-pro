@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warbird Pro — Trading Command Center</title>
+<script src="https://unpkg.com/lightweight-charts@5.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<!-- ═══ TOP BAR ═══ -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">Warbird Pro</span>
+    <span class="topbar-symbol">ES · MES</span>
+    <span class="topbar-price" id="top-price">—</span>
+    <span class="topbar-change" id="top-change">—</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-tf" id="tf-buttons">
+      <button data-tf="1m">1m</button>
+      <button data-tf="3m">3m</button>
+      <button data-tf="5m" class="active">5m</button>
+      <button data-tf="15m">15m</button>
+    </div>
+    <span class="topbar-status">
+      <span class="topbar-dot" id="status-dot"></span>
+      <span id="status-text">CONNECTING…</span>
+    </span>
+  </div>
+</div>
+
+<!-- ═══ MAIN GRID ═══ -->
+<div class="main-grid">
+  <!-- Chart Area -->
+  <div class="chart-area">
+    <div id="chart-container" class="chart-container"></div>
+    <!-- Pressure Bar -->
+    <div class="pressure-section">
+      <span class="pressure-label">Pressure</span>
+      <div class="pressure-track">
+        <div class="pressure-fill-bull" id="pressure-bull" style="width:50%"></div>
+        <div class="pressure-fill-bear" id="pressure-bear" style="width:50%"></div>
+      </div>
+      <span class="pressure-pct" id="pressure-pct">—</span>
+      <div class="pressure-divider"></div>
+      <span class="pressure-label">Squeeze</span>
+      <div class="pressure-squeeze-dot" id="squeeze-dot" style="display:none"></div>
+      <span id="squeeze-text" style="font-size:9px; font-family:'JetBrains Mono',monospace; color:rgba(255,255,255,0.2);">OFF</span>
+      <div class="pressure-divider"></div>
+      <span class="pressure-label">Momentum</span>
+      <span id="momentum-text" style="font-size:10px; font-family:'JetBrains Mono',monospace; color:rgba(255,255,255,0.3);">—</span>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <!-- Signal Card -->
+    <div class="card" id="signal-card">
+      <div class="card-header">
+        <span class="card-title">Entry Signal</span>
+        <span class="card-badge badge-live">LIVE</span>
+      </div>
+      <div class="signal-decision" id="signal-decision" style="color:rgba(255,255,255,0.15)">—</div>
+      <div class="signal-score" id="signal-score" style="color:rgba(255,255,255,0.2)">Waiting for data…</div>
+      <div class="signal-meta" id="signal-meta"></div>
+      <div class="shap-bars" id="shap-bars"></div>
+    </div>
+
+    <!-- Conviction Card -->
+    <div class="card" id="conviction-card">
+      <div class="card-header">
+        <span class="card-title">Conviction</span>
+        <span class="card-badge" id="conviction-badge" style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.3)">—</span>
+      </div>
+      <div class="conviction-level" id="conviction-level" style="color:rgba(255,255,255,0.15)">—</div>
+      <div class="conviction-layers" id="conviction-layers"></div>
+    </div>
+
+    <!-- Volume Card -->
+    <div class="card" id="volume-card">
+      <div class="card-header">
+        <span class="card-title">Volume Intelligence</span>
+      </div>
+      <div id="volume-stats">
+        <div class="volume-stat">
+          <span class="volume-label">Last Bar Vol</span>
+          <span class="volume-value" id="vol-last">—</span>
+        </div>
+        <div class="volume-stat">
+          <span class="volume-label">Avg Vol (20)</span>
+          <span class="volume-value" id="vol-avg">—</span>
+        </div>
+        <div class="volume-stat">
+          <span class="volume-label">Vol Ratio</span>
+          <span class="volume-value" id="vol-ratio">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fib State Card -->
+    <div class="card" id="fib-card">
+      <div class="card-header">
+        <span class="card-title">Fib Structure</span>
+        <span class="card-badge" id="fib-direction" style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.3)">—</span>
+      </div>
+      <div id="fib-levels"></div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">System</span>
+      </div>
+      <div class="volume-stat">
+        <span class="volume-label">Feed</span>
+        <span class="volume-value" id="sys-feed">—</span>
+      </div>
+      <div class="volume-stat">
+        <span class="volume-label">1m Bars</span>
+        <span class="volume-value" id="sys-bars">—</span>
+      </div>
+      <div class="volume-stat">
+        <span class="volume-label">Last Update</span>
+        <span class="volume-value" id="sys-update">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

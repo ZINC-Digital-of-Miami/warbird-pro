@@ -4,17 +4,21 @@ Warbird Pro is a PineScript trading indicator modeling project for ES/MES future
 
 ## Active Surfaces
 
-- **Main chart indicator:** `indicators/warbird-pro-v9.pine` (TradingView name: "Warbird Pro V9")
-- **Offline analysis stack:** DuckDB 1.5.2 / Pandera 0.31.1 / AutoGluon 1.5 at `scripts/duckdb_local/`
-- **Production trainer:** `scripts/ag/train_v9_locked.py`
-- **Runtime/dashboard:** Next.js + Supabase (support only — NOT training)
+- **Main chart indicator:** `indicators/warbird-pro-v9.pine` (TradingView name: "Warbird Pro V9") — also the trigger platform
+- **Local dashboard:** Python FastAPI engine + TradingView Lightweight Charts v5 at `engine/` + `dashboard/` (PR #11, branch `devin/1779988864-warbird-command-center`)
+- **Data layer:** DuckDB for local data/trade recording; Databento live MES streaming (free tier)
+- **ML stack:** DuckDB 1.5.2 / Pandera 0.31.1 at `scripts/duckdb_local/`; model selection TBD after data research
 - **Nexus:** retained research lane only (`indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine`)
 
 ## Architecture
 
-The active plan is **Warbird Indicator-Only DuckDB Local Modeling Plan v6**: perfect the TradingView indicator settings, train offline with AutoGluon over approved Pine + Databento source rows, promote results back into Pine after approval.
+**Local-first, indicator-driven.** The V9 Pine indicator provides the same fibs on both TradingView and the local Lightweight Charts dashboard. The indicator is the trigger platform — fib reclaim + MA gate → entry signals. Crons run on local machine, dashboard runs off Devin.
 
-V9 Core uses a file-based pipeline (DuckDB/Pandera/AutoGluon) — no Postgres dependency. Cloud Supabase is runtime/support only. The local PG17 `warbird` warehouse is legacy/reference.
+**Key shifts (2026-05-28):**
+- AutoGluon full-zoo is **no longer locked** — specific model set TBD after deep research on data sources and fib indicator polishing
+- Vercel/Next.js dashboard is **decommissioned** — replaced by local Python engine + LWC dashboard
+- Cloud Supabase is runtime/support only; DuckDB replaces it for local trade recording
+- Code quality checks: SonarQube (Sonic) replacing Codacy
 
 ## Live Pine Settings (Authoritative)
 

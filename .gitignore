@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+coverage.xml
+.coverage
+.coverage.*
+htmlcov/
 
 # next.js
 /.next/

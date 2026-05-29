@@ -29,3 +29,11 @@ The project has pivoted to local-first. FRED, macro, news, options data are NOW 
 ## Legacy Code Reactivation
 
 `scripts/ag/train_ag_baseline.py`, `scripts/ag/train_hard_gate.py`, local `ag_training` tables are superseded. Do not use unless Kirk explicitly reopens.
+
+## Deleting Planning Documents (2026-05-29 incident)
+
+Commit e8bdb9cf deleted 3 critical planning documents (launch packet, build playbook,
+v2.1 gate-clear patch — 325 lines total) and gitignored them as "scaffolding."
+These were NOT scaffolding — they contained the exact Devin prompt, Codex QA gates,
+stop conditions, authority state, and QA-required scope/git/reproducibility fixes.
+Never delete or gitignore planning artifacts. Mark superseded docs as superseded in-file.

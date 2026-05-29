@@ -42,6 +42,7 @@ If the task is the 2026-05-29 plan-build run, do not implement from this playboo
 - Do not claim Vercel is demoted before replacement proof exists.
 - Do not represent standard volume, candle-body delta, or other proxy data as footprint-equivalent.
 - Do not auto-push or auto-merge.
+- Do not delete, remove, or gitignore any planning, handoff, or authority document.
 
 ## Required From User
 

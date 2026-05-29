@@ -434,6 +434,10 @@ If any `.pine` file is touched, run:
 - One task at a time. Complete fully.
 - Do not refactor unrelated code.
 - Do not revert user changes.
+- Never delete, remove, or gitignore planning documents, handoff packets, build
+  playbooks, authority packets, or any artifact under `docs/plans/`, `docs/handoffs/`,
+  or `agents/skills/` without explicit Kirk approval. Superseded docs get marked
+  superseded in-file — not deleted.
 - Update `docs/MASTER_PLAN.md` when architecture changes.
 - Update `WARBIRD_MODEL_SPEC.md` when the model contract changes.
 - Update `CLAUDE.md` when operational truth changes.

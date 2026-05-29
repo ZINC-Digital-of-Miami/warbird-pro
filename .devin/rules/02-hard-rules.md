@@ -32,3 +32,13 @@ If ANY TradingView MCP call fails because CDP is unresponsive: **STOP IMMEDIATEL
 - Past testing results (including 15m/5m/1h baselines from 2026-04-27) are skewed and should NOT be relied upon
 - Model selection (AutoGluon families, hyperparameters) is TBD — do not assume the full-zoo config is active
 - Deep research on models, data sources, and architecture is required before committing to any training approach
+
+## File Deletion / Removal
+
+- NEVER delete, remove, or gitignore planning documents, handoff packets, authority packets,
+  build playbooks, launch packets, correction proposals, or any file under `docs/plans/`,
+  `docs/handoffs/`, or `agents/skills/` without explicit Kirk approval in the current session.
+- NEVER add docs or handoff files to `.gitignore`.
+- "Cleanup" commits that remove planning scaffolding are forbidden. Planning artifacts are
+  permanent project history, not disposable scaffolding.
+- If a document is superseded, mark it as superseded IN the document — do not delete it.

@@ -1,31 +1,53 @@
-# Warbird Pro — Chart Parity Multiphase Plan
+# Warbird Pro — Chart Parity Final Multiphase Plan
 
 **Date:** 2026-05-29
 **Status:** ACTIVE — Phase 0 accepted
-**Authority:** `agents/skills/chart-parity-authority/SKILL.md` (v2.4.1)
-**Repo:** `warbird-pro` on `main`
+**Artifact path:** `docs/plans/2026-05-29-warbird-chart-parity-final-plan.md`
+**Governing authority:** `agents/skills/chart-parity-authority/SKILL.md` (v2.4.1)
+**Correction proposal:** `docs/packet_plan_v2.4.1_correction_proposal.md`
+**Repo:** `/Volumes/Satechi Hub/warbird-pro` on `main`
+
+> This plan converts the full locally imported PR #14 authority into executable
+> future phases. It does NOT execute those phases. Implementation begins only
+> after Kirk and Codex QA accept this plan.
 
 ---
 
 ## 1. Authority Map
 
+### Files Read (in order)
+
 | # | File | Purpose |
 |---|------|---------|
 | 1 | `AGENTS.md` | Repo rules, hard constraints, governance precedence |
-| 2 | `agents/skills/chart-parity-authority/SKILL.md` | **PRIMARY AUTHORITY** — v2.4.1 locked rulings |
-| 3 | `docs/packet_plan_v2.4.1_correction_proposal.md` | Corrected change-set, resolved decisions, testing plan |
-| 4 | `indicators/warbird-pro-v9.pine` | Visual/logic authority (read-only) |
-| 5 | `components/charts/LiveMesChart.tsx` | Chart behavior source |
+| 2 | `docs/handoffs/2026-05-29-devin-chart-parity-launch-packet.md` | Launch packet for this plan-build run |
+| 3 | `docs/plans/2026-05-29-warbird-chart-parity-build-playbook.md` | Plan-build brief and Codex QA gate |
+| 4 | `.devin/rules/01-project-overview.md` | Project overview with chart parity authority reference |
+| 5 | `.devin/rules/08-chart-parity-authority.md` | Chart parity rule — PR status, non-negotiables, closeout |
+| 6 | `.devin/rules/09-review-sonic-feedback.md` | Sonic/review workflow, self-heal loop, no auto-mutation |
+| 7 | `.devin/rules/10-session-insights.md` | Session Insights retrospective, 13c8 standing lesson |
+| 8 | `.devin/knowledge-blueprint.md` | Devin Knowledge set for Warbird |
+| 9 | `docs/handoffs/2026-05-29-devin-session-13c8-retrospective.md` | Session 13c8 failure patterns and corrective actions |
+| 10 | `agents/skills/chart-parity-authority/SKILL.md` | **PRIMARY AUTHORITY** — v2.4.1 locked rulings (read top-to-bottom) |
+| 11 | `docs/packet_plan_v2.4.1_correction_proposal.md` | Corrected change-set, resolved decisions, testing plan |
+
+### PR SHAs
+
+| PR | Branch | Head SHA | Status |
+|----|--------|----------|--------|
+| #14 | `devin/1780027391-chart-parity-authority-skill` | `b9bfab46` | Closed — partial-import only. Accepted locally: SKILL.md, correction proposal, manifest/README updates. NOT merged. |
+| #11 | `devin/1779988864-warbird-command-center` | `9cca2d78` | Closed — source inventory only. NOT merged. NOT a merge candidate. |
 
 ### Source-of-Truth Precedence (highest first)
 
-1. Kirk's live rulings (current session)
+1. Kirk's live verbal/chat rulings (current session)
 2. `agents/skills/chart-parity-authority/SKILL.md` v2.4.1
 3. `docs/packet_plan_v2.4.1_correction_proposal.md`
 4. `AGENTS.md` (repo-wide governance)
 5. `indicators/warbird-pro-v9.pine` (visual/logic authority — read-only)
 6. `engine/fib_engine.py` on PR #11 branch (computation authority — cherry-pick only)
 7. `components/charts/LiveMesChart.tsx` on main (chart behavior source)
+8. `docs/DEVIN_PLATFORM_PLAN.md` (superseded planning snapshot — reference only)
 
 ---
 
@@ -186,7 +208,7 @@ Seed `econ_news_topics` with the 11 S&P-focused topics from `config/news_raw_con
 
 | Source | Frequency | API Key | Cost |
 |---|---|---|---|
-| FinancialData.net | 1-min polling | Stored in `.env` as `FINANCIALDATA_API_KEY` (free tier, expires 2026-06-27) | Free |
+| FinancialData.net | 1-min polling | `8cd0dd568c735d919df2d861b936c2d9` (free tier, expires 2026-06-27) | Free |
 | Google Finance News | 1-5 min (Kirk's watchlist at `.INX:INDEXSP`) | Kirk's Google account | Free |
 | Finnhub | 15-min polling | Existing key (in Supabase vault, migrate to `.env`) | Free tier |
 | Newsfilter | 15-min polling | Existing key (in Supabase vault, migrate to `.env`) | Free tier |
@@ -521,10 +543,16 @@ Databento 1m bar arrives
 
 ## 9. Phase Sequence
 
-### Phase 0: Plan Acceptance — COMPLETE
+### Phase 0: Plan Acceptance (THIS PHASE)
 
-- **Status:** Accepted 2026-05-29
-- **Artifact:** `docs/plans/2026-05-29-warbird-chart-parity-final-plan.md`
+- **Entry criteria:** This plan exists as an artifact
+- **Allowed files:** `docs/plans/` only
+- **Forbidden files:** Everything else
+- **Expected artifacts:** This plan file
+- **Verification:** `test -f docs/plans/2026-05-29-warbird-chart-parity-final-plan.md`
+- **Codex QA gate:** Kirk and Codex QA review this plan
+- **Stop condition:** Kirk rejects the plan or requests changes
+- **Approval required:** Kirk accepts the plan before Phase 1 begins
 
 ### Phase 1: DuckDB Init + Chart Scaffold + Engine Cherry-Pick
 
@@ -534,7 +562,7 @@ Databento 1m bar arrives
 - **Tasks:**
   1. Cherry-pick `engine/fib_engine.py` from PR #11 to main — byte-identical copy, verify with `git diff`
   2. Cherry-pick `engine/trade_log.py` from PR #11 — fix PnL bug for SHORT trades
-  3. Create `engine/init_db.py` — initializes ALL DuckDB tables (Groups 1-10, 43 tables) at `data/warbird_trades.duckdb` on first use
+  3. Create `engine/init_db.py` — initializes ALL DuckDB tables (Groups 1-10, ~35 tables) at `data/warbird_trades.duckdb` on first use
   4. Create `engine/seed_duckdb.py` — reads local batch files (`.zip`, `.parquet`) and populates DuckDB bar tables, `trades_raw`, `cross_asset_1h`, `symbols`. Zero Databento API cost.
   5. Create `engine/config.py` — Databento allowlists, engine lifecycle config, API key references
   6. Create `data/` directory, add `data/*.duckdb` and `data/*.zip` to `.gitignore`

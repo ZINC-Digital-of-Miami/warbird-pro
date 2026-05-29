@@ -129,7 +129,13 @@ get_file_diff() {
       git diff "$UPSTREAM_REF"...HEAD -- "$file" 2>/dev/null
       ;;
     manual)
-      git diff --cached -- "$file" 2>/dev/null || git diff -- "$file" 2>/dev/null
+      local cached_diff
+      cached_diff="$(git diff --cached -- "$file" 2>/dev/null || true)"
+      if [[ -n "$cached_diff" ]]; then
+        echo "$cached_diff"
+      else
+        git diff -- "$file" 2>/dev/null
+      fi
       ;;
   esac
 }

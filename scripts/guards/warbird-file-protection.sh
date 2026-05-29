@@ -221,7 +221,7 @@ check_plan_overwrites() {
       staged_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')" || staged_lines=0
     fi
 
-    if [[ "$main_lines" -gt 0 && "$staged_lines" -gt 0 ]]; then
+    if [[ "$main_lines" -gt 0 ]]; then
       local reduction_pct=$(( (main_lines - staged_lines) * 100 / main_lines ))
       if [[ "$reduction_pct" -gt 15 ]]; then
         add_violation "PLAN OVERWRITE: $f shrunk by ${reduction_pct}% (${main_lines} → ${staged_lines} lines). Verify this is intentional — do not overwrite with older/shorter versions."

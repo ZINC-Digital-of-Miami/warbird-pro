@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-29
 **Status:** PLAN ONLY — awaiting Kirk/Codex QA acceptance before any implementation phase begins
-**Artifact path:** `docs/plans/2026-05-29-warbird-chart-parity-final-plan.md`
+**Artifact path:** `docs/plans/2026-05-29-warbird-chart-parity-full-material-1058-lines.md`
 **Governing authority:** `agents/skills/chart-parity-authority/SKILL.md` (v2.4.1)
 **Correction proposal:** `docs/packet_plan_v2.4.1_correction_proposal.md`
 **Repo:** `/Volumes/Satechi Hub/warbird-pro` on `main`
@@ -17,26 +17,26 @@
 
 ### Files Read (in order)
 
-| # | File | Purpose |
-|---|------|---------|
-| 1 | `AGENTS.md` | Repo rules, hard constraints, governance precedence |
-| 2 | `docs/handoffs/2026-05-29-devin-chart-parity-launch-packet.md` | Launch packet for this plan-build run |
-| 3 | `docs/plans/2026-05-29-warbird-chart-parity-build-playbook.md` | Plan-build brief and Codex QA gate |
-| 4 | `.devin/rules/01-project-overview.md` | Project overview with chart parity authority reference |
-| 5 | `.devin/rules/08-chart-parity-authority.md` | Chart parity rule — PR status, non-negotiables, closeout |
-| 6 | `.devin/rules/09-review-sonic-feedback.md` | Sonic/review workflow, self-heal loop, no auto-mutation |
-| 7 | `.devin/rules/10-session-insights.md` | Session Insights retrospective, 13c8 standing lesson |
-| 8 | `.devin/knowledge-blueprint.md` | Devin Knowledge set for Warbird |
-| 9 | `docs/handoffs/2026-05-29-devin-session-13c8-retrospective.md` | Session 13c8 failure patterns and corrective actions |
-| 10 | `agents/skills/chart-parity-authority/SKILL.md` | **PRIMARY AUTHORITY** — v2.4.1 locked rulings (read top-to-bottom) |
-| 11 | `docs/packet_plan_v2.4.1_correction_proposal.md` | Corrected change-set, resolved decisions, testing plan |
+| #   | File                                                           | Purpose                                                            |
+| --- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | `AGENTS.md`                                                    | Repo rules, hard constraints, governance precedence                |
+| 2   | `docs/handoffs/2026-05-29-devin-chart-parity-launch-packet.md` | Launch packet for this plan-build run                              |
+| 3   | `docs/plans/2026-05-29-warbird-chart-parity-build-playbook.md` | Plan-build brief and Codex QA gate                                 |
+| 4   | `.devin/rules/01-project-overview.md`                          | Project overview with chart parity authority reference             |
+| 5   | `.devin/rules/08-chart-parity-authority.md`                    | Chart parity rule — PR status, non-negotiables, closeout           |
+| 6   | `.devin/rules/09-review-sonic-feedback.md`                     | Sonic/review workflow, self-heal loop, no auto-mutation            |
+| 7   | `.devin/rules/10-session-insights.md`                          | Session Insights retrospective, 13c8 standing lesson               |
+| 8   | `.devin/knowledge-blueprint.md`                                | Devin Knowledge set for Warbird                                    |
+| 9   | `docs/handoffs/2026-05-29-devin-session-13c8-retrospective.md` | Session 13c8 failure patterns and corrective actions               |
+| 10  | `agents/skills/chart-parity-authority/SKILL.md`                | **PRIMARY AUTHORITY** — v2.4.1 locked rulings (read top-to-bottom) |
+| 11  | `docs/packet_plan_v2.4.1_correction_proposal.md`               | Corrected change-set, resolved decisions, testing plan             |
 
 ### PR SHAs
 
-| PR | Branch | Head SHA | Status |
-|----|--------|----------|--------|
+| PR  | Branch                                          | Head SHA   | Status                                                                                                              |
+| --- | ----------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
 | #14 | `devin/1780027391-chart-parity-authority-skill` | `b9bfab46` | Closed — partial-import only. Accepted locally: SKILL.md, correction proposal, manifest/README updates. NOT merged. |
-| #11 | `devin/1779988864-warbird-command-center` | `9cca2d78` | Closed — source inventory only. NOT merged. NOT a merge candidate. |
+| #11 | `devin/1779988864-warbird-command-center`       | `9cca2d78` | Closed — source inventory only. NOT merged. NOT a merge candidate.                                                  |
 
 ### Source-of-Truth Precedence (highest first)
 
@@ -55,39 +55,39 @@
 
 Every section/ruling in `agents/skills/chart-parity-authority/SKILL.md` mapped to a phase, artifact, or explicit deferral.
 
-| SKILL.md Section | Ruling Summary | Phase | Artifact |
-|---|---|---|---|
-| Chart Stack | LWC renderer, port LiveMesChart.tsx exact, strip autofib-v16 | Phase 1 | `dashboard/index.html`, `dashboard/chart.js` |
-| Fib System | `engine/fib_engine.py` sole engine, visuals from Pine, bounded draw | Phase 2 | Fib rendering code, AT-1 evidence |
-| Moving Averages | EMA21+EMA9 from indicator, add 200 SMA white 2pt | Phase 2 | MA overlay code |
-| V9 Transfer Directive | Transfer EXACT indicator to LWC dashboard | Phase 2 | Full indicator port evidence |
-| Layout (Locked) | Correlations → Chart+Cards → Pressure → Nexus | Phase 3 | Layout CSS/HTML, screenshot proof |
-| Cards Panel | Entry Signal, Entry Price, SL, TP1, TP2, AI Analysis, Win Rate (if real) | Phase 3 | Cards panel code |
-| Volume / Pressure | Databento trades A/B/N, quality gate, LOW→WAIT | Phase 4 | Pressure bar code, AT-2/AT-3 evidence |
-| Correlations Row | NQ/6E/CL/ZN, 1h Databento Historical API pull, isolated timing | Phase 5 | Correlations row code |
-| Git Protocol | main only, cherry-pick engine/ from PR #11, discard PR #11 frontend | All phases | Git log evidence |
-| AI Analysis | Gemini (not OpenRouter), real-time data analysis + S&P/Fed/Mag7 news | Phase 6 | `engine/ai_analysis.py` |
-| Error Patterns | 12 documented anti-patterns | All phases | Error checklist in closeout |
-| Canonical TF | 5m default, 1m/3m/5m/15m, cards update with TF, correlations always 1h | Phase 3 | TF switching code |
-| Acceptance Tests | AT-1 (bounded fibs), AT-2 (trades A/B/N), AT-3 (LOW→WAIT) | Phase 7 | AT evidence packets |
-| Mandatory Doc Sync | All docs updated in same commit when ruling changes | Phase 8 | Doc sync evidence |
+| SKILL.md Section      | Ruling Summary                                                           | Phase      | Artifact                                     |
+| --------------------- | ------------------------------------------------------------------------ | ---------- | -------------------------------------------- |
+| Chart Stack           | LWC renderer, port LiveMesChart.tsx exact, strip autofib-v16             | Phase 1    | `dashboard/index.html`, `dashboard/chart.js` |
+| Fib System            | `engine/fib_engine.py` sole engine, visuals from Pine, bounded draw      | Phase 2    | Fib rendering code, AT-1 evidence            |
+| Moving Averages       | EMA21+EMA9 from indicator, add 200 SMA white 2pt                         | Phase 2    | MA overlay code                              |
+| V9 Transfer Directive | Transfer EXACT indicator to LWC dashboard                                | Phase 2    | Full indicator port evidence                 |
+| Layout (Locked)       | Correlations → Chart+Cards → Pressure → Nexus                            | Phase 3    | Layout CSS/HTML, screenshot proof            |
+| Cards Panel           | Entry Signal, Entry Price, SL, TP1, TP2, AI Analysis, Win Rate (if real) | Phase 3    | Cards panel code                             |
+| Volume / Pressure     | Databento trades A/B/N, quality gate, LOW→WAIT                           | Phase 4    | Pressure bar code, AT-2/AT-3 evidence        |
+| Correlations Row      | NQ/6E/CL/ZN, 1h Databento Historical API pull, isolated timing           | Phase 5    | Correlations row code                        |
+| Git Protocol          | main only, cherry-pick engine/ from PR #11, discard PR #11 frontend      | All phases | Git log evidence                             |
+| AI Analysis           | Gemini (not OpenRouter), real-time data analysis + S&P/Fed/Mag7 news     | Phase 6    | `engine/ai_analysis.py`                      |
+| Error Patterns        | 12 documented anti-patterns                                              | All phases | Error checklist in closeout                  |
+| Canonical TF          | 5m default, 1m/3m/5m/15m, cards update with TF, correlations always 1h   | Phase 3    | TF switching code                            |
+| Acceptance Tests      | AT-1 (bounded fibs), AT-2 (trades A/B/N), AT-3 (LOW→WAIT)                | Phase 7    | AT evidence packets                          |
+| Mandatory Doc Sync    | All docs updated in same commit when ruling changes                      | Phase 8    | Doc sync evidence                            |
 
 ### Correction Proposal Sections Mapped
 
-| Proposal Section | Phase |
-|---|---|
-| 1. TradingView chart stack | Phase 1 |
-| 2. Correlations cadence 1h | Phase 5 |
-| 3. Remove volume histogram + wrong cards | Phase 3 |
-| 4. Databento trades schema + A/B/N | Phase 4 |
-| 5. Trades-side delta + confidence gate | Phase 4 |
-| 6. Fibonacci — use exact engine | Phase 2 |
-| 6c. Visible ladder = 13 | Phase 2 |
-| 7. Accuracy audit — claims vs reality | Phase 6 (AI), Phase 8 (docs) |
-| 8. Corrected change-set summary | All phases |
-| 9. Testing plan | Phase 7 |
-| 10. Decisions (all resolved) | N/A — no open questions |
-| 11. Packet version history | Phase 8 (doc sync) |
+| Proposal Section                         | Phase                        |
+| ---------------------------------------- | ---------------------------- |
+| 1. TradingView chart stack               | Phase 1                      |
+| 2. Correlations cadence 1h               | Phase 5                      |
+| 3. Remove volume histogram + wrong cards | Phase 3                      |
+| 4. Databento trades schema + A/B/N       | Phase 4                      |
+| 5. Trades-side delta + confidence gate   | Phase 4                      |
+| 6. Fibonacci — use exact engine          | Phase 2                      |
+| 6c. Visible ladder = 13                  | Phase 2                      |
+| 7. Accuracy audit — claims vs reality    | Phase 6 (AI), Phase 8 (docs) |
+| 8. Corrected change-set summary          | All phases                   |
+| 9. Testing plan                          | Phase 7                      |
+| 10. Decisions (all resolved)             | N/A — no open questions      |
+| 11. Packet version history               | Phase 8 (doc sync)           |
 
 ---
 
@@ -95,25 +95,25 @@ Every section/ruling in `agents/skills/chart-parity-authority/SKILL.md` mapped t
 
 PR #11 (`devin/1779988864-warbird-command-center`) is source inventory only. Its dashboard frontend is DISCARDED. Cherry-pick targets are engine-only.
 
-| Surface | Decision | Phase | Notes |
-|---|---|---|---|
-| `engine/fib_engine.py` | **KEEP — cherry-pick** | Phase 1 | Sole fib computation engine. Used AS-IS. No modifications. |
-| `engine/trade_log.py` | **KEEP — cherry-pick** | Phase 1 | DuckDB trade log schema (trades, trade_tags, indicator_state). Fix PnL bug for SHORT trades (Devin Review finding). |
-| `engine/databento_feed.py` | **KEEP — cherry-pick** | Phase 1.5 | Databento Live subscription. Add trades-schema path in Phase 4. Add client-presence lifecycle. |
-| `engine/bar_store.py` | **KEEP — cherry-pick** | Phase 1.5 | Multi-TF bar aggregation (1m→1/3/5/15m/1h/4h). Fix thread-safety issues flagged by Codacy. |
-| `engine/server.py` | **KEEP — cherry-pick** | Phase 1.5 | FastAPI on port 3100 + WebSocket push. Add client-presence-aware lifecycle (COLD/WARM states). |
-| `engine/config.py` | INSPECT, conditional | Phase 1.5 | Review for Databento key handling. Add approved schemas/symbols allowlist. |
-| `engine/indicators.py` | INSPECT, conditional | Phase 2 | Contains candle-body proxy at :438-447. Replace with real trades-side delta in Phase 4. |
-| `engine/trigger_engine.py` | INSPECT, conditional | Phase 4 | Contains LOW→WAIT gate logic at :211-217. Verify and test. |
-| `engine/ai_analysis.py` | INSPECT, conditional | Phase 6 | Currently uses OpenRouter. Must switch to Gemini per Kirk's ruling. |
-| `engine/nexus.py` | INSPECT, conditional | Phase 5 | Nexus ML RSI / AMF oscillator. Port minus TradingView-centric items. |
-| `engine/pressure.py` | INSPECT, conditional | Phase 4 | Pressure bar computation. Verify weights: volume delta 30%, RSI 25%, momentum 20%, TTM squeeze 25%. |
-| `dashboard/index.html` | **DISCARD** | — | LWC-based frontend. Rebuild from LiveMesChart.tsx exact settings. |
-| `dashboard/app.js` | **DISCARD** | — | Contains wrong cards (Fib Structure, System), volume histogram, 15m conviction label. |
-| `dashboard/style.css` | **DISCARD** | — | Rebuild layout from SKILL.md locked layout diagram. |
-| `dashboard/nexus.js` | **DISCARD** | — | Rebuild Nexus sub-chart rendering. |
-| `dashboard/correlations.js` | **DISCARD** | — | Rebuild correlations row rendering. |
-| `docs/DASHBOARD_PLAN.md` | **DISCARD** | — | Superseded by this plan. |
+| Surface                     | Decision               | Phase     | Notes                                                                                                               |
+| --------------------------- | ---------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- |
+| `engine/fib_engine.py`      | **KEEP — cherry-pick** | Phase 1   | Sole fib computation engine. Used AS-IS. No modifications.                                                          |
+| `engine/trade_log.py`       | **KEEP — cherry-pick** | Phase 1   | DuckDB trade log schema (trades, trade_tags, indicator_state). Fix PnL bug for SHORT trades (Devin Review finding). |
+| `engine/databento_feed.py`  | **KEEP — cherry-pick** | Phase 1.5 | Databento Live subscription. Add trades-schema path in Phase 4. Add client-presence lifecycle.                      |
+| `engine/bar_store.py`       | **KEEP — cherry-pick** | Phase 1.5 | Multi-TF bar aggregation (1m→1/3/5/15m/1h/4h). Fix thread-safety issues flagged by Codacy.                          |
+| `engine/server.py`          | **KEEP — cherry-pick** | Phase 1.5 | FastAPI on port 3100 + WebSocket push. Add client-presence-aware lifecycle (COLD/WARM states).                      |
+| `engine/config.py`          | INSPECT, conditional   | Phase 1.5 | Review for Databento key handling. Add approved schemas/symbols allowlist.                                          |
+| `engine/indicators.py`      | INSPECT, conditional   | Phase 2   | Contains candle-body proxy at :438-447. Replace with real trades-side delta in Phase 4.                             |
+| `engine/trigger_engine.py`  | INSPECT, conditional   | Phase 4   | Contains LOW→WAIT gate logic at :211-217. Verify and test.                                                          |
+| `engine/ai_analysis.py`     | INSPECT, conditional   | Phase 6   | Currently uses OpenRouter. Must switch to Gemini per Kirk's ruling.                                                 |
+| `engine/nexus.py`           | INSPECT, conditional   | Phase 5   | Nexus ML RSI / AMF oscillator. Port minus TradingView-centric items.                                                |
+| `engine/pressure.py`        | INSPECT, conditional   | Phase 4   | Pressure bar computation. Verify weights: volume delta 30%, RSI 25%, momentum 20%, TTM squeeze 25%.                 |
+| `dashboard/index.html`      | **DISCARD**            | —         | LWC-based frontend. Rebuild from LiveMesChart.tsx exact settings.                                                   |
+| `dashboard/app.js`          | **DISCARD**            | —         | Contains wrong cards (Fib Structure, System), volume histogram, 15m conviction label.                               |
+| `dashboard/style.css`       | **DISCARD**            | —         | Rebuild layout from SKILL.md locked layout diagram.                                                                 |
+| `dashboard/nexus.js`        | **DISCARD**            | —         | Rebuild Nexus sub-chart rendering.                                                                                  |
+| `dashboard/correlations.js` | **DISCARD**            | —         | Rebuild correlations row rendering.                                                                                 |
+| `docs/DASHBOARD_PLAN.md`    | **DISCARD**            | —         | Superseded by this plan.                                                                                            |
 
 ### Approval Required Before Reuse
 
@@ -130,15 +130,15 @@ All tables created in Phase 1 via `engine/init_db.py` at `data/warbird_trades.du
 **Populated by:** Phase 1 (seeded from local batch files), Phase 1.5 (live data)
 **Dashboard surface:** Chart rendering, TF switching, fib/MA computation
 
-| Table | Schema |
-|---|---|
-| `mes_1m` | `ts TIMESTAMPTZ PRIMARY KEY, open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE, volume BIGINT` |
-| `mes_3m` | same as `mes_1m` |
-| `mes_5m` | same as `mes_1m` |
-| `mes_15m` | same as `mes_1m` |
-| `mes_1h` | same as `mes_1m` |
-| `mes_4h` | same as `mes_1m` |
-| `mes_1d` | same as `mes_1m` |
+| Table     | Schema                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `mes_1m`  | `ts TIMESTAMPTZ PRIMARY KEY, open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE, volume BIGINT` |
+| `mes_3m`  | same as `mes_1m`                                                                                |
+| `mes_5m`  | same as `mes_1m`                                                                                |
+| `mes_15m` | same as `mes_1m`                                                                                |
+| `mes_1h`  | same as `mes_1m`                                                                                |
+| `mes_4h`  | same as `mes_1m`                                                                                |
+| `mes_1d`  | same as `mes_1m`                                                                                |
 
 Note: Supabase has 5 tables (1m/15m/1h/4h/1d). DuckDB needs 7 because SKILL.md requires 1m/3m/5m/15m for TF switching plus 1h/4h/1d for correlations and daily bias context. The `engine/bar_store.py` already aggregates 1m → all higher TFs.
 
@@ -147,9 +147,9 @@ Note: Supabase has 5 tables (1m/15m/1h/4h/1d). DuckDB needs 7 because SKILL.md r
 **Populated by:** Phase 1 (seeded from local MES ES Trades zip), Phase 4 (live trades)
 **Dashboard surface:** Pressure bar, confidence gate (AT-2, AT-3)
 
-| Table | Schema |
-|---|---|
-| `trades_raw` | `ts TIMESTAMPTZ, price DOUBLE, size INTEGER, side TEXT CHECK(side IN ('B','A','N'))` |
+| Table           | Schema                                                                                                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trades_raw`    | `ts TIMESTAMPTZ, price DOUBLE, size INTEGER, side TEXT CHECK(side IN ('B','A','N'))`                                                                                                                                                              |
 | `trades_volume` | `ts TIMESTAMPTZ, timeframe TEXT CHECK(timeframe IN ('1m','3m','5m','15m')), buy_vol BIGINT, sell_vol BIGINT, unknown_vol BIGINT, delta BIGINT, total_vol BIGINT, confidence TEXT CHECK(confidence IN ('HIGH','LOW')), PRIMARY KEY(ts, timeframe)` |
 
 The `trades_volume` table is TF-aware — single table with a timeframe column, not per-TF tables. Confidence is derived: `unknown_vol / total_vol > 0.30 → LOW`. When LOW, force WAIT (AT-3).
@@ -159,8 +159,8 @@ The `trades_volume` table is TF-aware — single table with a timeframe column, 
 **Populated by:** Phase 1 (seeded from local parquet), Phase 5 (1h Databento Historical API pulls)
 **Dashboard surface:** Correlations row (4 symbols, 1h isolated timing)
 
-| Table | Schema |
-|---|---|
+| Table            | Schema                                                                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `cross_asset_1h` | `ts TIMESTAMPTZ, symbol_code TEXT, open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE, volume BIGINT, PRIMARY KEY(ts, symbol_code)` |
 
 Locked to NQ, 6E, CL, ZN only. Updated every 1h via Databento Historical API `ohlcv-1h` pull — NOT live streaming. Correlations row does NOT change with chart TF switching (always 1h, isolated).
@@ -170,19 +170,19 @@ Locked to NQ, 6E, CL, ZN only. Updated every 1h via Databento Historical API `oh
 **Populated by:** Phase 6 (FRED API ingestion scripts)
 **Dashboard surface:** AI Analysis card context
 
-| Table | Schema |
-|---|---|
-| `series_catalog` | `series_id TEXT PRIMARY KEY, name TEXT, category TEXT, frequency TEXT, is_active BOOLEAN` |
-| `econ_rates_1d` | `ts TIMESTAMPTZ, series_id TEXT, value DOUBLE, PRIMARY KEY(ts, series_id)` |
-| `econ_yields_1d` | same as `econ_rates_1d` |
-| `econ_fx_1d` | same as `econ_rates_1d` |
-| `econ_vol_1d` | same as `econ_rates_1d` |
-| `econ_inflation_1d` | same as `econ_rates_1d` |
-| `econ_labor_1d` | same as `econ_rates_1d` |
-| `econ_activity_1d` | same as `econ_rates_1d` |
-| `econ_money_1d` | same as `econ_rates_1d` |
-| `econ_commodities_1d` | same as `econ_rates_1d` |
-| `econ_indexes_1d` | same as `econ_rates_1d` |
+| Table                 | Schema                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `series_catalog`      | `series_id TEXT PRIMARY KEY, name TEXT, category TEXT, frequency TEXT, is_active BOOLEAN` |
+| `econ_rates_1d`       | `ts TIMESTAMPTZ, series_id TEXT, value DOUBLE, PRIMARY KEY(ts, series_id)`                |
+| `econ_yields_1d`      | same as `econ_rates_1d`                                                                   |
+| `econ_fx_1d`          | same as `econ_rates_1d`                                                                   |
+| `econ_vol_1d`         | same as `econ_rates_1d`                                                                   |
+| `econ_inflation_1d`   | same as `econ_rates_1d`                                                                   |
+| `econ_labor_1d`       | same as `econ_rates_1d`                                                                   |
+| `econ_activity_1d`    | same as `econ_rates_1d`                                                                   |
+| `econ_money_1d`       | same as `econ_rates_1d`                                                                   |
+| `econ_commodities_1d` | same as `econ_rates_1d`                                                                   |
+| `econ_indexes_1d`     | same as `econ_rates_1d`                                                                   |
 
 Seed `series_catalog` with the 40+ active FRED series from `supabase/seed.sql` (FEDFUNDS, DFF, SOFR, DGS2/5/10/30, T10Y2Y, T10Y3M, DTWEXBGS, DEXUSEU, DEXJPUS, VIXCLS, OVXCLS, CPIAUCSL, CPILFESL, etc.)
 
@@ -191,27 +191,27 @@ Seed `series_catalog` with the 40+ active FRED series from `supabase/seed.sql` (
 **Populated by:** Phase 6 (news ingestion scripts — FinancialData.net 1-min, Finnhub 15-min, Newsfilter 15-min, Google Finance)
 **Dashboard surface:** AI Analysis card news context
 
-| Table | Schema |
-|---|---|
-| `econ_news_topics` | `topic_code TEXT PRIMARY KEY, topic_label TEXT, topic_family TEXT, econ_category TEXT, topic_tags TEXT[], description TEXT, is_active BOOLEAN` |
-| `news_articles` | `id INTEGER PRIMARY KEY, provider TEXT, article_key TEXT UNIQUE, title TEXT, summary TEXT, url TEXT, publisher_domain TEXT, published_at TIMESTAMPTZ, published_minute TIMESTAMPTZ, normalized_title TEXT, dedupe_key TEXT UNIQUE, body_word_count INTEGER DEFAULT 0, related_symbols TEXT[], topic_codes TEXT[], benchmark_fit_score DOUBLE, fetched_at TIMESTAMPTZ DEFAULT now()` |
-| `news_article_segments` | `id INTEGER PRIMARY KEY, article_id INTEGER REFERENCES news_articles(id), segment TEXT, matched_keywords TEXT[], matched_symbols TEXT[]` |
+| Table                      | Schema                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `econ_news_topics`         | `topic_code TEXT PRIMARY KEY, topic_label TEXT, topic_family TEXT, econ_category TEXT, topic_tags TEXT[], description TEXT, is_active BOOLEAN`                                                                                                                                                                                                                                                                                                     |
+| `news_articles`            | `id INTEGER PRIMARY KEY, provider TEXT, article_key TEXT UNIQUE, title TEXT, summary TEXT, url TEXT, publisher_domain TEXT, published_at TIMESTAMPTZ, published_minute TIMESTAMPTZ, normalized_title TEXT, dedupe_key TEXT UNIQUE, body_word_count INTEGER DEFAULT 0, related_symbols TEXT[], topic_codes TEXT[], benchmark_fit_score DOUBLE, fetched_at TIMESTAMPTZ DEFAULT now()`                                                                |
+| `news_article_segments`    | `id INTEGER PRIMARY KEY, article_id INTEGER REFERENCES news_articles(id), segment TEXT, matched_keywords TEXT[], matched_symbols TEXT[]`                                                                                                                                                                                                                                                                                                           |
 | `news_article_assessments` | `id INTEGER PRIMARY KEY, provider TEXT, dedupe_key TEXT, article_key TEXT, topic_code TEXT, source_quality_score DOUBLE, market_relevance_score DOUBLE, macro_specificity_score DOUBLE, technical_specificity_score DOUBLE, cross_asset_context_score DOUBLE, watchlist_relevance_score DOUBLE, reasoning_confidence DOUBLE, benchmark_fit_score DOUBLE, scoring_version TEXT DEFAULT 'reuters_benchmark_v1', scored_at TIMESTAMPTZ DEFAULT now()` |
-| `econ_calendar` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, event_name TEXT, actual DOUBLE, forecast DOUBLE, previous DOUBLE, impact TEXT, currency TEXT` |
-| `news_signals` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, signal_type TEXT, direction TEXT, confidence DOUBLE, source_headline TEXT` |
-| `geopolitical_risk_1d` | `ts TIMESTAMPTZ PRIMARY KEY, gpr_daily DOUBLE, gpr_threats DOUBLE, gpr_acts DOUBLE, country TEXT` |
-| `trump_effect_1d` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, event_type TEXT, title TEXT, summary TEXT, market_impact TEXT, sector TEXT, source TEXT, source_url TEXT` |
+| `econ_calendar`            | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, event_name TEXT, actual DOUBLE, forecast DOUBLE, previous DOUBLE, impact TEXT, currency TEXT`                                                                                                                                                                                                                                                                                                             |
+| `news_signals`             | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, signal_type TEXT, direction TEXT, confidence DOUBLE, source_headline TEXT`                                                                                                                                                                                                                                                                                                                                |
+| `geopolitical_risk_1d`     | `ts TIMESTAMPTZ PRIMARY KEY, gpr_daily DOUBLE, gpr_threats DOUBLE, gpr_acts DOUBLE, country TEXT`                                                                                                                                                                                                                                                                                                                                                  |
+| `trump_effect_1d`          | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, event_type TEXT, title TEXT, summary TEXT, market_impact TEXT, sector TEXT, source TEXT, source_url TEXT`                                                                                                                                                                                                                                                                                                 |
 
 Seed `econ_news_topics` with the 11 S&P-focused topics from `config/news_raw_contract.json`. Use the existing scoring contract (`reuters_benchmark_v1` weights, trusted/blocked/premier domain lists) for article assessment.
 
 ### News Sources
 
-| Source | Frequency | API Key | Cost |
-|---|---|---|---|
-| FinancialData.net | 1-min polling | `8cd0dd568c735d919df2d861b936c2d9` (free tier, expires 2026-06-27) | Free |
-| Google Finance News | 1-5 min (Kirk's watchlist at `.INX:INDEXSP`) | Kirk's Google account | Free |
-| Finnhub | 15-min polling | Existing key (in Supabase vault, migrate to `.env`) | Free tier |
-| Newsfilter | 15-min polling | Existing key (in Supabase vault, migrate to `.env`) | Free tier |
+| Source              | Frequency                                    | API Key                                                            | Cost      |
+| ------------------- | -------------------------------------------- | ------------------------------------------------------------------ | --------- |
+| FinancialData.net   | 1-min polling                                | `8cd0dd568c735d919df2d861b936c2d9` (free tier, expires 2026-06-27) | Free      |
+| Google Finance News | 1-5 min (Kirk's watchlist at `.INX:INDEXSP`) | Kirk's Google account                                              | Free      |
+| Finnhub             | 15-min polling                               | Existing key (in Supabase vault, migrate to `.env`)                | Free tier |
+| Newsfilter          | 15-min polling                               | Existing key (in Supabase vault, migrate to `.env`)                | Free tier |
 
 All news API keys stored in `.env` (NOT committed — add to `.gitignore`). FinancialData.net is a new provider not currently in the codebase.
 
@@ -220,11 +220,11 @@ All news API keys stored in `.env` (NOT committed — add to `.gitignore`). Fina
 **Populated by:** Phase 1 (cherry-pick `engine/trade_log.py` from PR #11)
 **Dashboard surface:** Trade recording, pattern learning, Win Rate card (if real data exists)
 
-| Table | Schema |
-|---|---|
-| `trades` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, symbol TEXT DEFAULT 'MES', direction TEXT, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, exit_price DOUBLE, exit_reason TEXT, pnl DOUBLE, status TEXT` |
-| `trade_tags` | `id INTEGER PRIMARY KEY, trade_id INTEGER REFERENCES trades(id), tag TEXT` |
-| `indicator_state` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, timeframe TEXT, state_json TEXT` |
+| Table             | Schema                                                                                                                                                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trades`          | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, symbol TEXT DEFAULT 'MES', direction TEXT, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, exit_price DOUBLE, exit_reason TEXT, pnl DOUBLE, status TEXT` |
+| `trade_tags`      | `id INTEGER PRIMARY KEY, trade_id INTEGER REFERENCES trades(id), tag TEXT`                                                                                                                                      |
+| `indicator_state` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, timeframe TEXT, state_json TEXT`                                                                                                                                       |
 
 Note: `engine/trade_log.py` from PR #11 has a PnL bug for SHORT trades (Devin Review finding). Fix during Phase 1 cherry-pick.
 
@@ -233,8 +233,8 @@ Note: `engine/trade_log.py` from PR #11 has a PnL bug for SHORT trades (Devin Re
 **Populated by:** Phase 1 (seeded from `supabase/seed.sql` active symbols)
 **Dashboard surface:** Reference table for all symbol lookups
 
-| Table | Schema |
-|---|---|
+| Table     | Schema                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `symbols` | `code TEXT PRIMARY KEY, display_name TEXT, short_name TEXT, description TEXT, tick_size DOUBLE, data_source TEXT, dataset TEXT, databento_symbol TEXT, is_active BOOLEAN` |
 
 Seed with 17 active Databento futures + 3 active FRED symbols. Do NOT seed inactive symbols. The `is_active` flag is the billing guardrail.
@@ -244,8 +244,8 @@ Seed with 17 active Databento futures + 3 active FRED symbols. Do NOT seed inact
 **Populated by:** Phase 6 (computed from econ data)
 **Dashboard surface:** AI Analysis risk context, `warbird_risk` GARCH input
 
-| Table | Schema |
-|---|---|
+| Table        | Schema                                                                                                                                              |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `vol_states` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, state_name TEXT, regime_label TEXT, days_into_regime INTEGER, vix_level DOUBLE, vix_percentile_20d DOUBLE` |
 
 ### Group 9 — Warbird Signal Chain (8 tables)
@@ -253,16 +253,16 @@ Seed with 17 active Databento futures + 3 active FRED symbols. Do NOT seed inact
 **Populated by:** Phase 3-4 (engine computes locally, persists for AI to read)
 **Dashboard surface:** AI Analysis card reads latest state; signal chain drives GO/WAIT/NO_GO
 
-| Table | Schema |
-|---|---|
-| `warbird_daily_bias` | `ts TIMESTAMPTZ PRIMARY KEY, symbol_code TEXT DEFAULT 'MES', bias TEXT CHECK(bias IN ('BULL','BEAR','NEUTRAL')), close_price DOUBLE, ma_200 DOUBLE, price_vs_200d_ma DOUBLE, distance_pct DOUBLE, slope_200d_ma DOUBLE, sessions_on_side INTEGER, daily_return DOUBLE, daily_range_vs_avg DOUBLE` |
-| `warbird_structure_4h` | `ts TIMESTAMPTZ PRIMARY KEY, symbol_code TEXT DEFAULT 'MES', bias_4h TEXT CHECK(bias_4h IN ('BULL','BEAR','NEUTRAL')), agrees_with_daily BOOLEAN DEFAULT FALSE, trend_score DOUBLE, swing_high DOUBLE, swing_low DOUBLE, structural_note TEXT` |
-| `warbird_forecasts_1h` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, symbol_code TEXT DEFAULT 'MES', bias_1h TEXT, target_price_1h DOUBLE, target_price_4h DOUBLE, confidence DOUBLE, current_price DOUBLE, model_version TEXT, feature_snapshot TEXT` |
-| `warbird_triggers_15m` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, symbol_code TEXT DEFAULT 'MES', direction TEXT, decision TEXT CHECK(decision IN ('GO','WAIT','NO_GO')), fib_level DOUBLE, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, volume_confirmation BOOLEAN DEFAULT FALSE, volume_ratio DOUBLE, no_trade_reason TEXT` |
-| `warbird_conviction` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, trigger_id INTEGER, symbol_code TEXT DEFAULT 'MES', level TEXT CHECK(level IN ('MAXIMUM','HIGH','MODERATE','LOW','NO_TRADE')), counter_trend BOOLEAN DEFAULT FALSE, all_layers_agree BOOLEAN DEFAULT FALSE, runner_eligible BOOLEAN DEFAULT FALSE, daily_bias TEXT, bias_4h TEXT, bias_1h TEXT, trigger_decision TEXT` |
-| `warbird_setups` | `id INTEGER PRIMARY KEY, setup_key TEXT UNIQUE, ts TIMESTAMPTZ, symbol_code TEXT DEFAULT 'MES', forecast_id INTEGER, trigger_id INTEGER, conviction_id INTEGER, direction TEXT, status TEXT CHECK(status IN ('ACTIVE','TP1_HIT','TP2_HIT','RUNNER_ACTIVE','RUNNER_EXITED','STOPPED','EXPIRED')), conviction_level TEXT, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, volume_confirmation BOOLEAN DEFAULT FALSE, trigger_bar_ts TIMESTAMPTZ, tp1_hit_at TIMESTAMPTZ, tp2_hit_at TIMESTAMPTZ, stopped_at TIMESTAMPTZ, expires_at TIMESTAMPTZ, notes TEXT` |
-| `warbird_setup_events` | `id INTEGER PRIMARY KEY, setup_id INTEGER, ts TIMESTAMPTZ, event_type TEXT CHECK(event_type IN ('TRIGGERED','TP1_HIT','TP2_HIT','RUNNER_STARTED','RUNNER_EXITED','STOPPED','EXPIRED')), price DOUBLE, note TEXT, metadata TEXT` |
-| `warbird_risk` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, symbol_code TEXT DEFAULT 'MES', garch_sigma DOUBLE, garch_vol_ratio DOUBLE, zone_1_upper DOUBLE, zone_1_lower DOUBLE, zone_2_upper DOUBLE, zone_2_lower DOUBLE, gpr_level DOUBLE, trump_effect_active BOOLEAN, vix_level DOUBLE, vix_percentile_20d DOUBLE, vol_state_name TEXT, regime_label TEXT DEFAULT 'trump_2', days_into_regime INTEGER` |
+| Table                  | Schema                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `warbird_daily_bias`   | `ts TIMESTAMPTZ PRIMARY KEY, symbol_code TEXT DEFAULT 'MES', bias TEXT CHECK(bias IN ('BULL','BEAR','NEUTRAL')), close_price DOUBLE, ma_200 DOUBLE, price_vs_200d_ma DOUBLE, distance_pct DOUBLE, slope_200d_ma DOUBLE, sessions_on_side INTEGER, daily_return DOUBLE, daily_range_vs_avg DOUBLE`                                                                                                                                                                                                                                                                        |
+| `warbird_structure_4h` | `ts TIMESTAMPTZ PRIMARY KEY, symbol_code TEXT DEFAULT 'MES', bias_4h TEXT CHECK(bias_4h IN ('BULL','BEAR','NEUTRAL')), agrees_with_daily BOOLEAN DEFAULT FALSE, trend_score DOUBLE, swing_high DOUBLE, swing_low DOUBLE, structural_note TEXT`                                                                                                                                                                                                                                                                                                                           |
+| `warbird_forecasts_1h` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, symbol_code TEXT DEFAULT 'MES', bias_1h TEXT, target_price_1h DOUBLE, target_price_4h DOUBLE, confidence DOUBLE, current_price DOUBLE, model_version TEXT, feature_snapshot TEXT`                                                                                                                                                                                                                                                                                                                                               |
+| `warbird_triggers_15m` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, symbol_code TEXT DEFAULT 'MES', direction TEXT, decision TEXT CHECK(decision IN ('GO','WAIT','NO_GO')), fib_level DOUBLE, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, volume_confirmation BOOLEAN DEFAULT FALSE, volume_ratio DOUBLE, no_trade_reason TEXT`                                                                                                                                                                                                                              |
+| `warbird_conviction`   | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, trigger_id INTEGER, symbol_code TEXT DEFAULT 'MES', level TEXT CHECK(level IN ('MAXIMUM','HIGH','MODERATE','LOW','NO_TRADE')), counter_trend BOOLEAN DEFAULT FALSE, all_layers_agree BOOLEAN DEFAULT FALSE, runner_eligible BOOLEAN DEFAULT FALSE, daily_bias TEXT, bias_4h TEXT, bias_1h TEXT, trigger_decision TEXT`                                                                                                                                                                                     |
+| `warbird_setups`       | `id INTEGER PRIMARY KEY, setup_key TEXT UNIQUE, ts TIMESTAMPTZ, symbol_code TEXT DEFAULT 'MES', forecast_id INTEGER, trigger_id INTEGER, conviction_id INTEGER, direction TEXT, status TEXT CHECK(status IN ('ACTIVE','TP1_HIT','TP2_HIT','RUNNER_ACTIVE','RUNNER_EXITED','STOPPED','EXPIRED')), conviction_level TEXT, entry_price DOUBLE, stop_loss DOUBLE, tp1 DOUBLE, tp2 DOUBLE, volume_confirmation BOOLEAN DEFAULT FALSE, trigger_bar_ts TIMESTAMPTZ, tp1_hit_at TIMESTAMPTZ, tp2_hit_at TIMESTAMPTZ, stopped_at TIMESTAMPTZ, expires_at TIMESTAMPTZ, notes TEXT` |
+| `warbird_setup_events` | `id INTEGER PRIMARY KEY, setup_id INTEGER, ts TIMESTAMPTZ, event_type TEXT CHECK(event_type IN ('TRIGGERED','TP1_HIT','TP2_HIT','RUNNER_STARTED','RUNNER_EXITED','STOPPED','EXPIRED')), price DOUBLE, note TEXT, metadata TEXT`                                                                                                                                                                                                                                                                                                                                          |
+| `warbird_risk`         | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, forecast_id INTEGER, symbol_code TEXT DEFAULT 'MES', garch_sigma DOUBLE, garch_vol_ratio DOUBLE, zone_1_upper DOUBLE, zone_1_lower DOUBLE, zone_2_upper DOUBLE, zone_2_lower DOUBLE, gpr_level DOUBLE, trump_effect_active BOOLEAN, vix_level DOUBLE, vix_percentile_20d DOUBLE, vol_state_name TEXT, regime_label TEXT DEFAULT 'trump_2', days_into_regime INTEGER`                                                                                                                                                            |
 
 These were previously incorrectly listed as "skip — Vercel cron output." The local engine computes them, but the AI analysis card needs to READ the latest persisted state. The full signal chain flows: daily bias → structure 4H → forecast → trigger → conviction → setup → risk → AI analysis.
 
@@ -271,20 +271,20 @@ These were previously incorrectly listed as "skip — Vercel cron output." The l
 **Populated by:** Phase 6 (Gemini analysis runs on each bar close while dashboard is open)
 **Dashboard surface:** AI Analysis card audit trail
 
-| Table | Schema |
-|---|---|
+| Table             | Schema                                                                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ai_analysis_log` | `id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, model TEXT, analysis_text TEXT, data_sources_used TEXT, screenshot_available BOOLEAN DEFAULT FALSE` |
 
 Screenshot ingestion is PLANNED but unverified per SKILL.md. Do not claim until pipeline exists.
 
 ### Tables NOT Needed in DuckDB
 
-| Supabase Table | Reason |
-|---|---|
+| Supabase Table                            | Reason                                                |
+| ----------------------------------------- | ----------------------------------------------------- |
 | `warbird_forecasts_1h` (Supabase version) | Replaced by local engine computation → DuckDB Group 9 |
-| `options_stats_1d` | Not in SKILL.md dashboard scope |
-| `options_ohlcv_1d` | Not in SKILL.md dashboard scope |
-| `cross_asset_1d` | Dashboard only needs 1h for correlations |
+| `options_stats_1d`                        | Not in SKILL.md dashboard scope                       |
+| `options_ohlcv_1d`                        | Not in SKILL.md dashboard scope                       |
+| `cross_asset_1d`                          | Dashboard only needs 1h for correlations              |
 
 ---
 
@@ -340,12 +340,12 @@ The engine is demand-driven. Everything spins up when the dashboard is opened an
 
 ### States
 
-| State | Description | Resource Usage |
-|---|---|---|
-| **COLD** | FastAPI server listening on :3100. No Databento connection, no computation, no polling. | Near-zero CPU/memory |
-| **WARMING** | First WebSocket client connected. Loading historical bars from DuckDB, opening Databento Live subscription, starting computation engines, pulling gap-fill if needed. | Moderate (startup burst) |
-| **WARM** | Fully live. Databento streaming, all engines computing per-bar, WebSocket pushing updates. | Active CPU/memory proportional to TF cadence |
-| **COOLDOWN** | Last WebSocket client disconnected. 60-second grace period before teardown (in case of accidental tab close / immediate reopen). | Same as WARM during grace period |
+| State        | Description                                                                                                                                                           | Resource Usage                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **COLD**     | FastAPI server listening on :3100. No Databento connection, no computation, no polling.                                                                               | Near-zero CPU/memory                         |
+| **WARMING**  | First WebSocket client connected. Loading historical bars from DuckDB, opening Databento Live subscription, starting computation engines, pulling gap-fill if needed. | Moderate (startup burst)                     |
+| **WARM**     | Fully live. Databento streaming, all engines computing per-bar, WebSocket pushing updates.                                                                            | Active CPU/memory proportional to TF cadence |
+| **COOLDOWN** | Last WebSocket client disconnected. 60-second grace period before teardown (in case of accidental tab close / immediate reopen).                                      | Same as WARM during grace period             |
 
 ### Lifecycle Sequence
 
@@ -419,16 +419,16 @@ This is an ultra-fast trading dashboard. 5m canonical TF with 1m/3m/5m/15m chart
 
 ### TF-Coupled Surfaces
 
-| Surface | TF-Coupled? | Recompute Trigger |
-|---|---|---|
-| Chart (candlesticks) | YES | Every bar close at current TF |
-| Fibs (bounded anchored lines) | YES | Every bar close — lookback windows (8/13/21/34/55 bars) are relative to current TF |
-| MAs (EMA21, EMA9, SMA200) | YES | Every bar close at current TF |
-| Pressure bar (thin slim, blue-to-red) | YES | Every bar close — trades-side delta aggregated at current TF's bar boundaries |
-| Nexus ML RSI (sub-chart) | YES | Every bar close — AMF oscillator recomputes on current TF's bars |
-| Trigger engine (GO/WAIT/NO_GO) | YES | Every bar close — zone proximity, rejection wick, engulfing use current TF candles |
-| Cards panel (Entry Signal, Price, SL, TP1, TP2, AI, Win Rate) | YES | Every bar close at current TF |
-| Correlations row (NQ/6E/CL/ZN) | **NO** | Always 1h, isolated timer. NEVER changes with chart TF. |
+| Surface                                                       | TF-Coupled? | Recompute Trigger                                                                  |
+| ------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| Chart (candlesticks)                                          | YES         | Every bar close at current TF                                                      |
+| Fibs (bounded anchored lines)                                 | YES         | Every bar close — lookback windows (8/13/21/34/55 bars) are relative to current TF |
+| MAs (EMA21, EMA9, SMA200)                                     | YES         | Every bar close at current TF                                                      |
+| Pressure bar (thin slim, blue-to-red)                         | YES         | Every bar close — trades-side delta aggregated at current TF's bar boundaries      |
+| Nexus ML RSI (sub-chart)                                      | YES         | Every bar close — AMF oscillator recomputes on current TF's bars                   |
+| Trigger engine (GO/WAIT/NO_GO)                                | YES         | Every bar close — zone proximity, rejection wick, engulfing use current TF candles |
+| Cards panel (Entry Signal, Price, SL, TP1, TP2, AI, Win Rate) | YES         | Every bar close at current TF                                                      |
+| Correlations row (NQ/6E/CL/ZN)                                | **NO**      | Always 1h, isolated timer. NEVER changes with chart TF.                            |
 
 ### WebSocket Message Contract
 
@@ -438,14 +438,40 @@ This is an ultra-fast trading dashboard. 5m canonical TF with 1m/3m/5m/15m chart
 {
   "type": "bar_update",
   "timeframe": "5m",
-  "bar": { "ts": "...", "open": 0, "high": 0, "low": 0, "close": 0, "volume": 0 },
+  "bar": {
+    "ts": "...",
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "volume": 0
+  },
   "fibs": { "levels": [], "draw_left_bar": "...", "draw_right_bar": "..." },
   "mas": { "ema21": 0, "ema9": 0, "sma200": 0 },
   "pressure": { "value": 0, "color": "#...", "components": {} },
   "nexus": { "rsi": 0, "amf": 0 },
-  "trigger": { "decision": "GO|WAIT|NO_GO", "entry": 0, "sl": 0, "tp1": 0, "tp2": 0 },
-  "cards": { "entry_signal": "...", "entry_price": 0, "sl": 0, "tp1": 0, "tp2": 0, "confidence": "HIGH|LOW" },
-  "volume": { "buy_vol": 0, "sell_vol": 0, "unknown_vol": 0, "delta": 0, "confidence": "HIGH|LOW" }
+  "trigger": {
+    "decision": "GO|WAIT|NO_GO",
+    "entry": 0,
+    "sl": 0,
+    "tp1": 0,
+    "tp2": 0
+  },
+  "cards": {
+    "entry_signal": "...",
+    "entry_price": 0,
+    "sl": 0,
+    "tp1": 0,
+    "tp2": 0,
+    "confidence": "HIGH|LOW"
+  },
+  "volume": {
+    "buy_vol": 0,
+    "sell_vol": 0,
+    "unknown_vol": 0,
+    "delta": 0,
+    "confidence": "HIGH|LOW"
+  }
 }
 ```
 
@@ -473,7 +499,14 @@ This is an ultra-fast trading dashboard. 5m canonical TF with 1m/3m/5m/15m chart
 {
   "type": "correlations_update",
   "symbols": {
-    "NQ": { "ts": "...", "open": 0, "high": 0, "low": 0, "close": 0, "change_pct": 0 },
+    "NQ": {
+      "ts": "...",
+      "open": 0,
+      "high": 0,
+      "low": 0,
+      "close": 0,
+      "change_pct": 0
+    },
     "6E": {},
     "CL": {},
     "ZN": {}
@@ -549,7 +582,7 @@ Databento 1m bar arrives
 - **Allowed files:** `docs/plans/` only
 - **Forbidden files:** Everything else
 - **Expected artifacts:** This plan file
-- **Verification:** `test -f docs/plans/2026-05-29-warbird-chart-parity-final-plan.md`
+- **Verification:** `test -f docs/plans/2026-05-29-warbird-chart-parity-full-material-1058-lines.md`
 - **Codex QA gate:** Kirk and Codex QA review this plan
 - **Stop condition:** Kirk rejects the plan or requests changes
 - **Approval required:** Kirk accepts the plan before Phase 1 begins
@@ -731,6 +764,7 @@ Databento 1m bar arrives
 - **Codex QA gate:** Independent AT verification, error pattern review
 - **Stop condition:** Any AT fails
 - **Approval required:** Kirk accepts AT results
+
 # Devin Chart Parity Launch Packet
 
 **Date:** 2026-05-29
@@ -836,6 +870,7 @@ Stop and ask Kirk before:
 - connecting Supabase
 - enabling write automations
 - pushing
+
 # Warbird Chart Parity Plan-Build Brief
 
 **Status:** Devin planning brief only. This is not the final implementation plan and not authorization to write runtime code.
@@ -913,9 +948,11 @@ Codex should verify after Devin returns the plan:
 - `.devin/wiki.json` parses if touched
 - `.devin/environment-blueprint.yaml` parses if touched
 - `git diff --check`
+
 # Chart Parity Authority Packet v2 -> v2.1 (Gate-Clear Patch)
 
 This patch applies only the three QA-required fixes:
+
 1. Scope/contract alignment
 2. Git protocol alignment
 3. Reproducible evidence for Section 10
@@ -967,16 +1004,18 @@ This patch applies only the three QA-required fixes:
 **Cherry-pick content only** — do NOT merge PR #11.
 
 Execution must follow repo git protocol in `AGENTS.md`:
+
 - work on `main`
 - no feature-branch implementation lane
 - push only with explicit approval
 
 Implementation steps:
+
 1. Confirm branch is `main` and working tree ownership is known.
 2. Pull only required surfaces from PR #11 into `main` working tree:
    - `dashboard/`
    - `engine/`
-   using targeted restore/checkout from `origin/devin/1779988864-warbird-command-center`.
+     using targeted restore/checkout from `origin/devin/1779988864-warbird-command-center`.
 3. Do **not** carry PR #11 governance/config deletions.
 4. Apply Section 3B fixes in bounded commits.
 5. Run required verification after each phase.
@@ -1000,6 +1039,7 @@ Implementation steps:
 **Evidence status:** PROVISIONAL until reproducibility packet is attached.
 
 The symbol conclusions below are hypothesis-grade until the following evidence is produced and archived:
+
 - exact query windows (UTC)
 - exact symbols and mapping outputs
 - exact aggregation method (1m -> 15m)
@@ -1015,20 +1055,24 @@ The symbol conclusions below are hypothesis-grade until the following evidence i
 Runbook-grade evidence must be generated before Section 10 is treated as settled:
 
 1. Capture instrument mapping and symbol validity (GLBX.MDP3)
+
 - verify continuous symbols used in the plan
 - archive mapping output with timestamp
 
 2. Build synchronized 15m panels for MES, NQ, 6E, CL, ZN
+
 - source: Databento GLBX.MDP3
 - base schema: `ohlcv-1m`
 - aggregation: exact 15m bar close alignment in UTC
 
 3. Compute rolling and full-window statistics
+
 - Pearson correlation to MES returns
 - rolling stability windows (e.g., 5d, 20d, 60d)
 - sign-consistency checks for positive/negative designations
 
 4. Archive evidence artifacts in repo
+
 - recommended path: `artifacts/research/correlations/2026-05-29/`
 - include:
   - `inputs_manifest.json`
@@ -1038,6 +1082,7 @@ Runbook-grade evidence must be generated before Section 10 is treated as settled
   - `summary.md`
 
 5. Promotion rule
+
 - Section 10 remains provisional until artifacts exist and QA confirms reproducibility.
 ```
 

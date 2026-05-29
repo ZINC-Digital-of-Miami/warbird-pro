@@ -1,6 +1,6 @@
 ---
 name: chart-parity-authority
-description: Locked rulings and guardrails for the Warbird Pro local dashboard implementation using TradingView Charting Library. Must be followed exactly — no drift, no reinterpretation, no additions beyond what Kirk approves.
+description: Locked rulings and guardrails for the Warbird Pro local dashboard implementation using TradingView Lightweight Charts. Must be followed exactly — no drift, no reinterpretation, no additions beyond what Kirk approves.
 version: 2.4.1
 owner: Kirk Musick
 last_reviewed: 2026-05-29
@@ -31,12 +31,11 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 
 ## Chart Stack
 
-- **TradingView Charting Library (Advanced Charts)** is the ONLY chart renderer.
-- **Private repo** — licensed access required. Non-redistributable. No public-repo distribution of library files.
-- Must request access at https://www.tradingview.com/advanced-charts/ and confirm license-compliant integration path.
-- Do NOT use LWC (Lightweight Charts) as the final charting path.
+- **TradingView Lightweight Charts** is the chart renderer.
+- Pull the EXACT chart from `components/charts/LiveMesChart.tsx` on main — it already uses Lightweight Charts with the exact theme, bar spacing, rightOffset, watermark, crosshair, SMA200 (white, w2).
+- Port the exact settings/code into the local dashboard. Strip the chart's own fib rendering (V16FibLinesPrimitive + autofib-v16). Fibs come from the indicator instead.
+- Licensing is NOT a blocker — repo goes private if needed. Do not raise licensing concerns.
 - Do NOT use any other charting platform.
-- Pine Script does NOT execute in TV Charting Library — implement Warbird logic as JS custom indicators via `custom_indicators_getter`.
 
 ## Fib System — 100% From Repo
 

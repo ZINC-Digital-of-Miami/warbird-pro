@@ -4,6 +4,13 @@
 **Status:** Draft for refinement — NOT a build plan yet  
 **Purpose:** Captures everything discussed, decided, and half-planned so Kirk can review and refine before execution begins.
 
+> **2026-05-29 Supersession Note:** For local dashboard implementation decisions
+> (chart stack, fibs, MAs, layout, cards, pressure bar, correlations, AI analysis),
+> the authority is `agents/skills/chart-parity-authority/SKILL.md` (v2.4.1).
+> Where this plan conflicts with that skill, the skill wins. Key updates:
+> - Fib engine (`engine/fib_engine.py`) is used EXACTLY as-is — no modifications, no "evolve independently" language applies to fib computation.
+> - Chart source is the EXACT `LiveMesChart.tsx` from main, ported to the local dashboard.
+
 ---
 
 ## 1. Architecture Direction (Decided 2026-05-28)

@@ -19,9 +19,12 @@ set -euo pipefail
 
 MODE="manual"
 
+COMMIT_MSG_FILE=""
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) MODE="${2:-manual}"; shift 2 ;;
+    --commit-msg-file) COMMIT_MSG_FILE="${2:-}"; shift 2 ;;
     *) shift ;;
   esac
 done
@@ -220,10 +223,28 @@ check_no_vercel_demotion() {
 # Rule: No auto-apply of Sonic fixes (checked via commit message)
 
 check_no_autofix_commit_messages() {
-  # Only check on pre-commit — inspect the commit message being created
-  [[ "$MODE" == "pre-commit" ]] || return 0
+  # Check commit message for Sonic auto-fix references.
+  # In commit-msg mode (called from .githooks/commit-msg with --commit-msg-file),
+  # the file path is accurate. In pre-commit mode, COMMIT_EDITMSG may be stale
+  # so we skip. In pre-push mode, check the commit messages in the push range.
+  local msg_file=""
 
-  local msg_file="$ROOT_DIR/.git/COMMIT_EDITMSG"
+  if [[ -n "${COMMIT_MSG_FILE:-}" ]]; then
+    msg_file="$COMMIT_MSG_FILE"
+  elif [[ "$MODE" == "pre-push" ]]; then
+    # Check all commit messages in the push range
+    local bad_msg
+    bad_msg="$(git log --format='%s' "$UPSTREAM_REF"...HEAD 2>/dev/null | grep -iE '(auto.?fix|autofix).*(sonic|sonar)' || true)"
+    if [[ -n "$bad_msg" ]]; then
+      add_violation "Sonic Is Advisory" "note-d6a7f0ce" \
+        "Commit message references Sonic auto-fix — Sonic fixes require defect map + Kirk approval"
+    fi
+    return 0
+  else
+    # pre-commit: COMMIT_EDITMSG not yet written at this hook stage; skip
+    return 0
+  fi
+
   [[ -f "$msg_file" ]] || return 0
 
   local msg
@@ -265,11 +286,11 @@ check_governance_file_changes() {
       AGENTS.md|CLAUDE.md|WARBIRD_MODEL_SPEC.md)
         # These are governance files — flag large changes
         local main_lines current_lines
-        main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
+        main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ')" || main_lines=0
         if [[ "$MODE" == "pre-commit" ]]; then
-          current_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
+          current_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ')" || current_lines=0
         else
-          current_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ' || echo 0)"
+          current_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')" || current_lines=0
         fi
 
         if [[ "$main_lines" -gt 0 && "$current_lines" -gt 0 ]]; then
@@ -338,7 +359,7 @@ echo "ENFORCEMENT: knowledge note checks ($MODE)"
 
 collect_changed_files
 
-if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
+if [[ ${#CHANGED_FILES[@]} -eq 0 && ${#DELETED_FILES[@]} -eq 0 ]]; then
   echo "INFO: no changed files in scope; knowledge enforcement checks pass."
   exit 0
 fi

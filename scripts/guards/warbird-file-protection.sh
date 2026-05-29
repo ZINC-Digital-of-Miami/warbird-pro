@@ -214,11 +214,11 @@ check_plan_overwrites() {
 
     # Compare line counts: if staged version is significantly shorter, warn
     local main_lines staged_lines
-    main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
+    main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ')" || main_lines=0
     if [[ "$MODE" == "pre-commit" ]]; then
-      staged_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ' || echo 0)"
+      staged_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ')" || staged_lines=0
     else
-      staged_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ' || echo 0)"
+      staged_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')" || staged_lines=0
     fi
 
     if [[ "$main_lines" -gt 0 && "$staged_lines" -gt 0 ]]; then

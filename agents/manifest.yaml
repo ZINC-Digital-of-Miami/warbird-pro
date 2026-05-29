@@ -38,9 +38,13 @@ automation:
     launchd_template: agents/launchd/com.warbird.agents.process-reaper.plist
     install_script: agents/scripts/install_reaper_launchagent.sh
     uninstall_script: agents/scripts/uninstall_reaper_launchagent.sh
-  decommission:
-    hermes: agents/scripts/decommission_hermes.sh
 
 retired:
   - .hermes/**
   - .claude/skills/**
+  - .github/agents/**
+  - .github/skills/**
+  - .github/copilot-instructions.md
+  - .github/workflows/copilot-review.yml
+  - .copilot-tracking/**
+  - agents/scripts/decommission_hermes.sh

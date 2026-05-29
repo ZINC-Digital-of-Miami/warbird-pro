@@ -1,9 +1,7 @@
 ---
-name: 'Quant Analyst'
-description: 'Warbird quant analyst for V9 indicator-only modeling, DuckDB/Core ETL, and AutoGluon evidence analysis under strict safety gates.'
-model: 'GPT-5'
-target: 'vscode'
-tools: ['codebase', 'search', 'read/readFile', 'read/problems', 'edit/editFiles', 'execute/runTests', 'execute/runInTerminal', 'web/fetch']
+name: quant-analyst
+description: Warbird quant analyst for V9 indicator-only modeling, DuckDB/Core ETL, and AutoGluon evidence analysis under strict safety gates.
+platform: devin
 ---
 
 # Quant Analyst

@@ -1,8 +1,9 @@
 Read and follow `AGENTS.md` at the repository root.
 
-2026-05-22 operational override: `agents/` is now the canonical multi-IDE
-agent umbrella. Any Hermes-first or Claude-only routing notes in this file are
-legacy context and must not override `AGENTS.md` + `agents/README.md`.
+2026-05-29: **Devin is the only active agent platform.** All Hermes, Copilot,
+and Claude Code agent surfaces have been retired. `agents/` is the canonical
+agent umbrella. This file is retained for project context — all agent routing
+is governed by `AGENTS.md` + `agents/README.md`.
 
 ## Quick Reference
 

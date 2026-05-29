@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SIGNATURES = (
     "warbird_optuna_hub.py",
     "tv_bridge_worker.mjs",
-    "/.hermes/",
+    # "/.hermes/" — retired 2026-05-29
     "next dev",
     "next-server",
 )

@@ -15,23 +15,23 @@ runbook, `.remember/` note, and migration question. ALWAYS read or grep the
 local clone first. The GitHub remote (`github.com/ZINC-Digital-of-Miami/warbird-pro`)
 is secondary — use it only for PRs, Issues, Actions, and remote-only state.
 
-This rule applies to every Claude surface: Claude Code on the Mac, claude.ai
-web, and claude.ai mobile. claude.ai sessions must use Desktop Commander to
-reach the Satechi Hub mount. If tooling can't reach the local mount, surface
-the blocker — do NOT silently substitute GitHub web fetch as source of truth.
+This rule applies to every agent session. If tooling can't reach the local
+mount, surface the blocker — do NOT silently substitute GitHub web fetch as
+source of truth.
 
 ## Agent Bootstrap
 
-This root `AGENTS.md` is the workspace instruction surface. `.github/copilot-instructions.md`
-is a thin redirector only; do not expand it into a competing source.
+This root `AGENTS.md` is the workspace instruction surface.
+**Devin is the only active agent platform (2026-05-29).** All Hermes, Copilot,
+and Claude Code agent surfaces have been retired and removed.
 
-### Global Agent Umbrella (2026-05-22)
+### Global Agent Umbrella (updated 2026-05-29)
 
-- Canonical multi-IDE agent assets live under `agents/`.
+- Canonical agent assets live under `agents/`.
 - Start with `agents/README.md` for current role/skill/MCP registries.
 - New role, skill, and MCP additions must be authored in `agents/` first.
-- Legacy mirrors (`.github/agents`, `.github/skills`, `.claude/skills`) are
-  migration surfaces only.
+- Legacy mirrors (`.github/agents`, `.github/skills`, `.claude/skills`,
+  `.copilot-tracking`, `.github/copilot-instructions.md`) have been removed.
 
 ### Read Order
 

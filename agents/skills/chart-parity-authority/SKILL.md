@@ -40,8 +40,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 
 ## Fib System — 100% From Repo
 
-- **Computation:** `engine/fib_engine.py` (PR #11 branch) is the SOLE fib engine. Used AS-IS. NO alternative engines. NO reimplementation.
-- **Parity note:** `fib_engine.py` is a multi-period confluence approximation of Pine's ZigZag, NOT an exact port. Pivot detection may differ from Pine on edge cases.
+- **Computation:** `engine/fib_engine.py` (PR #11 branch) is the SOLE fib engine. Used EXACTLY AS-IS. NO modifications. NO alternative engines. NO reimplementation. This is the engine — same as the indicator's fib logic.
 - **Visuals:** ALL colors, widths, styles, ladder, zone fill, labels come from `indicators/warbird-pro-v9.pine` (lines 68-70, 226-261, 805-870).
 - **Draw semantics:** BOUNDED anchored lines (`x1=drawLeftBar`, `x2=rightBar`, `extend.none`). NO spread-out lines across the screen. NO horizon lines. NO pivot-line look.
 - Entries are tied to the fibs. Modeling is tied to the fibs. Everything is tied to the fibs.
@@ -142,6 +141,6 @@ These are mistakes made during v2.4 packet creation. Do NOT repeat them:
 
 ## Acceptance Tests (3 required)
 
-- AT-1: Bounded fib draw window parity (fib computation uses `engine/fib_engine.py` ONLY, 13 visible-default levels)
+- AT-1: Bounded fib draw window parity (fib computation uses `engine/fib_engine.py` ONLY, 13 visible levels — same as indicator, -.236 hidden)
 - AT-2: Pressure derived from trades side A/B/N
 - AT-3: Confidence-gating on unknown-side volume (LOW confidence => force WAIT, never GO)

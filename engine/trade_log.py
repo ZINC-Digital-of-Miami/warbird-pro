@@ -7,6 +7,7 @@ The model can query this to improve entry quality over time.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import duckdb
@@ -61,23 +62,28 @@ def init_db() -> str:
     return f"{db_path} ({count} trades)"
 
 
-def record_trade(
-    direction: str,
-    entry_price: float,
-    timeframe: str = "5m",
-    stop_price: float | None = None,
-    tp_price: float | None = None,
-    score: float | None = None,
-    conviction: str | None = None,
-    fib_level: str | None = None,
-    ema21: float | None = None,
-    ema9: float | None = None,
-    rsi: float | None = None,
-    pressure_pct: float | None = None,
-    squeeze_on: bool | None = None,
-    pattern_tags: list[str] | None = None,
-    ai_commentary: str | None = None,
-) -> int:
+@dataclass
+class TradeEntry:
+    """All fields for opening a new trade."""
+
+    direction: str
+    entry_price: float
+    timeframe: str = "5m"
+    stop_price: float | None = None
+    tp_price: float | None = None
+    score: float | None = None
+    conviction: str | None = None
+    fib_level: str | None = None
+    ema21: float | None = None
+    ema9: float | None = None
+    rsi: float | None = None
+    pressure_pct: float | None = None
+    squeeze_on: bool | None = None
+    pattern_tags: list[str] = field(default_factory=list)
+    ai_commentary: str | None = None
+
+
+def record_trade(entry: TradeEntry) -> int:
     """Record a new trade entry. Returns the trade ID."""
     conn = _get_conn()
     now = datetime.now(timezone.utc)
@@ -89,10 +95,12 @@ def record_trade(
             pattern_tags, result, ai_commentary
         ) VALUES (?, 'MES', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)""",
         [
-            now, timeframe, direction, entry_price,
-            stop_price, tp_price, score, conviction, fib_level,
-            ema21, ema9, rsi, pressure_pct, squeeze_on,
-            pattern_tags or [], ai_commentary,
+            now, entry.timeframe, entry.direction, entry.entry_price,
+            entry.stop_price, entry.tp_price, entry.score,
+            entry.conviction, entry.fib_level,
+            entry.ema21, entry.ema9, entry.rsi,
+            entry.pressure_pct, entry.squeeze_on,
+            entry.pattern_tags, entry.ai_commentary,
         ],
     )
     trade_id = conn.execute("SELECT max(id) FROM trades").fetchone()[0]

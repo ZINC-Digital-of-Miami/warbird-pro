@@ -146,7 +146,7 @@ def seed_bars_from_files(conn: duckdb.DuckDBPyConnection) -> dict[str, int]:
         return results
 
     for fname in os.listdir(DATA_DIR):
-        if not (fname.endswith(".parquet") or fname.endswith(".zip")):
+        if not fname.endswith((".parquet", ".zip")):
             continue
         fpath = os.path.join(DATA_DIR, fname)
         count = _ingest_file(conn, fname, fpath)

@@ -434,6 +434,14 @@ If any `.pine` file is touched, run:
 - One task at a time. Complete fully.
 - Do not refactor unrelated code.
 - Do not revert user changes.
+- **No-Delete Rule:** Planning artifacts (`docs/plans/`, `docs/handoffs/`,
+  `agents/skills/`) are permanent project history. Never delete, truncate,
+  `.gitignore`, or overwrite them with older/shorter versions. If a plan file
+  already exists on `main`, diff before touching it. The enforcement engine
+  (`scripts/guards/warbird-file-protection.sh`) blocks violations at pre-commit.
+- **Stop-On-Escalation:** If Kirk says "STOP" (any form, any case), immediately
+  kill all background processes and shell sessions before responding. Do not
+  "fix" the mistake first — stop first, then wait for instructions.
 - Update `docs/MASTER_PLAN.md` when architecture changes.
 - Update `WARBIRD_MODEL_SPEC.md` when the model contract changes.
 - Update `CLAUDE.md` when operational truth changes.

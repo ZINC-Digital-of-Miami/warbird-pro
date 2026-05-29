@@ -29,3 +29,21 @@ The project has pivoted to local-first. FRED, macro, news, options data are NOW 
 ## Legacy Code Reactivation
 
 `scripts/ag/train_ag_baseline.py`, `scripts/ag/train_hard_gate.py`, local `ag_training` tables are superseded. Do not use unless Kirk explicitly reopens.
+
+## Plan File Overwrite (2026-05-29 session f6fe99cc incident)
+
+Before restoring or editing ANY file in `docs/plans/` or `docs/handoffs/`, ALWAYS:
+
+1. Run `git show origin/main:<path>` to see what's already on `main`
+2. Compare line counts and content
+3. If a newer/larger version already exists on `main`, do NOT overwrite
+
+Session f6fe99cc overwrote Kirk's 705-line plan with a 733-line historical version from `git show`. The current `main` HEAD is always the source of truth for what exists — not git history commits.
+
+## Autonomous "Fix" After Correction (2026-05-29 session f6fe99cc incident)
+
+When Kirk corrects a mistake, do NOT immediately start "fixing" it autonomously. STOP and ask what Kirk wants done. Session f6fe99cc acknowledged a mistake and then immediately started reverting, committing, and pushing — making things worse while Kirk was still escalating.
+
+## Background Process Persistence (2026-05-29 session f6fe99cc incident)
+
+When Kirk says "STOP", kill ALL running shell processes immediately — including background git pushes, pending commits, and any shell with `run_in_background=true`. Check every active shell ID. Session f6fe99cc had a `fix` shell still running `git push` while Kirk was saying "STOP THE FUCKING WORK".

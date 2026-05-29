@@ -6,6 +6,8 @@
 ./scripts/guards/warbird-agent-precheck.sh --mode manual
 ```
 
+This runs the **Knowledge Enforcement Engine** and **File Protection Engine** first, then the quality lane. If enforcement fails, the commit is blocked before any quality checks run.
+
 ## Before Claiming PR Is Mergeable
 
 ```bash

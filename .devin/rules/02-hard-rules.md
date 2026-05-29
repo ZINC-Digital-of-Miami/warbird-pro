@@ -1,5 +1,21 @@
 # Hard Rules
 
+## File Deletion / Removal (2026-05-29 — session f6fe99cc incident)
+
+- **NEVER** delete files under `docs/plans/`, `docs/handoffs/`, `agents/skills/`, `docs/contracts/`, `docs/runbooks/`, `.devin/rules/`, or `.devin/playbooks/`.
+- **NEVER** add `docs/`, `agents/`, or `.devin/` to `.gitignore`.
+- **NEVER** overwrite a plan or handoff file with an older or shorter version without first diffing against `origin/main`.
+- **NEVER** reactivate retired surfaces (V7/V8 Pine files, `train_ag_baseline.py`, `train_hard_gate.py`).
+- Planning artifacts are permanent project history, not disposable scaffolding.
+- Enforced by `scripts/guards/warbird-file-protection.sh` — hard `exit 1`, not advisory.
+
+## Stop-On-Escalation (2026-05-29 — session f6fe99cc incident)
+
+- If Kirk says "STOP" in any form, any case, any level of anger: **immediately kill all background processes and shell sessions**, then respond.
+- Do NOT "fix" the mistake first. Stop first. Wait for instructions.
+- Do NOT push, commit, or modify anything after the stop signal until Kirk gives new instructions.
+- Do NOT continue running git operations in background shells after a stop signal.
+
 ## Data
 
 - **Local-first data policy:** FRED, macro, news, options, and cross-asset data are now allowed since the system is local and not constrained by TradingView

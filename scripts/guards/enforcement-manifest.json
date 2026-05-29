@@ -1,0 +1,98 @@
+{
+  "_version": "1.0.0",
+  "_description": "Machine-readable enforcement manifest. Maps Knowledge notes to concrete blocked actions. Used by warbird-knowledge-enforcement.sh and warbird-file-protection.sh at pre-commit and pre-push time. Every rule here is a HARD GATE — exit 1, no override except Kirk in the current session.",
+  "_updated": "2026-05-29",
+  "protected_paths": {
+    "never_delete": [
+      "docs/plans/",
+      "docs/handoffs/",
+      "agents/skills/",
+      "docs/contracts/",
+      "docs/runbooks/",
+      ".devin/rules/",
+      ".devin/playbooks/"
+    ],
+    "never_gitignore": [
+      "docs/",
+      "agents/",
+      ".devin/"
+    ],
+    "never_edit_without_approval": [
+      "indicators/warbird-pro-v9.pine",
+      "indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine",
+      ".env",
+      ".env.*",
+      ".env.local",
+      ".env.production",
+      ".env.development",
+      ".env.test"
+    ],
+    "never_overwrite_if_newer_on_main": [
+      "docs/plans/",
+      "docs/handoffs/"
+    ]
+  },
+  "blocked_actions": {
+    "auto_merge": {
+      "knowledge_note": "Manual First Automations Later",
+      "note_id": "note-445c5846b0aa450b9fdfa1a70f81f70e",
+      "description": "No auto-merge without explicit Kirk approval"
+    },
+    "auto_push": {
+      "knowledge_note": "Manual First Automations Later",
+      "note_id": "note-445c5846b0aa450b9fdfa1a70f81f70e",
+      "description": "No auto-push without explicit Kirk approval"
+    },
+    "auto_fix_sonic": {
+      "knowledge_note": "Sonic Is Advisory",
+      "note_id": "note-d6a7f0cef6ad457c9aec8d044a7b7a87",
+      "description": "No auto-apply of Sonic suggested fixes"
+    },
+    "vercel_demotion": {
+      "knowledge_note": "Proof Before Vercel Demotion",
+      "note_id": "note-86b6ce3eac4646eb87b2f83bef46dfbf",
+      "description": "No Vercel demotion without proven local replacement"
+    },
+    "force_push": {
+      "knowledge_note": "Main Only And Push Approval",
+      "note_id": "note-07165b17942b47838287f90ac94ee165",
+      "description": "Never force push or use --no-verify"
+    },
+    "legacy_training": {
+      "knowledge_note": "DuckDB And Specialized Models Only",
+      "note_id": "note-a429f39c81174484a424646173251551",
+      "description": "Do not invoke training-full-zoo, legacy ag_training, or broad model suites"
+    },
+    "fake_data": {
+      "knowledge_note": "Nexus And Standard Volume Adapter Gap",
+      "note_id": "note-96ef65ec546145338408dc298235f718",
+      "description": "No fake footprint, fake win rate, or proxy values presented as real data"
+    },
+    "premature_completion": {
+      "knowledge_note": "No Premature Completion Claims",
+      "note_id": "note-3c0f91b9308341b6a85ce0c5d927d6ce",
+      "description": "Do not claim work is complete without evidence return"
+    }
+  },
+  "required_evidence_on_completion": [
+    "files_changed",
+    "authority_read",
+    "commands_run",
+    "command_outcomes",
+    "adapter_gaps",
+    "unverified_claims",
+    "remaining_blockers"
+  ],
+  "retired_surfaces": [
+    "indicators/v8-warbird-live.pine",
+    "indicators/v8-warbird-prescreen.pine",
+    "indicators/warbird-pro-indicator.pine",
+    "indicators/Warbird_Pro_v7.pine",
+    "indicators/v7-warbird-institutional.pine",
+    "indicators/v7-warbird-strategy.pine",
+    "indicators/v7-warbird-institutional-backtest-strategy.pine",
+    "indicators/fibs-only.pine",
+    "scripts/ag/train_ag_baseline.py",
+    "scripts/ag/train_hard_gate.py"
+  ]
+}

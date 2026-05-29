@@ -117,6 +117,20 @@ echo "INFO: head $(git rev-parse --short HEAD)"
 echo "INFO: working tree status"
 git status --short --branch
 
+# ─── Knowledge Enforcement Engine (hard gates) ───
+# Runs BEFORE quality-lane checks. Violations here are non-negotiable.
+if [[ -x "$ROOT_DIR/scripts/guards/warbird-knowledge-enforcement.sh" ]]; then
+  echo ""
+  echo "═══ Knowledge Enforcement Engine ═══"
+  "$ROOT_DIR/scripts/guards/warbird-knowledge-enforcement.sh" --mode "$MODE" || fail "Knowledge enforcement check failed"
+fi
+
+if [[ -x "$ROOT_DIR/scripts/guards/warbird-file-protection.sh" ]]; then
+  echo ""
+  echo "═══ File Protection Engine ═══"
+  "$ROOT_DIR/scripts/guards/warbird-file-protection.sh" --mode "$MODE" || fail "File protection check failed"
+fi
+
 case "$MODE" in
   pre-commit)
     staged_count="$(git diff --cached --name-only --diff-filter=ACMR | sed '/^$/d' | wc -l | tr -d ' ')"

@@ -29,6 +29,14 @@ pytest tests/ag/test_v9_core_training_targets.py -q
 ## Code Quality Checks
 
 - **SonarQube (Sonic)** — primary linter, review, audit, and reporting surface.
+- The SonarQube GitHub Actions workflow is the primary hosted gate and must run
+  `npm ci`, `npm run lint`, `npm run build`, repo guard checks, Pine static
+  lint, Python contract tests with coverage, and the SonarQube Cloud scan in
+  one job.
+- The scanner must wait for the Sonar Quality Gate so a red gate fails the
+  GitHub Actions job.
+- GitHub ruleset `Warbird Repo Push Checks` requires both `SonarQube Cloud Scan`
+  and `SonarCloud Code Analysis` on `main`.
 - Treat SonarQube as the first defect report to triage for remediation work.
 - Keep lint/build/test/guard commands as executable verification after approved fixes.
 

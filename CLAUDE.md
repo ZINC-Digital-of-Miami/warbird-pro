@@ -397,6 +397,16 @@ Before committing any `.pine` edit:
 For docs-only work, run `npm run lint` and `npm run build` before pushing when
 the docs claim repo operational truth.
 
+## SonarQube Hosted Quality Gate
+
+SonarQube/Sonic is the primary hosted linter, review, audit, reporting, and
+quality-gate surface. The `.github/workflows/sonarqube.yml` workflow must run
+`npm ci`, `npm run lint`, `npm run build`, repo guard checks, Pine static lint,
+Python contract tests with coverage, and the SonarQube Cloud scan in one job.
+The scanner must wait for the Sonar Quality Gate so a red gate fails the
+GitHub Actions job. GitHub ruleset `Warbird Repo Push Checks` requires both
+`SonarQube Cloud Scan` and `SonarCloud Code Analysis` on `main`.
+
 ## Agent-Owned Local Quality Lane
 
 All commits and pushes must pass the Codex-owned local gate:

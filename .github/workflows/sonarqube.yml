@@ -40,6 +40,18 @@ jobs:
       - name: Build frontend/runtime code
         run: npm run build
 
+      - name: Run repository guard checks
+        run: |
+          ./scripts/guards/check-contamination.sh
+          ./scripts/guards/check-no-tv-force.sh
+          ./scripts/guards/check-canonical-zoo.sh
+          ./scripts/guards/check-fib-scanner-guardrails.sh
+
+      - name: Run Pine static lint
+        run: |
+          ./scripts/guards/pine-lint.sh indicators/warbird-pro-v9.pine
+          ./scripts/guards/pine-lint.sh indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -49,13 +61,30 @@ jobs:
       - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install numpy pandas pytest pytest-cov
+          python -m pip install \
+            "setuptools<81" \
+            numpy \
+            pandas \
+            pytest \
+            pytest-cov \
+            duckdb==1.5.2 \
+            pandera==0.31.1 \
+            fg-data-profiling==4.19.1
 
-      - name: Generate Python coverage
+      - name: Run Python contract tests with coverage
         run: |
-          python -m pytest tests/ag/test_v9_core_training_targets.py \
+          mkdir -p sonar-reports
+          python -m pytest \
+            tests/ag/test_v9_core_indicator_input_contract.py \
+            tests/ag/test_v9_core_training_targets.py \
+            tests/duckdb_local/test_warbird_pro_v9_contract.py \
             --cov=scripts \
-            --cov-report=xml:coverage.xml
+            --cov-report=xml:sonar-reports/coverage.xml \
+            --junitxml=sonar-reports/pytest-contracts.xml
+          python -m pytest \
+            scripts/ag/test_tuner.py \
+            -k "load_trials_jsonl_csv_full_includes_tv_mcp_strict or load_history_jsonl_filters_by_profile" \
+            --junitxml=sonar-reports/pytest-tuner.xml
 
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@v7

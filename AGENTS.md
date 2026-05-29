@@ -143,6 +143,14 @@ surface for Warbird quality work. It may annotate, summarize, flag risk, and
 suggest fixes. It is not approval to edit, and it does not replace required
 repo-native verification gates.
 
+- The SonarQube GitHub Actions workflow is the primary hosted quality gate.
+  It must run `npm ci`, `npm run lint`, `npm run build`, repo guard checks,
+  Pine static lint, Python contract tests with coverage, and the SonarQube
+  Cloud scan in one gate.
+- The SonarQube scanner must wait for the Sonar Quality Gate so a red gate
+  fails the GitHub Actions job.
+- GitHub ruleset `Warbird Repo Push Checks` requires both `SonarQube Cloud Scan`
+  and `SonarCloud Code Analysis` on `main`.
 - SonarQube findings are the first quality report to triage for remediation
   planning.
 - SonarQube suggested fixes are advisory only.
@@ -434,9 +442,13 @@ If any `.pine` file is touched, run:
 
 ## Global Quality Surface
 
-- Active quality lane is SonarQube/Sonic as the primary quality report surface,
-  plus repo-native validators and `agents/` automation for executable
-  verification.
+- Active quality lane is SonarQube/Sonic as the primary hosted quality gate and
+  report surface. The Sonar workflow owns hosted `npm ci`, `npm run lint`,
+  `npm run build`, repo guard checks, Pine static lint, Python contract tests
+  with coverage, and Sonar Quality Gate evaluation. GitHub ruleset `Warbird
+  Repo Push Checks` requires `SonarQube Cloud Scan` and `SonarCloud Code
+  Analysis` on `main`; repo-native validators and `agents/` automation remain
+  executable local verification.
 - Canonical agent/runtime quality references:
   - `agents/README.md`
   - `agents/manifest.yaml`

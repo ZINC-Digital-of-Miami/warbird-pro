@@ -90,7 +90,7 @@ Data-layer + sequencing update (locked 2026-05-11):
 | Monte Carlo artifacts root                       | `artifacts/mc_v9/<tag>/`                                                                               |
 | TV settings/tuning helpers (non-V9)              | `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`                                     |
 | TradingView readiness doctor                     | `scripts/ag/tv_connection_doctor.py`                                                                   |
-| Indicator-only AG contract                       | `docs/contracts/pine_indicator_ag_contract.md`                                                         |
+| Local-first modeling contract                    | `docs/contracts/pine_indicator_ag_contract.md`                                                         |
 | Startup review runbook                           | `docs/runbooks/startup_repo_review.md`                                                                 |
 | V9 ML/trading research operating system          | `docs/runbooks/v9_ml_trading_research_operating_system.md`                                             |
 | Legacy (do not use without architecture reopen)  | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |

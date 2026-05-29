@@ -428,6 +428,24 @@ If any `.pine` file is touched, run:
 - Update `AGENTS.md` only when repo rules or hard workflow constraints change.
 - Update memory when a phase or contract locks.
 
+### Mandatory Knowledge & Doc Sync (Anti-Drift Rule)
+
+**Every time Kirk gives a ruling, correction, decision, or directive — ALL related documentation must be updated in the SAME commit. No exceptions. No "update docs later." This is how drift is prevented.**
+
+When a change is made, update ALL of the following that are affected:
+1. **Knowledge notes** (`suggest_knowledge`) — so future sessions get it automatically
+2. **SKILL.md** (`agents/skills/chart-parity-authority/SKILL.md` or relevant skill) — committed guardrails
+3. **CLAUDE.md** — when operational truth changes
+4. **AGENTS.md** — when repo rules or workflow constraints change
+5. **manifest.yaml** — `updated_at` field must reflect the current date
+6. **Packet / plan docs** — if a governing packet exists, it must stay in sync
+
+Do NOT:
+- Leave knowledge notes stale after receiving corrections
+- Ship code changes without updating the governing docs in the same commit
+- Assume another session will "pick up" undocumented rulings
+- Ask Kirk questions that existing docs, knowledge, or secrets already answer
+
 ## Global Quality Surface
 
 - Active quality lane is repo-native validators plus `agents/` automation.

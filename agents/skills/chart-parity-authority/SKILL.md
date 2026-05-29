@@ -134,6 +134,8 @@ These are mistakes made during v2.4 packet creation. Do NOT repeat them:
 8. **Horizon lines for fibs:** Drawing lines that stretch across the entire screen instead of bounded anchored lines.
 9. **Alternative fib engines:** Proposing any fib logic outside of `engine/fib_engine.py`.
 10. **Rewriting sections:** When Kirk gives corrections, apply ONLY those corrections. Do not rewrite entire sections.
+11. **Asking questions the repo already answers:** Read the codebase, knowledge notes, and provisioned secrets before asking Kirk anything.
+12. **Stale docs:** Failing to update ALL related docs (SKILL.md, knowledge notes, AGENTS.md, CLAUDE.md, manifest, packet) when a ruling changes. This is how drift happens. See AGENTS.md "Mandatory Knowledge & Doc Sync" rule.
 
 ## Canonical TF
 
@@ -146,3 +148,14 @@ These are mistakes made during v2.4 packet creation. Do NOT repeat them:
 - AT-1: Bounded fib draw window parity (fib computation uses `engine/fib_engine.py` ONLY, 13 visible levels — same as indicator, -.236 hidden)
 - AT-2: Pressure derived from trades side A/B/N
 - AT-3: Confidence-gating on unknown-side volume (LOW confidence => force WAIT, never GO)
+
+## Mandatory Doc Sync
+
+When ANY ruling in this skill changes, update ALL of the following in the SAME commit:
+- This SKILL.md
+- Knowledge notes (via `suggest_knowledge`)
+- The governing packet (if it exists)
+- AGENTS.md / CLAUDE.md (if operational truth changed)
+- `agents/manifest.yaml` `updated_at` field
+
+No exceptions. No "update docs later." Stale docs cause drift. Drift causes Kirk to repeat himself. That is unacceptable.

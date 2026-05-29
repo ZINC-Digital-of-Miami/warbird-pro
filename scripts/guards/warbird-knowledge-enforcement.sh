@@ -295,6 +295,8 @@ check_governance_file_changes() {
         main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ')" || main_lines=0
         if [[ "$MODE" == "pre-commit" ]]; then
           current_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ')" || current_lines=0
+        elif [[ "$MODE" == "pre-push" ]]; then
+          current_lines="$(git show HEAD:"$f" 2>/dev/null | wc -l | tr -d ' ')" || current_lines=0
         else
           current_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')" || current_lines=0
         fi

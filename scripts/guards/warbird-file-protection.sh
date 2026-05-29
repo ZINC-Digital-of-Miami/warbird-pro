@@ -202,6 +202,9 @@ check_plan_overwrites() {
       while IFS= read -r f; do
         [[ -n "$f" ]] && modified_files+=("$f")
       done < <(git diff --cached --name-only --diff-filter=M 2>/dev/null)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && modified_files+=("$f")
+      done < <(git diff --name-only --diff-filter=M 2>/dev/null)
       ;;
   esac
 
@@ -217,6 +220,8 @@ check_plan_overwrites() {
     main_lines="$(git show origin/main:"$f" 2>/dev/null | wc -l | tr -d ' ')" || main_lines=0
     if [[ "$MODE" == "pre-commit" ]]; then
       staged_lines="$(git show :"$f" 2>/dev/null | wc -l | tr -d ' ')" || staged_lines=0
+    elif [[ "$MODE" == "pre-push" ]]; then
+      staged_lines="$(git show HEAD:"$f" 2>/dev/null | wc -l | tr -d ' ')" || staged_lines=0
     else
       staged_lines="$(wc -l < "$f" 2>/dev/null | tr -d ' ')" || staged_lines=0
     fi
@@ -252,6 +257,9 @@ check_retired_surfaces() {
       while IFS= read -r f; do
         [[ -n "$f" ]] && changed_files+=("$f")
       done < <(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && changed_files+=("$f")
+      done < <(git diff --name-only --diff-filter=ACMR 2>/dev/null)
       ;;
   esac
 

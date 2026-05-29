@@ -1,15 +1,22 @@
 # Warbird Pro — Devin Platform Plan
 
-**Created:** 2026-05-28  
-**Status:** Draft for refinement — NOT a build plan yet  
-**Purpose:** Captures everything discussed, decided, and half-planned so Kirk can review and refine before execution begins.
+**Created:** 2026-05-28
+**Status:** Superseded planning snapshot — NOT the current build plan
+**Purpose:** Captures the 2026-05-28 discussion lineage. Current execution preparation uses the 2026-05-29 chart parity plan-build brief and Devin control-plane artifacts.
+
+> **2026-05-29 Current Authority:** For chart parity and Devin execution, use
+> `docs/plans/2026-05-29-warbird-chart-parity-build-playbook.md`,
+> `.devin/rules/08-chart-parity-authority.md`, `.devin/rules/10-session-insights.md`,
+> `.devin/knowledge-blueprint.md`, and PR #14 / Packet v2.4.1 authority. Vercel
+> is pending demotion only after local replacement proof; it is not already
+> decommissioned.
 
 ---
 
 ## 1. Architecture Direction (Decided 2026-05-28)
 
 ### What Changed
-- **Vercel/Next.js dashboard** → DECOMMISSIONED. Replaced by local Python engine + TradingView Lightweight Charts v5
+- **Vercel/Next.js dashboard** → pending demotion after local Python engine + TradingView Lightweight Charts replacement is proven. Do not claim decommissioned before proof and explicit approval.
 - **System is NOT hinged on TradingView live indicator** — the local engine is the primary platform. TV indicator is reference, not the trigger
 - **Data restrictions LIFTED** — FRED, macro, news, options data are now allowed. Local-first removes all TradingView constraints
 - **AutoGluon full-zoo "locked" config** → UNLOCKED. Specific model set TBD after deep research
@@ -56,7 +63,7 @@
 
 ### Key Requirement: Slick Dashboard with Fib Logic
 
-The local dashboard is NOT hinged on the TradingView live indicator. The fib engine logic in `engine/fib_engine.py` is a Python port that may evolve independently of the Pine indicator. The chart should be visually clean and professional using TV Lightweight Charts.
+The local dashboard is NOT hinged on the TradingView live indicator, but chart parity work is packet-governed. Per Packet v2.4.1 / PR #14, `engine/fib_engine.py` is used only where approved by the packet, without alternative fib engines or approximation language. The chart behavior source is `components/charts/LiveMesChart.tsx` unless a newer approved packet supersedes it.
 
 **Current chart styling (from PR #11):**
 - Candle theme: up=#26C6DA, down=#FF0000, borderUp/borderDown=transparent
@@ -145,7 +152,17 @@ Kirk explicitly said: "we have to do deep research on the models/data used/fib i
 
 ---
 
-## 4. Devin Platform Setup (Completed)
+## 4. Devin Platform Setup Snapshot (Superseded)
+
+This section records the 2026-05-28 snapshot. The current Devin setup contract is now:
+
+- `.devin/knowledge-blueprint.md`
+- `.devin/environment-blueprint.yaml`
+- `.devin/wiki.json`
+- `.devin/rules/08-chart-parity-authority.md`
+- `.devin/rules/09-review-sonic-feedback.md`
+- `.devin/rules/10-session-insights.md`
+- `docs/handoffs/2026-05-29-devin-chart-parity-launch-packet.md`
 
 ### Knowledge Notes (Suggested — Awaiting Approval)
 1. **Project Architecture & Active State** — V9 indicator, Nexus research, DuckDB stack, training sequence, blockers
@@ -200,13 +217,17 @@ Kirk explicitly said: "we have to do deep research on the models/data used/fib i
 
 ## 5. What Happens Next (Kirk's Call)
 
-This plan captures the current state. Before executing, Kirk should decide:
+This plan no longer drives the next execution step. Use
+`docs/handoffs/2026-05-29-devin-chart-parity-launch-packet.md` for the first
+bounded Devin plan-build run.
 
-1. **PR #11** — Merge as-is to get the engine/dashboard foundation on main? Or refine further on the branch?
-2. **Dashboard scope** — How "slick as fuck" does the dashboard need to be before we start wiring trade logic? Is the current LWC implementation sufficient, or does Kirk want a complete visual overhaul first?
-3. **Cron architecture** — What recurring jobs should run on the local machine? (e.g., Databento backfill, DuckDB maintenance, model retraining, alert monitoring)
-4. **Research priority** — Start with model research, data research, fib polishing, or architecture? Or do them in parallel?
-5. **Trade entry logic** — Should the engine auto-fire entries from fib reclaim + MA gate, or should it surface signals for manual execution?
+Resolved for the current lane:
+
+1. **PR #11** — do not merge as-is; use as source inventory and import only approved surfaces.
+2. **Dashboard scope** — packet-first chart parity, not open redesign.
+3. **Cron architecture** — not part of the chart parity plan-build run or first implementation slice.
+4. **Research priority** — deferred until the local dashboard lane is stable.
+5. **Trade entry logic** — keep as explicit implementation phase, not a pre-plan assumption.
 
 ---
 

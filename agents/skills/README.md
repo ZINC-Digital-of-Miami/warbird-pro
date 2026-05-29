@@ -26,11 +26,12 @@ Keep (active, curated):
   - `v9-core-training-governance`
   - `v9-postfit-shap-monte-carlo-gates`
   - `warbird-tuning-router`
-- read-only MCP-oriented helpers that are not tied to Hermes runtime
+- Chart parity authority added under `agents/skills/`:
+  - `chart-parity-authority` (v2.4.1 locked local dashboard rulings)
+- read-only MCP-oriented helpers
 
 Retired from legacy mirrors:
 
-- `.hermes/skills/**` (removed in 2026-05-22 phase-1)
 - duplicate Pine primer stacks mirrored in multiple locations
 - duplicate generic utility skills mirrored in both `.github/skills` and
   `.claude/skills` (removed from `.claude/skills` in 2026-05-22 de-dup pass)

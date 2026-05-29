@@ -136,12 +136,16 @@ context, or agent-facing notes pointing at an older trigger or training surface.
   `python3 scripts/ag/tv_connection_doctor.py --json` (read-only). Treat
   `ready: true` as the only "safe to proceed" signal.
 
-## SonarQube (Sonic) / AI Reviewer Guardrail
+## SonarQube (Sonic) / Primary Quality Surface
 
-SonarQube (Sonic) is the code quality and review surface for Warbird. It may
-annotate, summarize, flag risk, and suggest fixes. It is not approval to edit.
+SonarQube (Sonic) is the primary linter, code-review, audit, and reporting
+surface for Warbird quality work. It may annotate, summarize, flag risk, and
+suggest fixes. It is not approval to edit, and it does not replace required
+repo-native verification gates.
 
-- SonarQube findings and suggested fixes are advisory only.
+- SonarQube findings are the first quality report to triage for remediation
+  planning.
+- SonarQube suggested fixes are advisory only.
 - Do not use SonarQube's suggested-fix output as an automatic write path.
 - When SonarQube reports issues, first return a defect map: path, issue class,
   severity, owning surface, likely root cause, and disproof/verification step.
@@ -430,7 +434,9 @@ If any `.pine` file is touched, run:
 
 ## Global Quality Surface
 
-- Active quality lane is repo-native validators plus `agents/` automation.
+- Active quality lane is SonarQube/Sonic as the primary quality report surface,
+  plus repo-native validators and `agents/` automation for executable
+  verification.
 - Canonical agent/runtime quality references:
   - `agents/README.md`
   - `agents/manifest.yaml`

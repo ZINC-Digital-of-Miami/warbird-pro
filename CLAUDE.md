@@ -1,8 +1,8 @@
 Read and follow `AGENTS.md` at the repository root.
 
-2026-05-22 operational override: `agents/` is now the canonical multi-IDE
-agent umbrella. Any Hermes-first or Claude-only routing notes in this file are
-legacy context and must not override `AGENTS.md` + `agents/README.md`.
+2026-05-29 operational override: `agents/` is now the canonical multi-IDE
+agent umbrella. Legacy runtime-specific routing notes in this file must not
+override `AGENTS.md` + `agents/README.md`.
 
 ## Quick Reference
 
@@ -425,7 +425,7 @@ Before claiming completion on guardrail work, run:
 3. any surface-specific checks required by `AGENTS.md` (for example Pine or
    V9 Core contract lanes)
 
-Hermes runtime overlays are retired for active execution.
+Legacy runtime overlays are retired for active execution.
 
 Quality workbook runtime/artifact surfaces were removed. Do not route new
 execution through quality-playbook phase runners.

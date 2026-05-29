@@ -17,7 +17,7 @@ automation scripts must land here first.
 
 - `agents/roles/`: custom role definitions and role hardening checkpoints.
 - `agents/skills/`: curated skill registry and overlap decisions.
-- `agents/mcp/`: portable read-only MCP servers that do not require Hermes.
+- `agents/mcp/`: portable read-only MCP servers.
 - `agents/scripts/`: install/decommission and process cleanup scripts.
 - `agents/launchd/`: launchd templates for lightweight automation.
 - `agents/manifest.yaml`: single registry for active roles, skills, MCP, and
@@ -28,7 +28,7 @@ automation scripts must land here first.
 1. Phase 1 (this change):
    - establish canonical `agents/` surface
    - add no-manual process cleanup automation
-   - add Hermes decommission script
+   - add no-manual cleanup automation
    - wire existing guard lane to run cleanup silently
 2. Phase 2 (separate):
    - role hardening and intentional keep/drop curation
@@ -40,7 +40,6 @@ automation scripts must land here first.
 
 Current migration status:
 
-- `.hermes/**` retired in phase-1.
 - Legacy IDE mirror surfaces removed from the active repo.
 - `.claude/skills/**` completed phase-2 curation on 2026-05-22; remaining
   ignored local files are migration evidence only, not active registry

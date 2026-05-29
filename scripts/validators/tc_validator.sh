@@ -20,7 +20,6 @@ Options:
   --full                               Run full quality lane (default)
   --skip-quality-lane                  Skip scripts/guards/check-local-quality-lane.sh
   --skip-runtime                       Skip agents runtime surface checks
-  --skip-hermes                        Deprecated alias for --skip-runtime
   -h, --help                           Show this help
 USAGE
 }
@@ -60,7 +59,7 @@ while [[ $# -gt 0 ]]; do
       SKIP_QUALITY=1
       shift
       ;;
-    --skip-runtime|--skip-hermes)
+    --skip-runtime)
       SKIP_RUNTIME=1
       shift
       ;;

@@ -28,8 +28,9 @@ pytest tests/ag/test_v9_core_training_targets.py -q
 
 ## Code Quality Checks
 
-- **SonarQube (Sonic)** — installed in GitHub as the primary code quality gate.
-- Review SonarQube findings on PRs alongside lint/build results.
+- **SonarQube (Sonic)** — primary linter, review, audit, and reporting surface.
+- Treat SonarQube as the first defect report to triage for remediation work.
+- Keep lint/build/test/guard commands as executable verification after approved fixes.
 
 ## Docs-Only Work
 

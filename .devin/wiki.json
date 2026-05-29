@@ -1,0 +1,58 @@
+{
+  "repo_notes": [
+    {
+      "author": "Warbird Codex QA",
+      "content": "Warbird Pro is packet-first for the local dashboard lane. The Vercel dashboard/project is not demoted until the chart packet and local implementation are complete and verified. Codex QA remains the independent verification gate for Devin outputs."
+    },
+    {
+      "author": "Warbird Codex QA",
+      "content": "For chart parity work, prioritize AGENTS.md, agents/skills/chart-parity-authority/SKILL.md when present, docs/packet_plan_v2.4.1_correction_proposal.md when present, components/charts/LiveMesChart.tsx, indicators/warbird-pro-v9.pine, and approved engine surfaces. Do not treat older packet diffs as current when PR #14 content is available."
+    },
+    {
+      "author": "Warbird Codex QA",
+      "content": "Nexus local dashboard work uses the approved dropped-in Nexus logic as-is minus TradingView-centric items. Use standard volume for now, and label any missing footprint or trades-side evidence as an adapter gap rather than as equivalent data."
+    }
+  ],
+  "pages": [
+    {
+      "title": "Warbird Active Authority",
+      "purpose": "Document the authority order, current packet-first dashboard lane, and hard stop rules from AGENTS.md.",
+      "parent": null
+    },
+    {
+      "title": "Chart Parity Packet v2.4.1",
+      "purpose": "Document PR #14 chart-parity-authority skill, corrected proposal, layout rulings, retained chart surfaces, and implementation gates.",
+      "parent": "Warbird Active Authority"
+    },
+    {
+      "title": "Local Dashboard Architecture",
+      "purpose": "Document LiveMesChart.tsx, Lightweight Charts settings, local dashboard runtime, engine surfaces, WebSocket/API paths, and PR #11 keep/fix/discard boundaries.",
+      "parent": null
+    },
+    {
+      "title": "Nexus And Volume Adapter Gaps",
+      "purpose": "Document Nexus local-dashboard behavior, standard-volume fallback, footprint and Databento trades-side limitations, and confidence-gate rules.",
+      "parent": "Local Dashboard Architecture"
+    },
+    {
+      "title": "Devin Execution Rules",
+      "purpose": "Document .devin rules, playbooks, no auto-merge/no auto-push policy, main-only protocol, closeout requirements, and Codex QA handoff.",
+      "parent": null
+    },
+    {
+      "title": "Sonic And Review Workflow",
+      "purpose": "Document SonarQube/Sonic advisory role, Devin Review status, Session Insights retrospective workflow, defect-map workflow, and the self-heal loop for turning repeated review feedback into rules/playbooks/Knowledge.",
+      "parent": "Devin Execution Rules"
+    },
+    {
+      "title": "Session Insights Feedback Loop",
+      "purpose": "Document Warbird category expectations, actionable feedback routing, misleading Knowledge cleanup, repeated issue handling, and L/XL session splitting.",
+      "parent": "Devin Execution Rules"
+    },
+    {
+      "title": "Vercel Demotion Gate",
+      "purpose": "Document proof required before Vercel/Next.js dashboard demotion, rollback expectations, and replacement runtime coverage.",
+      "parent": "Warbird Active Authority"
+    }
+  ]
+}

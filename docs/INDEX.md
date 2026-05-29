@@ -128,6 +128,11 @@ overrides stale push wording in older `docs/plans/` artifacts.
 - `docs/runbooks/2026-04-29-startup-repo-review-initialization.md`
   - initial startup repo review findings and permanence record
 
+## Execution Handoffs
+
+- `docs/handoffs/2026-05-28-devin-execution-qa-turnover.md`
+  - active handoff for Devin-run execution with Codex as independent QA gatekeeper
+
 ## Research References
 
 - `docs/research/2026-05-02-optuna-unified-platform.md`

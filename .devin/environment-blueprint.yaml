@@ -1,0 +1,56 @@
+# Warbird Pro Devin Environment Blueprint Template
+#
+# Devin docs currently say Git-based blueprints are not auto-supported. Paste
+# this into Settings > Environment > Blueprints for the warbird-pro repository,
+# then build a snapshot and verify in a fresh Devin session.
+
+initialize:
+  - name: Use Node 24
+    uses: github.com/actions/setup-node@v6
+    with:
+      node-version: "24"
+  - name: Use Python 3.11
+    uses: github.com/actions/setup-python@v6
+    with:
+      python-version: "3.11"
+
+maintenance:
+  - name: Install Node dependencies
+    run: npm install
+  - name: Install Python test dependencies
+    run: |
+      python -m pip install --upgrade pip
+      python -m pip install numpy pandas pytest pytest-cov
+
+knowledge:
+  - name: authority
+    contents: |
+      Start every Warbird session by reading AGENTS.md, .devin/rules/, and the
+      relevant governing packet/skill. For local dashboard work, use
+      agents/skills/chart-parity-authority/SKILL.md when present.
+  - name: lint
+    contents: |
+      Run npm run lint for frontend/runtime lint. Do not claim success from
+      Sonar or Devin Review alone.
+  - name: build
+    contents: |
+      Run npm run build before push or before claiming dashboard/runtime work is
+      complete.
+  - name: v9_contract_tests
+    contents: |
+      For V9 trainer/ETL/provenance changes, run:
+      pytest tests/ag/test_v9_core_indicator_input_contract.py -q
+      pytest tests/ag/test_v9_core_training_targets.py -q
+  - name: precheck
+    contents: |
+      Before commit/push, run:
+      ./scripts/guards/warbird-agent-precheck.sh --mode manual
+  - name: review_sonic
+    contents: |
+      SonarQube/Sonic and Devin Review are advisory. Return a defect map before
+      applying fixes, and update .devin rules/playbooks when feedback is reusable.
+  - name: session_insights
+    contents: |
+      After meaningful Devin sessions, generate Session Insights. Compare the task
+      category to intent, route actionable feedback, fix misleading Knowledge, and
+      turn repeated issues into playbook, Knowledge, or environment updates.

@@ -1,8 +1,9 @@
 # Agents MCP Registry
 
-Portable MCP servers retained from Hermes and re-homed under `agents/mcp/`.
+Portable MCP servers retained under `agents/mcp/`.
 
-These servers are intentionally read-only and do not depend on Hermes runtime.
+These servers are intentionally read-only and do not depend on a separate agent
+runtime.
 
 ## Servers
 

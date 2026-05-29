@@ -1,5 +1,5 @@
 version: 1
-updated_at: 2026-05-22
+updated_at: 2026-05-29
 canonical_root: agents/
 
 roles:
@@ -20,6 +20,7 @@ skills:
     - agents/skills/v9-core-training-governance/SKILL.md
     - agents/skills/v9-postfit-shap-monte-carlo-gates/SKILL.md
     - agents/skills/warbird-tuning-router/SKILL.md
+    - agents/skills/chart-parity-authority/SKILL.md
   curation_policy:
     - agents/skills/README.md
 
@@ -37,9 +38,6 @@ automation:
     launchd_template: agents/launchd/com.warbird.agents.process-reaper.plist
     install_script: agents/scripts/install_reaper_launchagent.sh
     uninstall_script: agents/scripts/uninstall_reaper_launchagent.sh
-  decommission:
-    hermes: agents/scripts/decommission_hermes.sh
 
 retired:
-  - .hermes/**
   - .claude/skills/**

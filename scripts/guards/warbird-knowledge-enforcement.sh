@@ -67,7 +67,7 @@ report_and_exit() {
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
   echo "VIOLATIONS (${#VIOLATIONS[@]}):"
-  for v in "${VIOLATIONS[@]}"; do
+  for v in "${VIOLATIONS[@]+"${VIOLATIONS[@]}"}"; do
     echo "  ✘ $v"
   done
   echo ""
@@ -150,6 +150,7 @@ get_file_diff() {
 # Rule: Never force push or use --no-verify
 
 check_no_force_push_in_changes() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
@@ -178,6 +179,7 @@ check_no_force_push_in_changes() {
 # Rule: Do not invoke training-full-zoo or legacy ag_training
 
 check_no_legacy_training() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
@@ -196,6 +198,7 @@ check_no_legacy_training() {
 # Rule: No fake footprint/win rate data presented as real
 
 check_no_fake_data_labels() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
@@ -214,6 +217,7 @@ check_no_fake_data_labels() {
 # Rule: No Vercel demotion without proven replacement
 
 check_no_vercel_demotion() {
+  [[ ${#DELETED_FILES[@]} -gt 0 ]] || return 0
   for f in "${DELETED_FILES[@]}"; do
     case "$f" in
       vercel.json|.vercel/*|next.config.*|app/layout.tsx)
@@ -267,6 +271,7 @@ check_no_autofix_commit_messages() {
 # Rule: No auto-push/auto-merge/auto-fix automation without approval
 
 check_no_unauthorized_automation() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
@@ -287,6 +292,7 @@ check_no_unauthorized_automation() {
 # Rule: AGENTS.md is the instruction surface — changes need care
 
 check_governance_file_changes() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     case "$f" in
       AGENTS.md|CLAUDE.md|WARBIRD_MODEL_SPEC.md)
@@ -323,6 +329,7 @@ check_governance_file_changes() {
 # Rule: Watch for V7/V8 references in new code
 
 check_no_v7_v8_references() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in
@@ -346,6 +353,7 @@ check_no_v7_v8_references() {
 # (This is defense-in-depth alongside hook-pre-plan-contract.sh)
 
 check_pine_edit_protection() {
+  [[ ${#CHANGED_FILES[@]} -gt 0 ]] || return 0
   for f in "${CHANGED_FILES[@]}"; do
     case "$f" in
       indicators/warbird-pro-v9.pine|indicators/warbird-nexus-machine-learning-rsi-optuna-fast-test.pine)

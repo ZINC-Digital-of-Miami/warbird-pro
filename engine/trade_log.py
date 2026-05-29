@@ -121,12 +121,12 @@ def close_trade(
         """UPDATE trades
            SET closed_at = ?, exit_price = ?, result = ?,
                pnl_pts = CASE WHEN direction = 'SHORT'
-                               THEN entry_price - exit_price
-                               ELSE exit_price - entry_price
+                               THEN entry_price - ?
+                               ELSE ? - entry_price
                           END,
                notes = ?
            WHERE id = ?""",
-        [now, exit_price, result, notes, trade_id],
+        [now, exit_price, result, exit_price, exit_price, notes, trade_id],
     )
     conn.close()
 

@@ -145,9 +145,10 @@ GROUP_5_TABLES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Group 6 — Trade Log (3 tables)
 # ---------------------------------------------------------------------------
+GROUP_6_SEQUENCE = "CREATE SEQUENCE IF NOT EXISTS trade_id_seq START 1"
 GROUP_6_TABLES: dict[str, str] = {
     "trades": (
-        "id INTEGER PRIMARY KEY, "
+        "id INTEGER PRIMARY KEY DEFAULT (nextval('trade_id_seq')), "
         "opened_at TIMESTAMP NOT NULL, closed_at TIMESTAMP, "
         "symbol VARCHAR DEFAULT 'MES', timeframe VARCHAR NOT NULL, "
         "direction VARCHAR NOT NULL, entry_price DOUBLE NOT NULL, "
@@ -300,6 +301,9 @@ def init_all_tables(db_path: str | None = None) -> list[str]:
 
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     conn = duckdb.connect(db_path)
+
+    # Group 6 requires a sequence for trade_id auto-increment
+    conn.execute(GROUP_6_SEQUENCE)
 
     created: list[str] = []
     for group_name, tables in ALL_GROUPS:

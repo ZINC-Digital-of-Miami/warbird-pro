@@ -160,7 +160,7 @@ check_no_force_push_in_changes() {
           scripts/guards/warbird-file-protection.sh) continue ;;
           scripts/guards/enforcement-manifest.json) continue ;;
         esac
-        if grep -qE 'git\s+push\s+.*--force' "$f" 2>/dev/null && ! grep -qE 'git\s+push\s+.*--force-with-lease' "$f" 2>/dev/null; then
+        if grep -E 'git\s+push\s+.*--force' "$f" 2>/dev/null | grep -qvE '\-\-force-with-lease'; then
           add_violation "Main Only And Push Approval" "note-07165b17" \
             "Forbidden 'git push --force' found in $f"
         fi

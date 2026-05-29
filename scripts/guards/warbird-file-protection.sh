@@ -307,7 +307,20 @@ check_force_push_markers() {
     [[ -f "$f" ]] || continue
     case "$f" in
       *.sh|*.bash|*.py|*.md|*.yml|*.yaml)
-        if grep -qE '(--force-with-lease|--force|--no-verify|force.push)' "$f" 2>/dev/null; then
+        local has_forbidden=false
+        # Check for git push --force (excluding --force-with-lease which is allowed)
+        if grep -E 'git\s+push\s+.*--force' "$f" 2>/dev/null | grep -qvE '\-\-force-with-lease'; then
+          has_forbidden=true
+        fi
+        # Check for --no-verify in git context
+        if grep -qE 'git\s+(commit|push)\s+.*--no-verify' "$f" 2>/dev/null; then
+          has_forbidden=true
+        fi
+        # Check for force.push git config
+        if grep -qE 'force\.push' "$f" 2>/dev/null; then
+          has_forbidden=true
+        fi
+        if [[ "$has_forbidden" == "true" ]]; then
           # Skip guard scripts, manifest, rules, and docs that document forbidden patterns
           case "$f" in
             scripts/guards/warbird-file-protection.sh) continue ;;

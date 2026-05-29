@@ -85,7 +85,7 @@ report_and_exit() {
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
   echo "VIOLATIONS:"
-  for v in "${VIOLATIONS[@]}"; do
+  for v in "${VIOLATIONS[@]+"${VIOLATIONS[@]}"}"; do
     echo "  ✘ $v"
   done
   echo ""
@@ -125,6 +125,7 @@ check_deleted_files() {
       ;;
   esac
 
+  [[ ${#deleted_files[@]} -gt 0 ]] || return 0
   for f in "${deleted_files[@]}"; do
     for protected in "${NEVER_DELETE_PATHS[@]}"; do
       if [[ "$f" == "$protected"* ]]; then
@@ -208,6 +209,7 @@ check_plan_overwrites() {
       ;;
   esac
 
+  [[ ${#modified_files[@]} -gt 0 ]] || return 0
   for f in "${modified_files[@]}"; do
     # Only check docs/plans/ and docs/handoffs/
     case "$f" in
@@ -276,6 +278,7 @@ check_retired_surfaces() {
     "scripts/ag/train_hard_gate.py"
   )
 
+  [[ ${#changed_files[@]} -gt 0 ]] || return 0
   for f in "${changed_files[@]}"; do
     for r in "${retired[@]}"; do
       if [[ "$f" == "$r" ]]; then
@@ -303,6 +306,7 @@ check_force_push_markers() {
       ;;
   esac
 
+  [[ ${#changed_files[@]} -gt 0 ]] || return 0
   for f in "${changed_files[@]}"; do
     [[ -f "$f" ]] || continue
     case "$f" in

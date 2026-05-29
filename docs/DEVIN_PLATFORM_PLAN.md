@@ -21,7 +21,7 @@
 - **Data restrictions LIFTED** — FRED, macro, news, options data are now allowed. Local-first removes all TradingView constraints
 - **AutoGluon full-zoo "locked" config** → UNLOCKED. Specific model set TBD after deep research
 - **Past testing results are SKEWED** — 15m/5m/1h baselines from 2026-04-27 should not be relied upon
-- **Codacy** → REMOVED. Replaced by SonarQube (Sonic) for code quality checks
+- **SonarQube (Sonic)** is the active code quality system.
 - **Cloud Supabase for training** → PROHIBITED. DuckDB for all local data/trade recording
 - **Dashboard hosting platform** → TBD. Using TV Lightweight Charts but the hosting/serving platform is not fully chosen
 
@@ -171,7 +171,7 @@ This section records the 2026-05-28 snapshot. The current Devin setup contract i
 4. **V9 Core Training Pipeline Details** — trainer, labels, features, post-fit gates
 5. **Git Protocol & Quality Gates** — main-only, push approval, precheck, lint/build
 6. **Dashboard Command Center (PR #11)** — Python engine, LWC, DuckDB trade log, Databento
-7. **Code Quality & CI Setup** — SonarQube replacing Codacy
+7. **Code Quality & CI Setup** — SonarQube quality lane
 8. **ML Modeling Direction (Pivot)** — AG unlocked, models TBD, data research first
 
 ### .devin/ Rules (In Repo)
@@ -204,10 +204,10 @@ This section records the 2026-05-28 snapshot. The current Devin setup contract i
 - Knowledge entries for lint, build, test, startup, pre_commit
 
 ### SonarQube (Sonic)
-- `sonar-project.properties` created in repo with exclusion patterns (migrated from old `.codacy.yaml`)
+- `sonar-project.properties` created in repo with exclusion patterns (migrated from legacy quality config)
 - SonarQube is installed in GitHub as a GitHub App
 - Devin MCP integration has placeholder URLs — Kirk can configure at org settings → MCP servers if desired
-- All Codacy files, config, references removed from repo
+- Legacy quality-scanner files, config, and references removed from repo
 
 ### Wiki
 - Generated at https://app.devin.ai/wiki/ZINC-Digital-of-Miami/warbird-pro

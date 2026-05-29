@@ -39,7 +39,7 @@ Checked from local `main` on 2026-05-28:
 - `docs/DEVIN_PLATFORM_PLAN.md` exists and is marked `Draft for refinement - NOT a build plan yet`.
 - SonarQube workflow exists at `.github/workflows/sonarqube.yml`.
 - `sonar-project.properties` exists.
-- Codacy config residue has been removed from the working tree.
+- Legacy quality-scanner config residue has been removed from the working tree.
 - `docs/MASTER_PLAN.md`, `AGENTS.md`, `CLAUDE.md`, and `.devin/rules/` include the 2026-05-28 local-first pivot.
 
 User-provided platform status, not repo-verifiable from local files:

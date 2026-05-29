@@ -100,7 +100,7 @@ PR #11 (`devin/1779988864-warbird-command-center`) is source inventory only. Its
 | `engine/fib_engine.py`      | **KEEP — cherry-pick** | Phase 1   | Sole fib computation engine. Used AS-IS. No modifications.                                                          |
 | `engine/trade_log.py`       | **KEEP — cherry-pick** | Phase 1   | DuckDB trade log schema (trades, trade_tags, indicator_state). Fix PnL bug for SHORT trades (Devin Review finding). |
 | `engine/databento_feed.py`  | **KEEP — cherry-pick** | Phase 1.5 | Databento Live subscription. Add trades-schema path in Phase 4. Add client-presence lifecycle.                      |
-| `engine/bar_store.py`       | **KEEP — cherry-pick** | Phase 1.5 | Multi-TF bar aggregation (1m→1/3/5/15m/1h/4h). Fix thread-safety issues flagged by Codacy.                          |
+| `engine/bar_store.py`       | **KEEP — cherry-pick** | Phase 1.5 | Multi-TF bar aggregation (1m→1/3/5/15m/1h/4h). Fix thread-safety issues flagged by static analysis.                  |
 | `engine/server.py`          | **KEEP — cherry-pick** | Phase 1.5 | FastAPI on port 3100 + WebSocket push. Add client-presence-aware lifecycle (COLD/WARM states).                      |
 | `engine/config.py`          | INSPECT, conditional   | Phase 1.5 | Review for Databento key handling. Add approved schemas/symbols allowlist.                                          |
 | `engine/indicators.py`      | INSPECT, conditional   | Phase 2   | Contains candle-body proxy at :438-447. Replace with real trades-side delta in Phase 4.                             |

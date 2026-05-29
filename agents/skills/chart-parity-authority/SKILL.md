@@ -50,10 +50,12 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 - EMA 21 + EMA 9 smoothing are already IN the Warbird Pro V9 indicator. Port them with EXACT settings. Do NOT add a separate/duplicate EMA 21.
 - The ONLY addition is 200 SMA (white, 2pt thick).
 
-## Warbird Pro V9 Is The Authority
+## Warbird Pro V9 Is The Authority — TRANSFER THE EXACT INDICATOR
 
+- **CORE DIRECTIVE:** Transfer the EXACT Warbird Pro V9 indicator to the TV Charting Library chart. Every MA, every fib, every color, every width, every style, every setting — directly from the indicator.
 - The entire Warbird Pro V9 indicator (`indicators/warbird-pro-v9.pine`) is the authority for MAs, colors, logic, draw semantics — everything.
-- Port it. Do NOT reinvent it. Do NOT leave it to "use what we can from it."
+- The fib engine (`engine/fib_engine.py`) is the computation authority. The Pine indicator is the visual/logic authority.
+- Port it EXACTLY. Do NOT reinvent it. Do NOT approximate it. Do NOT leave anything out.
 
 ## Layout (Locked)
 

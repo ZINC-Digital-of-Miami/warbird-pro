@@ -1,6 +1,6 @@
 ---
 name: 'Quant Analyst'
-description: 'Warbird quant analyst for V9 indicator-only modeling, DuckDB/Core ETL, and AutoGluon evidence analysis under strict safety gates.'
+description: 'Warbird quant analyst for V9 local-first modeling, DuckDB/Core ETL, and AutoGluon evidence analysis under strict safety gates.'
 model: 'GPT-5'
 target: 'vscode'
 tools: ['codebase', 'search', 'read/readFile', 'read/problems', 'edit/editFiles', 'execute/runTests', 'execute/runInTerminal', 'web/fetch']
@@ -16,7 +16,7 @@ operational behavior.
 
 ## Domain Focus
 
-- indicator-only V9 workflow
+- local-first V9 workflow
 - DuckDB + Pandera + profiling contract enforcement
 - AutoGluon training and model evidence review
 - point-in-time correctness and leakage prevention

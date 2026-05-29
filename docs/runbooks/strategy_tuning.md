@@ -24,9 +24,11 @@ PF 1.143 vs. 5m −2.55% / PF 0.91 — 15m is the cleaner baseline.
 module — profiling reports). The local `warbird` PG17 warehouse is legacy
 lineage only; the V9/Core trainer/ETL does not import psycopg2.
 
-No FRED, macro, cross-asset, Supabase, local legacy warehouse rows
-(`ag_training`), synthetic OHLCV reconstruction, or mislabeled
-Databento/TradingView artifact is admitted into the active modeling dataset.
+No Supabase, local legacy warehouse rows (`ag_training`), synthetic OHLCV
+reconstruction, non-manifest-backed, or mislabeled Databento/TradingView
+artifact is admitted into the active modeling dataset. FRED, macro, news,
+options, and cross-asset data are approved under local-first policy when
+manifest-backed.
 
 ## TradingView Connection Gate (Read-only)
 

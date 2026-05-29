@@ -6,7 +6,7 @@
 ## Purpose
 
 Defines the minimum metadata required for Pine/TradingView exports used in
-indicator-only modeling.
+active modeling.
 
 ## Required Identity Fields
 

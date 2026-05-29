@@ -3,7 +3,7 @@
 **Date:** 2026-05-05
 **Status:** Active Runbook Index
 
-The active runbooks support indicator-only Pine modeling.
+The active runbooks support local-first modeling.
 
 ## Iteration Rule
 

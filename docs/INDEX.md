@@ -81,7 +81,7 @@ overrides stale push wording in older `docs/plans/` artifacts.
 - `docs/contracts/`
   - the only interface and payload authority
 - `docs/contracts/pine_indicator_ag_contract.md`
-  - exact active indicator-only modeling contract
+  - exact active local-first modeling contract
 - `docs/cloud_scope.md`
   - the only cloud-whitelist authority
 - `docs/runbooks/README.md`

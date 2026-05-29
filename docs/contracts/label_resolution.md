@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Defines labels for indicator-only modeling.
+Defines labels for active modeling.
 
 ## Label Source
 

@@ -12,7 +12,7 @@ to the active V9/Core workflow.
 1. Inventory all legacy role files across mirror directories.
 2. Mark each role keep/drop with reason and owner.
 3. Rewrite kept roles under `agents/roles/` using current contracts:
-   - indicator-only V9 Core
+   - local-first V9 Core
    - real data only
    - no unauthorized Pine edits
    - no push/deploy without explicit approval

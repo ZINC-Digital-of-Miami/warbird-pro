@@ -6,7 +6,7 @@
 The four-table local AG warehouse contract and `ag_training` view were part of
 the retired warehouse/FRED/macro modeling plan.
 
-They are not active training truth under Warbird Indicator-Only AG Plan v6.
+They are not active training truth under Warbird Local-First DuckDB Platform Plan v7.
 
 Active modeling now uses the manifest-backed source data admitted by the active
 contract. See:

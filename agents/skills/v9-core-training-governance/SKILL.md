@@ -22,8 +22,9 @@ launch work.
 - Model family: AutoGluon Tabular through the locked trainer
 
 Do not route V9/Core work through `train_ag_baseline.py`, local Postgres
-`ag_training`, FRED/macro joins, cloud Supabase, or legacy warehouse preflight
-skills unless Kirk explicitly reopens that architecture.
+`ag_training`, cloud Supabase, or legacy warehouse preflight skills unless Kirk
+explicitly reopens that architecture. FRED/macro data is approved under
+local-first policy when manifest-backed.
 
 ## Stop conditions
 

@@ -61,7 +61,7 @@ Training rows may come from manifest-backed sources:
 All sources must be manifest-backed with honest labeling.
 
 `warbird_pro_v9` may load ES exports across 5m/15m from the same active Warbird
-Pro V9 training lane. MES/NQ/MNQ rows are ignored. No undeclared external
+Pro V9 training lane. MES/NQ/MNQ rows are ignored. No non-manifest-backed external
 cross-symbol join, cloud table, or external feature stack is admitted into this
 lane. Pine-native NQ + 6E values emitted by the active indicator are part of the
 indicator behavior. Approved local Databento model-context side features must be

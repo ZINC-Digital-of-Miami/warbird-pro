@@ -68,5 +68,6 @@ Then answer:
 - Do not tune on OOS.
 - Do not use mock, synthetic, or stale exports.
 - Do not use local OHLCV/Databento bars for Nexus footprint claims.
-- Do not reintroduce cloud/FRED/macro feature stacking into V9/Core.
+- Do not reintroduce cloud or non-manifest-backed feature stacking into V9/Core.
+  FRED/macro data is approved under local-first policy when manifest-backed.
 - Do not restart, kill, or launch TradingView as recovery automation.

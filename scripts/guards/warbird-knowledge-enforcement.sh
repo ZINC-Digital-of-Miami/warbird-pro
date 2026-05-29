@@ -75,28 +75,58 @@ report_and_exit() {
 
 collect_changed_files() {
   CHANGED_FILES=()
+  DELETED_FILES=()
+  UPSTREAM_REF="origin/main"
   case "$MODE" in
     pre-commit)
       while IFS= read -r f; do
         [[ -n "$f" ]] && CHANGED_FILES+=("$f")
       done < <(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && DELETED_FILES+=("$f")
+      done < <(git diff --cached --name-only --diff-filter=D 2>/dev/null)
       ;;
     pre-push)
-      local upstream_ref
-      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
+      UPSTREAM_REF="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
       while IFS= read -r f; do
         [[ -n "$f" ]] && CHANGED_FILES+=("$f")
-      done < <(git diff --name-only --diff-filter=ACMR "$upstream_ref"...HEAD 2>/dev/null)
+      done < <(git diff --name-only --diff-filter=ACMR "$UPSTREAM_REF"...HEAD 2>/dev/null)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && DELETED_FILES+=("$f")
+      done < <(git diff --name-only --diff-filter=D "$UPSTREAM_REF"...HEAD 2>/dev/null)
       ;;
     manual)
       while IFS= read -r f; do
         [[ -n "$f" ]] && CHANGED_FILES+=("$f")
       done < <(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && DELETED_FILES+=("$f")
+      done < <(git diff --cached --name-only --diff-filter=D 2>/dev/null)
       if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
         while IFS= read -r f; do
           [[ -n "$f" ]] && CHANGED_FILES+=("$f")
         done < <(git diff --name-only --diff-filter=ACMR 2>/dev/null)
+        DELETED_FILES=()
+        while IFS= read -r f; do
+          [[ -n "$f" ]] && DELETED_FILES+=("$f")
+        done < <(git diff --name-only --diff-filter=D 2>/dev/null)
       fi
+      ;;
+  esac
+}
+
+# Helper: get diff content for a file in a mode-aware way
+get_file_diff() {
+  local file="$1"
+  case "$MODE" in
+    pre-commit)
+      git diff --cached -- "$file" 2>/dev/null
+      ;;
+    pre-push)
+      git diff "$UPSTREAM_REF"...HEAD -- "$file" 2>/dev/null
+      ;;
+    manual)
+      git diff --cached -- "$file" 2>/dev/null || git diff -- "$file" 2>/dev/null
       ;;
   esac
 }
@@ -121,7 +151,7 @@ check_no_force_push_in_changes() {
           scripts/guards/warbird-file-protection.sh) continue ;;
           scripts/guards/enforcement-manifest.json) continue ;;
         esac
-        if grep -qE 'git\s+push\s+.*--force(?!-with-lease)' "$f" 2>/dev/null; then
+        if grep -qE 'git\s+push\s+.*--force' "$f" 2>/dev/null && ! grep -qE 'git\s+push\s+.*--force-with-lease' "$f" 2>/dev/null; then
           add_violation "Main Only And Push Approval" "note-07165b17" \
             "Forbidden 'git push --force' found in $f"
         fi
@@ -175,13 +205,9 @@ check_no_fake_data_labels() {
 # Rule: No Vercel demotion without proven replacement
 
 check_no_vercel_demotion() {
-  for f in "${CHANGED_FILES[@]}"; do
+  for f in "${DELETED_FILES[@]}"; do
     case "$f" in
       vercel.json|.vercel/*|next.config.*|app/layout.tsx)
-        # Check if file is being deleted or gutted
-        if ! git diff --cached --name-only --diff-filter=D 2>/dev/null | grep -q "^${f}$"; then
-          continue
-        fi
         add_violation "Proof Before Vercel Demotion" "note-86b6ce3e" \
           "Vercel infrastructure file deleted: $f — requires proven local replacement first"
         ;;
@@ -218,8 +244,8 @@ check_no_unauthorized_automation() {
     [[ -f "$f" ]] || continue
     case "$f" in
       .github/workflows/*|.devin/playbooks/*|cron/*|scripts/automation/*)
-        # Check for auto-push/auto-merge patterns in new workflow files
-        if git diff --cached -- "$f" 2>/dev/null | grep -qiE '(auto.?push|auto.?merge|auto.?fix|auto.?deploy)'; then
+        # Check for auto-push/auto-merge patterns using mode-aware diff
+        if get_file_diff "$f" | grep -qiE '(auto.?push|auto.?merge|auto.?fix|auto.?deploy)'; then
           add_violation "Manual First Automations Later" "note-445c5846" \
             "Write automation detected in $f — manual-first: run playbook manually once first"
         fi

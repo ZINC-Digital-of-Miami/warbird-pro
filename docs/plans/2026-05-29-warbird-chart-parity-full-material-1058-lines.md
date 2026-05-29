@@ -208,7 +208,7 @@ Seed `econ_news_topics` with the 11 S&P-focused topics from `config/news_raw_con
 
 | Source              | Frequency                                    | API Key                                                            | Cost      |
 | ------------------- | -------------------------------------------- | ------------------------------------------------------------------ | --------- |
-| FinancialData.net   | 1-min polling                                | `8cd0dd568c735d919df2d861b936c2d9` (free tier, expires 2026-06-27) | Free      |
+| FinancialData.net   | 1-min polling                                | Stored in `.env` as `FINANCIALDATA_API_KEY` (free tier, expires 2026-06-27) | Free      |
 | Google Finance News | 1-5 min (Kirk's watchlist at `.INX:INDEXSP`) | Kirk's Google account                                              | Free      |
 | Finnhub             | 15-min polling                               | Existing key (in Supabase vault, migrate to `.env`)                | Free tier |
 | Newsfilter          | 15-min polling                               | Existing key (in Supabase vault, migrate to `.env`)                | Free tier |

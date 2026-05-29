@@ -147,10 +147,16 @@ GROUP_5_TABLES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 GROUP_6_TABLES: dict[str, str] = {
     "trades": (
-        "id INTEGER PRIMARY KEY, ts TIMESTAMPTZ, symbol TEXT DEFAULT 'MES', "
-        "direction TEXT, entry_price DOUBLE, stop_loss DOUBLE, "
-        "tp1 DOUBLE, tp2 DOUBLE, exit_price DOUBLE, exit_reason TEXT, "
-        "pnl DOUBLE, status TEXT"
+        "id INTEGER PRIMARY KEY, "
+        "opened_at TIMESTAMP NOT NULL, closed_at TIMESTAMP, "
+        "symbol VARCHAR DEFAULT 'MES', timeframe VARCHAR NOT NULL, "
+        "direction VARCHAR NOT NULL, entry_price DOUBLE NOT NULL, "
+        "stop_price DOUBLE, tp_price DOUBLE, exit_price DOUBLE, "
+        "pnl_pts DOUBLE, result VARCHAR, score DOUBLE, "
+        "conviction VARCHAR, fib_level VARCHAR, "
+        "ema21 DOUBLE, ema9 DOUBLE, rsi DOUBLE, "
+        "pressure_pct DOUBLE, squeeze_on BOOLEAN, "
+        "pattern_tags VARCHAR[], notes VARCHAR, ai_commentary VARCHAR"
     ),
     "trade_tags": (
         "id INTEGER PRIMARY KEY, trade_id INTEGER, tag TEXT"

@@ -113,9 +113,10 @@ def _resolve_target_table(fname: str) -> str | None:
 
 def _read_source(fpath: str) -> str:
     """Return the DuckDB read expression for a file path."""
+    safe = fpath.replace("'", "''")
     if fpath.endswith(".zip"):
-        return f"read_parquet('{fpath}/*.parquet')"
-    return f"read_parquet('{fpath}')"
+        return f"read_parquet('{safe}/*.parquet')"
+    return f"read_parquet('{safe}')"
 
 
 def _ingest_file(

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warbird Pro — Local Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- LWC v5 via CDN — plain HTML, no React, no Next.js, no npm build step -->
+  <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <!-- ================================================================== -->
+  <!-- Layout from SKILL.md locked diagram:                                -->
+  <!-- Correlations → Chart+Cards → Pressure → Nexus                      -->
+  <!-- ================================================================== -->
+
+  <div class="dashboard-root">
+
+    <!-- Row 1: Correlations — full width, above everything, 1h update -->
+    <section class="correlations-row" id="correlations-row">
+      <div class="correlation-cell" data-symbol="NQ">
+        <span class="corr-symbol">NQ</span>
+        <span class="corr-value">--</span>
+      </div>
+      <div class="correlation-cell" data-symbol="6E">
+        <span class="corr-symbol">6E</span>
+        <span class="corr-value">--</span>
+      </div>
+      <div class="correlation-cell" data-symbol="CL">
+        <span class="corr-symbol">CL</span>
+        <span class="corr-value">--</span>
+      </div>
+      <div class="correlation-cell" data-symbol="ZN">
+        <span class="corr-symbol">ZN</span>
+        <span class="corr-value">--</span>
+      </div>
+    </section>
+
+    <!-- Row 2: Chart + Cards (2-column grid, cards sidebar 320px within chart row only) -->
+    <section class="chart-cards-row">
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div class="chart-header-left">
+            <div class="chart-status-dot"></div>
+            <span class="chart-symbol">MES1!</span>
+            <span class="chart-desc">Micro E-mini S&amp;P 500 &bull; 5m</span>
+          </div>
+          <div class="chart-header-right">
+            <span class="chart-price" id="chart-price">--</span>
+          </div>
+        </div>
+        <div class="chart-area">
+          <!-- Watermark -->
+          <div class="chart-watermark">
+            <img src="/chart_watermark.svg" alt="" width="280" height="140" />
+          </div>
+          <!-- LWC mounts here -->
+          <div id="chart-container"></div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-sma-line"></div>
+            <span>200 SMA</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-bull-box"></div>
+            <span>Bull</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-bear-box"></div>
+            <span>Bear</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards panel — 320px, WITHIN chart row only -->
+      <aside class="cards-panel" id="cards-panel">
+        <div class="card" id="card-entry-signal">
+          <h3>Entry Signal</h3>
+          <div class="card-value">WAIT</div>
+        </div>
+        <div class="card" id="card-entry-price">
+          <h3>Entry Price</h3>
+          <div class="card-value">--</div>
+        </div>
+        <div class="card" id="card-sl">
+          <h3>Stop Loss</h3>
+          <div class="card-value">--</div>
+        </div>
+        <div class="card" id="card-tp1">
+          <h3>TP1</h3>
+          <div class="card-value">--</div>
+        </div>
+        <div class="card" id="card-tp2">
+          <h3>TP2</h3>
+          <div class="card-value">--</div>
+        </div>
+        <div class="card" id="card-ai-analysis">
+          <h3>AI Analysis</h3>
+          <div class="card-value card-text">Waiting for Gemini...</div>
+        </div>
+        <div class="card" id="card-win-rate">
+          <h3>Win Rate</h3>
+          <div class="card-value">--</div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Row 3: Pressure bar — thin slim, full width, below chart and cards -->
+    <section class="pressure-bar" id="pressure-bar">
+      <div class="pressure-fill" id="pressure-fill" style="width: 50%;"></div>
+    </section>
+
+    <!-- Row 4: Nexus — full width, below pressure bar -->
+    <section class="nexus-row" id="nexus-row">
+      <div class="nexus-placeholder">Nexus ML RSI (Phase 5)</div>
+    </section>
+
+  </div>
+
+  <script src="chart.js"></script>
+</body>
+</html>

@@ -36,7 +36,7 @@ This system applies to:
 - SHAP and Monte Carlo evaluation cycles
 - TP/SL policy research
 - timeframe research across ES 1m, 3m, 5m, 15m, and hybrid structures
-- future strategy revisions that remain under the indicator-only contract
+- future strategy revisions that remain under the local-first contract
 
 ## B. Full Phase Architecture
 

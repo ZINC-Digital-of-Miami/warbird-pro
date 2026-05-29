@@ -63,7 +63,7 @@
 
 ### Key Requirement: Slick Dashboard with Fib Logic
 
-The local dashboard is NOT hinged on the TradingView live indicator. The fib engine logic in `engine/fib_engine.py` is a Python port that may evolve independently of the Pine indicator. The chart should be visually clean and professional using TV Lightweight Charts.
+The local dashboard is NOT hinged on the TradingView live indicator. The fib engine logic in `engine/fib_engine.py` is used exactly as-is from the repo — no modifications, no alternative engines (see `agents/skills/chart-parity-authority/SKILL.md`). The chart is ported exactly from `components/charts/LiveMesChart.tsx` using TradingView Lightweight Charts.
 
 **Current chart styling (from PR #11):**
 - Candle theme: up=#26C6DA, down=#FF0000, borderUp/borderDown=transparent

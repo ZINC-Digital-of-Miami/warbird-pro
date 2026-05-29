@@ -51,7 +51,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 
 ## Warbird Pro V9 Is The Authority — TRANSFER THE EXACT INDICATOR
 
-- **CORE DIRECTIVE:** Transfer the EXACT Warbird Pro V9 indicator to the TV Charting Library chart. Every MA, every fib, every color, every width, every style, every setting — directly from the indicator.
+- **CORE DIRECTIVE:** Transfer the EXACT Warbird Pro V9 indicator to the Lightweight Charts dashboard. Every MA, every fib, every color, every width, every style, every setting — directly from the indicator.
 - The entire Warbird Pro V9 indicator (`indicators/warbird-pro-v9.pine`) is the authority for MAs, colors, logic, draw semantics — everything.
 - The fib engine (`engine/fib_engine.py`) is the computation authority. The Pine indicator is the visual/logic authority.
 - Port it EXACTLY. Do NOT reinvent it. Do NOT approximate it. Do NOT leave anything out.
@@ -63,7 +63,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 │ CORRELATIONS ROW (4 Databento symbols, 1h update)           │
 │ full width — above everything                               │
 ├─────────────────────────────────────┬───────────────────────┤
-│ CHART (TV Charting Library)         │ CARDS PANEL (320px)   │
+│ CHART (Lightweight Charts)          │ CARDS PANEL (320px)   │
 │                                     │ ├ Entry Signal        │
 │ sidebar sits WITHIN chart row only  │ ├ Entry Price         │
 │                                     │ ├ SL                  │

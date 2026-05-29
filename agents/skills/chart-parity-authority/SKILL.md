@@ -1,7 +1,7 @@
 ---
 name: chart-parity-authority
 description: Locked rulings and guardrails for the Warbird Pro local dashboard implementation using TradingView Charting Library. Must be followed exactly — no drift, no reinterpretation, no additions beyond what Kirk approves.
-version: 2.4
+version: 2.4.1
 author: Kirk Musick
 date: 2026-05-29
 status: APPROVED — awaiting implementation approval
@@ -19,7 +19,8 @@ packet_version_history:
   - v2.2: Layout locked, footprint → volume delta, 5m canonical
   - v2.3: Full-width pressure bar + nexus, cards within chart row only
   - v2.4: "HARD CORRECTION — LWC replaced by TV Charting Library, bounded fibs, A/B/N trades delta, Gemini AI analysis, corrected cards panel"
-error_corrections_applied: 10
+  - v2.4.1: "Surgical corrections — licensing (private repo), drift acknowledgment, fib count (13 visible), engine parity note, AI screenshot claims qualified, trigger-gate LOW=>WAIT rule"
+error_corrections_applied: 23
 acceptance_tests: 3
 implementation_phases: 10
 ---
@@ -31,14 +32,16 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 ## Chart Stack
 
 - **TradingView Charting Library (Advanced Charts)** is the ONLY chart renderer.
-- Repo is PUBLIC. No licensing blocker. No access request needed.
+- **Private repo** — licensed access required. Non-redistributable. No public-repo distribution of library files.
+- Must request access at https://www.tradingview.com/advanced-charts/ and confirm license-compliant integration path.
 - Do NOT use LWC (Lightweight Charts) as the final charting path.
 - Do NOT use any other charting platform.
 - Pine Script does NOT execute in TV Charting Library — implement Warbird logic as JS custom indicators via `custom_indicators_getter`.
 
 ## Fib System — 100% From Repo
 
-- **Computation:** `engine/fib_engine.py` (PR #11 branch) is the SOLE fib engine. Used AS-IS. NO modifications. NO alternative engines. NO reimplementation.
+- **Computation:** `engine/fib_engine.py` (PR #11 branch) is the SOLE fib engine. Used AS-IS. NO alternative engines. NO reimplementation.
+- **Parity note:** `fib_engine.py` is a multi-period confluence approximation of Pine's ZigZag, NOT an exact port. Pivot detection may differ from Pine on edge cases.
 - **Visuals:** ALL colors, widths, styles, ladder, zone fill, labels come from `indicators/warbird-pro-v9.pine` (lines 68-70, 226-261, 805-870).
 - **Draw semantics:** BOUNDED anchored lines (`x1=drawLeftBar`, `x2=rightBar`, `extend.none`). NO spread-out lines across the screen. NO horizon lines. NO pivot-line look.
 - Entries are tied to the fibs. Modeling is tied to the fibs. Everything is tied to the fibs.
@@ -86,7 +89,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 - Entry Price
 - SL
 - TP1, TP2
-- AI Analysis — Gemini, chart screenshot + real-time data (structure/volume/correlations/nexus/pressure bar) + S&P news, Fed reports, Mag 7 industry/financials/IPOs. Short, high impact, dense, credible.
+- AI Analysis — Gemini, real-time data analysis (structure/volume/correlations/nexus/pressure bar) + S&P news, Fed reports, Mag 7 industry/financials/IPOs. Short, high impact, dense, credible. *(Chart screenshot ingestion is PLANNED but unverified — do not claim until pipeline exists.)*
 - Win Rate / Probability / Conviction — ONLY if real. No fake numbers.
 - **NO** Fib Structure card.
 - **NO** System card.
@@ -95,7 +98,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 
 - Databento `trades` schema with A/B/N side classification.
 - buy_vol (side='B'), sell_vol (side='A'), unknown_vol (side='N').
-- Quality gate: if unknown_vol/total_vol > 30% → LOW confidence → block GO decisions.
+- Quality gate: if unknown_vol/total_vol > 30% → LOW confidence → **force WAIT, never GO**.
 - No crypto. No substitute instruments.
 
 ## Correlations Row
@@ -112,7 +115,7 @@ This skill governs ALL work on the Warbird Pro local dashboard. Every item below
 ## AI Analysis
 
 - `engine/ai_analysis.py` currently uses OpenRouter — must switch to Gemini.
-- Gemini analyzes: chart screenshot + real-time structure/volume/correlations/nexus/pressure bar data.
+- Gemini analyzes: real-time structure/volume/correlations/nexus/pressure bar data. Chart screenshot ingestion is PLANNED but unverified.
 - Also covers: S&P news, Fed reports, Mag 7 industry news/releases/financials/IPOs.
 - Output must be: short, high impact, dense, credible. Not verbose.
 
@@ -124,7 +127,7 @@ These are mistakes made during v2.4 packet creation. Do NOT repeat them:
 2. **Reinvention:** Trying to build things from scratch instead of porting from the Warbird Pro V9 indicator.
 3. **Duplicate MAs:** Adding a separate EMA 21 when it's already in the indicator.
 4. **Wrong update timing:** Using 15m for correlations when Kirk said 1h.
-5. **Fake blockers:** Claiming TV Charting Library needs private repo access or licensing when the repo is public.
+5. **Fake claims:** Claiming capabilities are implemented/resolved when they are not (e.g., claiming trades-side delta exists when code still uses candle-direction proxy).
 6. **Wrong cards:** Adding Fib Structure, System, Volume Intelligence, Conviction cards that Kirk didn't ask for.
 7. **Bulky pressure bar:** Making the pressure bar a full indicator row instead of a thin slim bar.
 8. **Horizon lines for fibs:** Drawing lines that stretch across the entire screen instead of bounded anchored lines.
@@ -139,6 +142,6 @@ These are mistakes made during v2.4 packet creation. Do NOT repeat them:
 
 ## Acceptance Tests (3 required)
 
-- AT-1: Bounded fib draw window parity (fib computation uses `engine/fib_engine.py` ONLY)
+- AT-1: Bounded fib draw window parity (fib computation uses `engine/fib_engine.py` ONLY, 13 visible-default levels)
 - AT-2: Pressure derived from trades side A/B/N
-- AT-3: Confidence-gating on unknown-side volume
+- AT-3: Confidence-gating on unknown-side volume (LOW confidence => force WAIT, never GO)

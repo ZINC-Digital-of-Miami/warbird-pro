@@ -307,7 +307,7 @@ def init_all_tables(db_path: str | None = None) -> list[str]:
 
 def main() -> None:
     """CLI entry point — initialize DuckDB and print summary."""
-    tables = init_all_tables()
+    init_all_tables()
 
     conn = duckdb.connect(DUCKDB_PATH)
     actual = conn.execute(

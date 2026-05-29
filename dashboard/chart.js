@@ -68,7 +68,7 @@ function parseTimeToUnix(time) {
     const parsed = Date.parse(time);
     return Number.isNaN(parsed) ? null : Math.floor(parsed / 1000);
   }
-  if (time && time.year !== undefined) {
+  if (time?.year !== undefined) {
     return Math.floor(
       Date.UTC(time.year, time.month - 1, time.day) / 1000
     );
@@ -131,10 +131,10 @@ function generateSampleData() {
 
     bars.push({
       time: timeToTz(ts, CHART_TIME_ZONE),
-      open: parseFloat(open.toFixed(2)),
-      high: parseFloat(high.toFixed(2)),
-      low: parseFloat(low.toFixed(2)),
-      close: parseFloat(close.toFixed(2)),
+      open: Number.parseFloat(open.toFixed(2)),
+      high: Number.parseFloat(high.toFixed(2)),
+      low: Number.parseFloat(low.toFixed(2)),
+      close: Number.parseFloat(close.toFixed(2)),
     });
   }
 

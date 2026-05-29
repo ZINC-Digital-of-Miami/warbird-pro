@@ -99,6 +99,43 @@ def seed_symbols(conn: duckdb.DuckDBPyConnection) -> int:
     return len(symbols)
 
 
+def _resolve_target_table(fname: str) -> str | None:
+    """Map a data file name to its DuckDB target table."""
+    name = fname.lower()
+    if "cross_asset" in name or "ohlcv_1h" in name:
+        return "cross_asset_1h"
+    if "trades" in name:
+        return "trades_raw"
+    if "ohlcv" in name and "1m" in name:
+        return "mes_1m"
+    return None
+
+
+def _read_source(fpath: str) -> str:
+    """Return the DuckDB read expression for a file path."""
+    if fpath.endswith(".zip"):
+        return f"read_parquet('{fpath}/*.parquet')"
+    return f"read_parquet('{fpath}')"
+
+
+def _ingest_file(
+    conn: duckdb.DuckDBPyConnection, fname: str, fpath: str,
+) -> int | None:
+    """Ingest a single data file into the matching DuckDB table. Returns row count or None."""
+    table = _resolve_target_table(fname)
+    if table is None:
+        return None
+
+    source = _read_source(fpath)
+    try:
+        count: int = conn.execute(f"SELECT count(*) FROM {source}").fetchone()[0]
+        conn.execute(f"INSERT INTO {table} SELECT * FROM {source} ON CONFLICT DO NOTHING")
+        return count
+    except Exception as e:
+        print(f"WARNING: Could not read {fname}: {e}")
+        return None
+
+
 def seed_bars_from_files(conn: duckdb.DuckDBPyConnection) -> dict[str, int]:
     """Seed bar tables from local .zip and .parquet files in data/."""
     results: dict[str, int] = {}
@@ -108,51 +145,12 @@ def seed_bars_from_files(conn: duckdb.DuckDBPyConnection) -> dict[str, int]:
         return results
 
     for fname in os.listdir(DATA_DIR):
+        if not (fname.endswith(".parquet") or fname.endswith(".zip")):
+            continue
         fpath = os.path.join(DATA_DIR, fname)
-
-        if fname.endswith(".parquet"):
-            try:
-                count = conn.execute(
-                    f"SELECT count(*) FROM read_parquet('{fpath}')"
-                ).fetchone()[0]
-                if "cross_asset" in fname.lower() or "ohlcv_1h" in fname.lower():
-                    conn.execute(
-                        f"INSERT INTO cross_asset_1h "
-                        f"SELECT * FROM read_parquet('{fpath}') "
-                        f"ON CONFLICT DO NOTHING"
-                    )
-                    results[fname] = count
-                elif "ohlcv" in fname.lower() and "1m" in fname.lower():
-                    conn.execute(
-                        f"INSERT INTO mes_1m "
-                        f"SELECT * FROM read_parquet('{fpath}') "
-                        f"ON CONFLICT DO NOTHING"
-                    )
-                    results[fname] = count
-            except Exception as e:
-                print(f"WARNING: Could not read {fname}: {e}")
-
-        elif fname.endswith(".zip"):
-            try:
-                count = conn.execute(
-                    f"SELECT count(*) FROM read_parquet('{fpath}/*.parquet')"
-                ).fetchone()[0]
-                if "trades" in fname.lower():
-                    conn.execute(
-                        f"INSERT INTO trades_raw "
-                        f"SELECT * FROM read_parquet('{fpath}/*.parquet') "
-                        f"ON CONFLICT DO NOTHING"
-                    )
-                    results[fname] = count
-                else:
-                    conn.execute(
-                        f"INSERT INTO mes_1m "
-                        f"SELECT * FROM read_parquet('{fpath}/*.parquet') "
-                        f"ON CONFLICT DO NOTHING"
-                    )
-                    results[fname] = count
-            except Exception as e:
-                print(f"WARNING: Could not read {fname}: {e}")
+        count = _ingest_file(conn, fname, fpath)
+        if count is not None:
+            results[fname] = count
 
     return results
 

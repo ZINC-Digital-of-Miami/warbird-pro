@@ -96,7 +96,11 @@ require_hooks_path() {
 resolve_upstream_ref() {
   local upstream_ref
   upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
-  [[ -n "$upstream_ref" ]] || fail "pre-push needs an upstream branch; set one with: git branch --set-upstream-to origin/$(git rev-parse --abbrev-ref HEAD)"
+  if [[ -z "$upstream_ref" ]]; then
+    # New branches without an upstream default to origin/main for diff comparison
+    upstream_ref="origin/main"
+    echo "INFO: no upstream set; defaulting to $upstream_ref for pre-push checks" >&2
+  fi
   echo "$upstream_ref"
 }
 

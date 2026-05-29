@@ -20,6 +20,7 @@ skills:
     - agents/skills/v9-core-training-governance/SKILL.md
     - agents/skills/v9-postfit-shap-monte-carlo-gates/SKILL.md
     - agents/skills/warbird-tuning-router/SKILL.md
+    - agents/skills/chart-parity-authority/SKILL.md
   curation_policy:
     - agents/skills/README.md
 

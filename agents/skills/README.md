@@ -22,6 +22,8 @@ Keep (active, curated):
 - Pine engineering skills migrated under `agents/skills/`:
   - `pine-script-ai-coding-agent`
   - `tradingview-indicator-assembler-optuna-ready`
+- Dashboard and chart implementation governance under `agents/skills/`:
+  - `chart-parity-authority`
 - Training and model-governance skills rebuilt under `agents/skills/`:
   - `v9-core-training-governance`
   - `v9-postfit-shap-monte-carlo-gates`

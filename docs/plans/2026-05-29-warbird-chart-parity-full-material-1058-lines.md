@@ -731,3 +731,328 @@ Databento 1m bar arrives
 - **Codex QA gate:** Independent AT verification, error pattern review
 - **Stop condition:** Any AT fails
 - **Approval required:** Kirk accepts AT results
+# Devin Chart Parity Launch Packet
+
+**Date:** 2026-05-29
+**Repo:** `/Volumes/Satechi Hub/warbird-pro`
+**Purpose:** Next bounded Devin planning run after PR #11 closure, PR #14 partial import, and legacy runtime cleanup. This prepares Devin to write the final multiphase artifacted plan; it is not an implementation launch.
+
+## Current State
+
+- PR #11 is closed and retained as source inventory only. Do not merge it.
+- PR #14 is closed as partially imported/superseded.
+- The accepted PR #14 artifacts are local:
+  - `agents/skills/chart-parity-authority/SKILL.md`
+  - `docs/packet_plan_v2.4.1_correction_proposal.md`
+- The chart authority skill is registered in `agents/manifest.yaml` and
+  `agents/skills/README.md`.
+- The legacy runtime cleanup is complete in local WIP; do not reintroduce its
+  script, aliases, process signatures, or documentation references.
+- The broader PR #14 agent-platform purge remains deferred; do not delete
+  `.github/agents`, `.github/skills`, `.github/copilot-instructions.md`,
+  `.github/workflows/copilot-review.yml`, or `.copilot-tracking/`.
+
+## Paste To Devin
+
+Use this exact scope. Do not expand it.
+
+```text
+We are starting the Warbird Pro chart parity plan-build lane.
+
+Read these first:
+- AGENTS.md
+- docs/plans/2026-05-29-warbird-chart-parity-build-playbook.md
+- .devin/rules/01-project-overview.md
+- .devin/rules/08-chart-parity-authority.md
+- .devin/rules/09-review-sonic-feedback.md
+- .devin/rules/10-session-insights.md
+- .devin/knowledge-blueprint.md
+- docs/handoffs/2026-05-29-devin-session-13c8-retrospective.md
+- agents/skills/chart-parity-authority/SKILL.md
+- docs/packet_plan_v2.4.1_correction_proposal.md
+
+Mission for this run:
+Write the final multiphase artifacted chart parity plan from the local PR #14 authority. Before writing any plan content, read `agents/skills/chart-parity-authority/SKILL.md` top-to-bottom and read `docs/packet_plan_v2.4.1_correction_proposal.md`. Do not summarize from memory or prior Devin output.
+
+Scope:
+- Treat PR #14 authority as already imported locally.
+- Treat PR #11 dashboard frontend as discarded. Use it only as source inventory when explicitly cited by the packet.
+- Start from `components/charts/LiveMesChart.tsx` for retained Lightweight Charts behavior.
+- Produce a plan artifact only. Do not implement dashboard/runtime changes in this run.
+- Convert the full PR #14 authority into a sequenced plan with phases, deliverables, acceptance evidence, stop conditions, and artifact paths.
+- Keep engine integration, Databento trades-side aggregation, Nexus adapter work, Supabase audit, and Vercel demotion as planned phases only. Do not execute them.
+- Include a Session Insights section for the planning run: expected category, what feedback to collect, and how misleading Knowledge/repeated issues will be routed.
+
+Forbidden:
+- Do not merge PR #11 as-is.
+- Do not reopen PR #14 or accept its broader agent-platform purge.
+- Do not implement code in this run unless Kirk explicitly changes the scope after reviewing the plan.
+- Do not run training/modeling.
+- Do not edit Pine.
+- Do not touch `indicators/`.
+- Do not migrate Supabase.
+- Do not demote Vercel.
+- Do not push without explicit approval.
+- Do not auto-apply Sonic fixes.
+
+Return a closeout packet with:
+- files changed
+- exact authority files read
+- explicit confirmation that `agents/skills/chart-parity-authority/SKILL.md` was read top-to-bottom before plan writing
+- PR #14 SHA and PR #11 SHA
+- confirmation that PR #14 remains partial-import only
+- confirmation that PR #11 remains source inventory only
+- validation commands and outcomes
+- path to the final multiphase artifacted plan Devin wrote
+- plan coverage map showing every PR #14 section/ruling is either represented in the plan or explicitly deferred with reason and owner
+- dashboard baseline keep/discard map as a planning artifact, not an implementation diff
+- proposed Knowledge notes for approval if the run surfaces a new reusable rule
+- Session Insights Review: category, actionable feedback, misleading Knowledge, repeated issues, and any rule/playbook/Knowledge/blueprint updates needed
+- next task recommendation after Kirk/Codex QA reviews the plan
+```
+
+## Codex QA Acceptance Gate
+
+Codex should verify:
+
+- `git status --short --branch --untracked-files=all`
+- `test -f agents/skills/chart-parity-authority/SKILL.md`
+- `test -f docs/packet_plan_v2.4.1_correction_proposal.md`
+- `.devin/wiki.json` parses if present
+- `.devin/environment-blueprint.yaml` parses if present
+- `git diff --check`
+
+If Devin modifies dashboard/runtime code, Codex QA must also run `npm run lint`
+and `npm run build`, plus browser smoke if a local runtime is started.
+
+## Stop Conditions
+
+Stop and ask Kirk before:
+
+- merging all of PR #14
+- deleting non-Devin agent surfaces
+- touching dashboard implementation during the plan-build run
+- touching Pine
+- connecting Supabase
+- enabling write automations
+- pushing
+# Warbird Chart Parity Plan-Build Brief
+
+**Status:** Devin planning brief only. This is not the final implementation plan and not authorization to write runtime code.
+
+**Purpose:** Prepare Devin to write the final multiphase artifacted chart parity plan from the local PR #14 authority, with PR #11 retained as source inventory only.
+
+## Boundary
+
+Codex is not writing the final plan in this file. Devin's next run must read the local authority and produce the final plan artifact.
+
+The final plan must be written by Devin after reading:
+
+- `AGENTS.md`
+- `.devin/rules/01-project-overview.md`
+- `.devin/rules/08-chart-parity-authority.md`
+- `.devin/rules/09-review-sonic-feedback.md`
+- `.devin/rules/10-session-insights.md`
+- `.devin/knowledge-blueprint.md`
+- `docs/handoffs/2026-05-29-devin-session-13c8-retrospective.md`
+- `agents/skills/chart-parity-authority/SKILL.md`
+- `docs/packet_plan_v2.4.1_correction_proposal.md`
+
+`agents/skills/chart-parity-authority/SKILL.md` must be read top-to-bottom before Devin writes plan content. The closeout must state this explicitly.
+
+## Current Authority State
+
+- PR #11 is closed and retained as source inventory only. Do not merge it.
+- PR #14 is closed as partially imported/superseded.
+- Accepted PR #14 authority is local:
+  - `agents/skills/chart-parity-authority/SKILL.md`
+  - `docs/packet_plan_v2.4.1_correction_proposal.md`
+- The broader PR #14 agent-platform purge is not accepted. Do not delete `.github/agents`, `.github/skills`, `.github/copilot-instructions.md`, `.github/workflows/copilot-review.yml`, or `.copilot-tracking/`.
+- Legacy runtime cleanup is complete in local WIP. Do not reintroduce its script, aliases, process signatures, or documentation references.
+- Vercel is not demoted until local replacement proof exists.
+- Pine is not touched without explicit current-session approval.
+
+## Devin Deliverable
+
+Devin must create the final multiphase artifacted plan as a new or updated plan artifact under `docs/plans/`.
+
+The plan must include:
+
+- authority map: exact files read, PR #14 SHA, PR #11 SHA, and source-of-truth order
+- coverage map: every section/ruling from `agents/skills/chart-parity-authority/SKILL.md` mapped to a phase, artifact, or explicit deferral
+- PR #11 keep/discard map: what can be inspected, what is discarded, and what requires approval before reuse
+- phase sequence: each phase has entry criteria, allowed files, forbidden files, expected artifacts, verification commands, Codex QA gate, stop condition, and approval needed
+- artifact contract: exact paths or naming pattern for closeout packets, screenshots/browser proof, test logs, Sonic/Sonar findings, schema inventories, and rollback notes
+- Session Insights section: category, actionable feedback, misleading Knowledge, repeated issues, and proposed rule/playbook/Knowledge updates
+- next-run recommendation: the first implementation slice after Kirk/Codex QA accepts the plan
+
+The plan must not include code changes as proof. It should identify future implementation work and the evidence each future phase must produce.
+
+## Hard Stops For Devin
+
+Stop and ask Kirk before:
+
+- implementing dashboard/runtime code during the plan-build run
+- merging all of PR #14
+- deleting non-Devin agent surfaces
+- touching Pine or anything under `indicators/`
+- connecting Supabase
+- enabling write automations
+- demoting Vercel
+- pushing
+
+## Codex QA Gate For The Plan
+
+Codex should verify after Devin returns the plan:
+
+- the stated authority files exist locally
+- PR #14 remains closed / partial-import only
+- PR #11 remains closed / source-inventory only
+- no dashboard/runtime/Pine implementation diff was introduced during the plan-build run unless Kirk explicitly expanded scope
+- the plan coverage map accounts for the full `agents/skills/chart-parity-authority/SKILL.md`
+- `.devin/wiki.json` parses if touched
+- `.devin/environment-blueprint.yaml` parses if touched
+- `git diff --check`
+# Chart Parity Authority Packet v2 -> v2.1 (Gate-Clear Patch)
+
+This patch applies only the three QA-required fixes:
+1. Scope/contract alignment
+2. Git protocol alignment
+3. Reproducible evidence for Section 10
+
+---
+
+## PATCH 1 — Scope/Contract Alignment
+
+### Replace front-matter block
+
+```diff
+-**Status:** DRAFT v2 — Kirk's rulings applied; awaiting final approval before implementation
+-**Scope:** Pixel-for-pixel parity between the live Vercel dashboard and the new local Lightweight Charts dashboard
+-**No Pine edits. No chart redesign. No approximation.**
++**Status:** DRAFT v2.1 — Kirk's rulings applied; awaiting final approval before implementation
++**Scope:** Chart-surface parity with explicit approved UI deltas. Pixel parity applies to retained chart surfaces; approved layout deltas are enumerated below.
++**No Pine edits. No unsanctioned redesign. No approximation on retained chart surfaces.**
++
++**Approved UI deltas from live Vercel surface (contracted exceptions):**
++- Replace bottom `DataTablesPanel` layout with PR #11 right-side cards.
++- Remove standalone volume histogram; retain pressure bar + volume-intelligence card.
++- Keep top correlations row, but adapt symbol set via Section 10 once approved.
++All other chart rendering surfaces remain parity-targeted against live Vercel authority.
+```
+
+### Replace this line in Section 2G
+
+```diff
+-### 2G. Right-Side Cards (PR #11 layout — Kirk's ruling)
++### 2G. Right-Side Cards (Approved UI Delta — Contracted Exception)
+```
+
+### Replace this line in Section 6
+
+```diff
+-**DO NOT merge PR #11 as-is.**
++**DO NOT merge PR #11 as-is.** This remains a parity implementation with approved UI deltas, not an open redesign lane.
+```
+
+---
+
+## PATCH 2 — Git Protocol Alignment
+
+### Replace Section 6 "Merge/Rebuild Recommendation (Updated)" with the block below
+
+```markdown
+## 6. Merge/Rebuild Recommendation (Updated)
+
+**Cherry-pick content only** — do NOT merge PR #11.
+
+Execution must follow repo git protocol in `AGENTS.md`:
+- work on `main`
+- no feature-branch implementation lane
+- push only with explicit approval
+
+Implementation steps:
+1. Confirm branch is `main` and working tree ownership is known.
+2. Pull only required surfaces from PR #11 into `main` working tree:
+   - `dashboard/`
+   - `engine/`
+   using targeted restore/checkout from `origin/devin/1779988864-warbird-command-center`.
+3. Do **not** carry PR #11 governance/config deletions.
+4. Apply Section 3B fixes in bounded commits.
+5. Run required verification after each phase.
+6. Request approval before any push.
+```
+
+### Replace this line in Phase 1
+
+```diff
+-- Cherry-pick `dashboard/` + `engine/` from PR #11 into clean branch
++- Pull `dashboard/` + `engine/` from PR #11 onto `main` as targeted content import (no feature-branch lane)
+```
+
+---
+
+## PATCH 3 — Section 10 Reproducibility / Evidence Trail
+
+### Insert this immediately below `## 10. Correlations Row — 4 Databento Futures Symbol Research`
+
+```markdown
+**Evidence status:** PROVISIONAL until reproducibility packet is attached.
+
+The symbol conclusions below are hypothesis-grade until the following evidence is produced and archived:
+- exact query windows (UTC)
+- exact symbols and mapping outputs
+- exact aggregation method (1m -> 15m)
+- exact correlation windows and formulas
+- raw outputs + computed tables committed as artifacts
+```
+
+### Append this new subsection at the end of Section 10
+
+```markdown
+### 10.6 Reproducibility Appendix (Required Before Implementation)
+
+Runbook-grade evidence must be generated before Section 10 is treated as settled:
+
+1. Capture instrument mapping and symbol validity (GLBX.MDP3)
+- verify continuous symbols used in the plan
+- archive mapping output with timestamp
+
+2. Build synchronized 15m panels for MES, NQ, 6E, CL, ZN
+- source: Databento GLBX.MDP3
+- base schema: `ohlcv-1m`
+- aggregation: exact 15m bar close alignment in UTC
+
+3. Compute rolling and full-window statistics
+- Pearson correlation to MES returns
+- rolling stability windows (e.g., 5d, 20d, 60d)
+- sign-consistency checks for positive/negative designations
+
+4. Archive evidence artifacts in repo
+- recommended path: `artifacts/research/correlations/2026-05-29/`
+- include:
+  - `inputs_manifest.json`
+  - `symbol_map.json`
+  - `corr_table.csv`
+  - `methodology.md`
+  - `summary.md`
+
+5. Promotion rule
+- Section 10 remains provisional until artifacts exist and QA confirms reproducibility.
+```
+
+### Replace this line in Section 9 Open Items
+
+```diff
+-4. **Correlations symbols** -> **RESEARCHED:** See Section 10 — needs Kirk's approval
++4. **Correlations symbols** -> **PROVISIONAL:** See Section 10; requires reproducibility appendix + Kirk approval
+```
+
+---
+
+## Optional One-Line Status Update for v2.1 Header
+
+```diff
+-**Status:** DRAFT v2 — Kirk's rulings applied; awaiting final approval before implementation
++**Status:** DRAFT v2.1 — Kirk's rulings applied; three QA-gate fixes integrated; awaiting final approval before implementation
+```

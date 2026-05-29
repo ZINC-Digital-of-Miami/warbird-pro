@@ -2,8 +2,8 @@
 name: chart-parity-authority
 description: Locked rulings and guardrails for the Warbird Pro local dashboard implementation using TradingView Charting Library. Must be followed exactly — no drift, no reinterpretation, no additions beyond what Kirk approves.
 version: 2.4.1
-author: Kirk Musick
-date: 2026-05-29
+owner: Kirk Musick
+last_reviewed: 2026-05-29
 status: APPROVED — awaiting implementation approval
 governing_docs:
   - AGENTS.md

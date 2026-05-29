@@ -36,7 +36,7 @@ This system applies to:
 - SHAP and Monte Carlo evaluation cycles
 - TP/SL policy research
 - timeframe research across ES 1m, 3m, 5m, 15m, and hybrid structures
-- future strategy revisions that remain under the indicator-only contract
+- future strategy revisions that remain under the local-first contract
 
 ## B. Full Phase Architecture
 
@@ -371,8 +371,9 @@ work.
 
 - source kind is honest
 - ES-only requirement is maintained for V9 Core
-- no cloud Supabase tables, FRED, macro/news/options, or unapproved joins enter
-  the dataset
+- no cloud Supabase tables, mislabeled data, or non-manifest-backed joins enter
+  the dataset (FRED, macro, news, options approved under local-first policy
+  when manifest-backed)
 - features use information available at or before the bar
 - labels use future windows only
 
@@ -1132,8 +1133,9 @@ exception.
 
 `HOOK_NO_EXTERNAL_STACK`
 
-- Blocks FRED, macro, news, options, cloud joins, or unapproved cross-asset
-  joins in active V9 Core training.
+- Blocks cloud joins, mislabeled data, or non-manifest-backed joins in active
+  V9 Core training. FRED, macro, news, options, and cross-asset data are
+  approved under local-first policy (2026-05-28) when manifest-backed.
 
 `HOOK_TEMPORAL_ALIGNMENT_DEFINED`
 

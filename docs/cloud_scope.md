@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-26
 **Status:** Active Cloud Scope
-**Governing plan:** Warbird Indicator-Only AG Plan v6
+**Governing plan:** Warbird Local-First DuckDB Platform Plan v7
 
 Cloud Supabase is runtime/support only. It is not an active model-training
 database and must not become a mirror of local Pine/TradingView modeling
@@ -51,7 +51,7 @@ the active contract and recorded with an honest source/capture manifest.
 Before any cloud object is added, answer:
 
 1. Does it serve live runtime/support rather than training?
-2. Can the indicator-only modeling program run without it?
+2. Can the local-first modeling program run without it?
 3. Does it avoid storing raw trials, labels, or research artifacts?
 
 If any answer is no, the object does not belong in cloud.

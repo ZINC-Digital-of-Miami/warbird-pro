@@ -157,7 +157,7 @@ If any touched file is under `supabase/`, `app/api/cron/`, or ingestion librarie
 2. Run the narrowest path-specific runtime or script validation available
 
 Runtime ingestion work must not be described as training work unless the active
-Pine indicator-only contract is explicitly updated.
+modeling contract is explicitly updated.
 
 ### Docs-Only Work
 

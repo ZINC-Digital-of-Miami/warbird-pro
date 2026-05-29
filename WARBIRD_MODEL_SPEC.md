@@ -1,15 +1,18 @@
-# Warbird Model Spec — Indicator-Only v6
+# Warbird Model Spec — Local-First v7
 
-**Date:** 2026-05-05
+**Date:** 2026-05-05 (updated 2026-05-28 for local-first pivot)
 **Status:** Active, subordinate to `docs/MASTER_PLAN.md`
 
 ## Contract
 
-Warbird modeling is now pure PineScript indicator modeling.
+**Local-first pivot (2026-05-28):** Warbird has shifted from pure PineScript
+indicator modeling to a local-first platform. The local dashboard (TV
+Lightweight Charts on localhost) is the primary platform for charting,
+triggers, and trade recording. The Pine indicator remains the reference
+implementation but is not the live trigger platform.
 
-The model program exists to improve the TradingView indicator settings and
-build. It does not create a separate live prediction engine and it does not
-train from external data stacks.
+Model selection (AutoGluon families, hyperparameters) is TBD pending deep
+research — the prior full-zoo locked config is no longer assumed active.
 
 ## Iteration Policy
 
@@ -24,13 +27,15 @@ ready for reuse by another agent.
 
 ## Training Truth
 
-Allowed training inputs are only manifest-backed active-lane sources:
+Allowed training inputs are manifest-backed sources:
 
 - TradingView indicator CSV exports for non-Nexus lanes
 - Databento ES market-data training rows (15m and 5m) when declared as Databento
   source data in the manifest
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for Nexus ML RSI
 - deterministic features derived from those approved sources
+- FRED, macro, news, options, and cross-asset data (approved under local-first
+  data policy, 2026-05-28)
 
 ## Data Layer (locked 2026-05-11)
 
@@ -59,13 +64,15 @@ there first before moving to the noisier 5m lane.
 
 Disallowed active training inputs:
 
-- FRED or macro joins
-- news/options data
-- external cross-asset joins outside the active Pine indicator
 - Supabase daily/hourly runtime ingestion as a training feature source
 - local `ag_training` warehouse rows
 - Python OHLCV reconstruction as the canonical label source
 - Databento rows mislabeled as TradingView/Pine indicator exports
+- any non-manifest-backed or mislabeled data source
+
+**Approved under local-first data policy (2026-05-28):** FRED, macro, news,
+options, and cross-asset data are now allowed for the local modeling dataset.
+All sources must be manifest-backed with honest labeling.
 
 Historical warehouse tables may remain on disk for lineage. They are not active
 model truth unless Kirk explicitly reopens that architecture.
@@ -171,7 +178,7 @@ Allowed tuning scope while locked:
 
 ## Feature Scope
 
-Feature scope is indicator-only.
+Feature scope includes indicator-emitted and manifest-backed local data sources.
 
 Current V9 Core AG feature policy: train on non-fib/non-color indicator
 settings and MA/RSI/liquidity/NQ+6E/footprint/HTF signal evidence emitted by
@@ -191,15 +198,15 @@ Admitted feature families:
 - OHLCV columns included in the TradingView export
 - deterministic columns computed only from approved source rows
 
-Not admitted:
+Approved under local-first data policy (2026-05-28):
 
-- server-side macro/fundamental context
-- FRED/economic calendar fields
-- unapproved Databento cross-asset context. Approved local Databento
-  model-context side features must be manifest-declared, limited to the active
-  contract set, and never represented as Pine gates or Pine exports. Pine-native
-  NQ + 6E values emitted by the active indicator are part of the indicator
-  behavior
+- FRED, macro, news, options, and cross-asset data when manifest-backed
+- Databento model-context side features when manifest-declared and limited to
+  the active contract set (never represented as Pine gates or Pine exports).
+  Pine-native NQ + 6E values emitted by the active indicator are part of the
+  indicator behavior
+
+Not admitted:
 - candlestick pattern columns unless a future research lane explicitly reopens
   them; they are not in the current active Pine export contract
 - Supabase/cloud serving tables
@@ -291,6 +298,7 @@ The following are legacy for active modeling:
 - `ag_fib_outcomes`
 - `ag_training`
 - local warehouse lineage tables
-- FRED/macro feature scope
+- FRED/macro warehouse join tables (data itself approved under local-first
+  policy when manifest-backed)
 - Python reconstruction as canonical training generator
 - server-side model packet promotion

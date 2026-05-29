@@ -1,17 +1,20 @@
-# Warbird Indicator-Only DuckDB Local Modeling Plan v6
+# Warbird Local-First DuckDB Platform Plan v7
 
-**Date:** 2026-05-05 (V9 Core data layer locked to DuckDB local stack 2026-05-12)
+**Date:** 2026-05-05 (V9 Core data layer locked to DuckDB local stack 2026-05-12; local-first pivot 2026-05-28)
 **Status:** Active architecture plan
 
 ## Summary
 
-Warbird training is a pure PineScript indicator modeling program.
+**Local-first pivot (2026-05-28):** Warbird has shifted from pure PineScript
+indicator modeling to a local-first platform. The local dashboard (TV
+Lightweight Charts on localhost) is the primary platform for charting,
+triggers, and trade recording. The Pine indicator remains the reference
+implementation but is NOT the live trigger platform.
 
-The active goal is to perfect the TradingView indicator itself: settings, state
-machine, entries, exits, filters, hidden exports, and visual/operator build.
-The local DuckDB / Pandera / AutoGluon stack at `scripts/duckdb_local/` is used
-offline to model and rank PineScript indicator behavior for V9 Core. It does
-not create a separate data-stack decision engine.
+The local DuckDB / Pandera stack at `scripts/duckdb_local/` is used for
+offline modeling, data recording, and analysis. Model selection (AutoGluon
+families, hyperparameters) is TBD pending deep research — the prior full-zoo
+locked config is no longer assumed active.
 
 Single-surface update (2026-05-02): the only active main chart indicator is
 **Warbird Pro V9** at `indicators/warbird-pro-v9.pine`. Nexus remains as the only retained
@@ -29,8 +32,9 @@ exports or Databento market data, ignores MES/NQ/MNQ rows, excludes `-.236` and
 other negative fib extensions as stop candidates, keeps `-.236` only as
 optional context/export data, and freezes fib anchors, fib visuals, and EMA/MA
 setup until a champion is approved for Pine promotion. The production trainer
-is `scripts/ag/train_v9_locked.py` (AutoGluon full-zoo, calibrated log_loss,
-chronological IS/VAL/OOS with embargo).
+is `scripts/ag/train_v9_locked.py` (model config TBD — prior AutoGluon
+full-zoo is reference only; calibrated log_loss, chronological IS/VAL/OOS
+with embargo).
 
 Data-layer + sequencing update (locked 2026-05-11):
 
@@ -86,7 +90,7 @@ Data-layer + sequencing update (locked 2026-05-11):
 | Monte Carlo artifacts root                       | `artifacts/mc_v9/<tag>/`                                                                               |
 | TV settings/tuning helpers (non-V9)              | `scripts/ag/tv_auto_tune.py`, `scripts/ag/tune_strategy_params.py`                                     |
 | TradingView readiness doctor                     | `scripts/ag/tv_connection_doctor.py`                                                                   |
-| Indicator-only AG contract                       | `docs/contracts/pine_indicator_ag_contract.md`                                                         |
+| Local-first modeling contract                    | `docs/contracts/pine_indicator_ag_contract.md`                                                         |
 | Startup review runbook                           | `docs/runbooks/startup_repo_review.md`                                                                 |
 | V9 ML/trading research operating system          | `docs/runbooks/v9_ml_trading_research_operating_system.md`                                             |
 | Legacy (do not use without architecture reopen)  | `scripts/ag/train_hard_gate.py`, `scripts/ag/train_ag_baseline.py`, local Postgres `warbird` warehouse |
@@ -416,7 +420,8 @@ budgets must be repriced before any Nexus edit.
 ## Verification Locks
 
 - No mock data.
-- No external feature stacking.
+- No non-manifest-backed external feature stacking. FRED, macro, news, options,
+  and cross-asset data are approved under local-first policy when manifest-backed.
 - No daily-ingestion training dependency.
 - No Pine edits without explicit approval.
 - Canonical fib and trade-state semantics are locked in
@@ -616,10 +621,13 @@ lane with its own audit, export budget, and AG contract.
 
 | File                                                                                | Role                                                                                               | Status                  |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------- |
-| `scripts/ag/train_v9_locked.py`                                                     | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready for live training |
+| `scripts/ag/train_v9_locked.py`                                                     | Production V9 AutoGluon trainer (entry classifier; `--model-suite` adds TP/SL/MFE/MAE side models) | Ready — AG config TBD |
 | `scripts/duckdb_local/cards/core_training/2026_05_09_warbird_pro_autogluon_core.py` | Auxiliary smoke-validation card (records local validation evidence; does NOT invoke AG)            | Live                    |
 
-**AG config (locked):**
+**AG config (2026-05-28 — UNLOCKED, TBD):**
+
+The prior full-zoo locked config is retained below as reference only — model
+selection is TBD pending deep research. Do not assume this is the active config.
 
 - `preset='best_quality'`
 - Full zoo (7 families) via explicit `hyperparameters` dict:

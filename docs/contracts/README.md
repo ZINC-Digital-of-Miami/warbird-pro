@@ -4,7 +4,7 @@
 **Status:** Active Interface Authority
 
 This directory is the only interface authority for Warbird payloads,
-indicator-only modeling identity, labels, feature tiers, Pine settings artifacts,
+local-first modeling identity, labels, feature tiers, Pine settings artifacts,
 and schema migration policy.
 
 Ignore interface definitions in old plans, scratch notes, and historical decision docs unless they are copied into this directory.

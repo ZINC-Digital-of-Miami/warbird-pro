@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Defines which fields are admitted into active indicator-only modeling.
+Defines which fields are admitted into active modeling.
 
 ## Active Feature Rule
 
@@ -23,11 +23,12 @@ Allowed feature families:
   the source/capture kind
 - deterministic transformations of the same approved source data
 
+Approved under local-first data policy (2026-05-28):
+
+- FRED, macro, news, options, and cross-asset data when manifest-backed
+
 Disallowed feature families:
 
-- FRED, macro, and economic calendar joins
-- news/options fields
-- cross-asset features
 - Supabase runtime ingestion tables
 - Databento rows mislabeled as TradingView/Pine indicator exports
 - local `ag_training` columns

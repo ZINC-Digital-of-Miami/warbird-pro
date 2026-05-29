@@ -5,8 +5,13 @@
 
 ## Purpose
 
-This contract defines the active Warbird training/modeling surface: pure
-PineScript indicator behavior on TradingView.
+This contract defines the active Warbird training/modeling surface.
+
+**Local-first pivot (2026-05-28):** The architecture has shifted to a
+local-first platform. The Pine indicator remains the reference implementation
+but is not the live trigger platform. FRED, macro, news, options, and
+cross-asset data are now approved under the local-first data policy (all
+sources must be manifest-backed with honest labeling).
 
 ## Iteration Policy
 
@@ -42,7 +47,7 @@ explicitly reopened strategy-harness sessions.
 
 ## Source Of Truth
 
-Training rows may come only from manifest-backed active-lane sources:
+Training rows may come from manifest-backed sources:
 
 - TradingView indicator CSV exports for non-Nexus lanes
 - Databento ES market-data training rows (5m/15m) when the manifest declares a
@@ -50,11 +55,13 @@ Training rows may come only from manifest-backed active-lane sources:
 - TradingView/Pine `request.footprint()` `nexus_fp_*` snapshots for
   `NEXUS_FOOTPRINT_DELTA`
 - deterministic columns derived from approved source rows
+- FRED, macro, news, options, and cross-asset data (approved under local-first
+  data policy, 2026-05-28)
 
-No external feature stack is admitted.
+All sources must be manifest-backed with honest labeling.
 
 `warbird_pro_v9` may load ES exports across 5m/15m from the same active Warbird
-Pro V9 training lane. MES/NQ/MNQ rows are ignored. No undeclared external
+Pro V9 training lane. MES/NQ/MNQ rows are ignored. No non-manifest-backed external
 cross-symbol join, cloud table, or external feature stack is admitted into this
 lane. Pine-native NQ + 6E values emitted by the active indicator are part of the
 indicator behavior. Approved local Databento model-context side features must be
@@ -160,11 +167,6 @@ mirrored by Core ETL as `knob_htf_1h_lookback`.
 
 The active modeling dataset must not join:
 
-- FRED or macro data
-- economic calendar data
-- news/options data
-- undeclared external cross-asset futures data outside active Pine exports or
-  approved manifest-declared Databento model context
 - Supabase cloud tables
 - Databento rows mislabeled as TradingView indicator exports or Pine indicator
   sources
@@ -172,6 +174,11 @@ The active modeling dataset must not join:
 - Python reconstructed fib interactions
 - Risk Mode fields or candlestick pattern columns; those are not active V9 Pine
   execution/export surfaces
+- any non-manifest-backed or mislabeled data source
+
+**Approved under local-first data policy (2026-05-28):** FRED, macro, news,
+options, and cross-asset data are now allowed for the local
+modeling dataset. All sources must be manifest-backed with honest labeling.
 
 ## Required Export Manifest
 
@@ -210,7 +217,7 @@ Invalid recommendations:
 
 - server-side feature gates
 - cloud scoring packets
-- macro/FRED gates
+- macro/FRED gates used as Pine live gates (approved for local modeling only)
 - daily-ingestion dependencies
 - invisible data joins not present in Pine output
 - V9 promotion based on NQ/MNQ, negative-fib stop candidates, or Pine edits made

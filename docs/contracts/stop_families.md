@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Defines stop/target policy handling for indicator-only modeling.
+Defines stop/target policy handling for active modeling.
 
 ## Rule
 

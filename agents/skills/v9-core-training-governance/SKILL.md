@@ -22,8 +22,9 @@ launch work.
 - Model family: AutoGluon Tabular through the locked trainer
 
 Do not route V9/Core work through `train_ag_baseline.py`, local Postgres
-`ag_training`, FRED/macro joins, cloud Supabase, or legacy warehouse preflight
-skills unless Kirk explicitly reopens that architecture.
+`ag_training`, cloud Supabase, or legacy warehouse preflight skills unless Kirk
+explicitly reopens that architecture. FRED/macro data is approved under
+local-first policy when manifest-backed.
 
 ## Stop conditions
 
@@ -35,16 +36,17 @@ skills unless Kirk explicitly reopens that architecture.
 - Do not change Pine, fib anchors, label semantics, or export fields without
   explicit Pine approval and the Pine verification gate.
 
-## Locked AG contract
+## AG contract (2026-05-28 — UNLOCKED, TBD)
 
-V9/Core uses:
+Model selection (AutoGluon families, hyperparameters) is TBD pending deep
+research. The prior full-zoo config below is reference only:
 
 - `eval_metric="log_loss"`
 - `calibrate=True`
 - `num_bag_folds=0`
 - `num_stack_levels=0`
 - `dynamic_stacking=False`
-- full explicit zoo: GBM, CAT, XGB, RF, XT, NN_TORCH, FASTAI
+- prior zoo: GBM, CAT, XGB, RF, XT, NN_TORCH, FASTAI
 - OpenMP/BLAS thread guards before AutoGluon imports
 - chronological split with embargo, not IID bagging
 
@@ -78,7 +80,9 @@ not run, report the task as incomplete.
 
 - Every feature must be available at prediction time and tied to an approved
   manifest-backed source.
-- No FRED, macro, news, options, cloud joins, or unapproved cross-asset features.
+- FRED, macro, news, options, and cross-asset data are approved under
+  local-first policy (2026-05-28) when manifest-backed. No cloud joins or
+  non-manifest-backed features.
 - Active Pine-native cross-asset context is NQ + 6E only.
 - TP ladder prices are label-construction inputs, not model features.
 - Update docs/contracts/tests in the same change when feature or label truth

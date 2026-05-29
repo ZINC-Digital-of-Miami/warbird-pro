@@ -534,7 +534,7 @@ Databento 1m bar arrives
 - **Tasks:**
   1. Cherry-pick `engine/fib_engine.py` from PR #11 to main — byte-identical copy, verify with `git diff`
   2. Cherry-pick `engine/trade_log.py` from PR #11 — fix PnL bug for SHORT trades
-  3. Create `engine/init_db.py` — initializes ALL DuckDB tables (Groups 1-10, ~35 tables) at `data/warbird_trades.duckdb` on first use
+  3. Create `engine/init_db.py` — initializes ALL DuckDB tables (Groups 1-10, 43 tables) at `data/warbird_trades.duckdb` on first use
   4. Create `engine/seed_duckdb.py` — reads local batch files (`.zip`, `.parquet`) and populates DuckDB bar tables, `trades_raw`, `cross_asset_1h`, `symbols`. Zero Databento API cost.
   5. Create `engine/config.py` — Databento allowlists, engine lifecycle config, API key references
   6. Create `data/` directory, add `data/*.duckdb` and `data/*.zip` to `.gitignore`

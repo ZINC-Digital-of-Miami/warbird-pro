@@ -158,6 +158,9 @@ repo-native verification gates.
 - When SonarQube reports issues, first return a defect map: path, issue class,
   severity, owning surface, likely root cause, and disproof/verification step.
 - Apply fixes only after Kirk explicitly approves the exact remediation scope.
+- AI Code Assurance is active — SonarCloud applies a stricter quality gate to
+  AI-generated code. Agent-produced commits are subject to elevated standards
+  beyond the base "Warbird Pro" quality gate thresholds.
 
 ## Repo Map
 

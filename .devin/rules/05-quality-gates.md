@@ -41,6 +41,9 @@ pytest tests/ag/test_v9_core_training_targets.py -q
   and `SonarCloud Code Analysis` on `main`.
 - Treat SonarQube as the first defect report to triage for remediation work.
 - Keep lint/build/test/guard commands as executable verification after approved fixes.
+- AI Code Assurance is active — SonarCloud applies stricter quality standards
+  to AI-generated code. The "Sonar way" gate (80 % coverage, 3 % duplication,
+  A ratings, 100 % hotspot review) is the enforced AI-qualified gate.
 
 ## Docs-Only Work
 

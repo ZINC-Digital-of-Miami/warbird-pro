@@ -41,7 +41,7 @@ def sample_bar():
 @pytest.fixture
 def async_client():
     transport = ASGITransport(app=app)
-    return AsyncClient(transport=transport, base_url="http://test")
+    return AsyncClient(transport=transport, base_url="https://test")
 
 
 @pytest.mark.asyncio
@@ -160,7 +160,7 @@ async def test_websocket_connect_and_snapshot():
         from httpx_ws import aconnect_ws
 
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(transport=transport, base_url="https://test") as client:
             async with aconnect_ws("/ws", client) as ws:
                 msg = await ws.receive_json()
                 assert msg["type"] == "snapshot"
@@ -175,7 +175,7 @@ async def test_websocket_ping_pong():
         from httpx_ws import aconnect_ws
 
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(transport=transport, base_url="https://test") as client:
             async with aconnect_ws("/ws", client) as ws:
                 await ws.receive_json()
                 await ws.send_json({"type": "ping"})

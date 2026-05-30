@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 
+import pytest
+
 
 def test_data_dir_is_absolute():
     from engine.config import DATA_DIR
@@ -39,7 +41,7 @@ def test_lifecycle_constants():
     from engine.config import BACKOFF_BASE_S, COOLDOWN_PERIOD_S, RECONNECT_ATTEMPTS
     assert COOLDOWN_PERIOD_S == 60
     assert RECONNECT_ATTEMPTS == 3
-    assert BACKOFF_BASE_S == 2.0
+    assert BACKOFF_BASE_S == pytest.approx(2.0)
 
 
 def test_cost_cap_rules():
@@ -86,10 +88,10 @@ def test_fib_constants():
         ZIGZAG_DEVIATION,
         ZIGZAG_THRESHOLD_FLOOR_PCT,
     )
-    assert ZIGZAG_DEVIATION == 3.0
+    assert ZIGZAG_DEVIATION == pytest.approx(3.0)
     assert ZIGZAG_DEPTH == 10
-    assert ZIGZAG_THRESHOLD_FLOOR_PCT == 0.25
-    assert MIN_FIB_RANGE_ATR == 0.5
-    assert MIDPOINT_HYSTERESIS_PCT == 2.0
-    assert 0.618 in FIB_RATIOS
-    assert 1.618 in FIB_EXTENSIONS
+    assert ZIGZAG_THRESHOLD_FLOOR_PCT == pytest.approx(0.25)
+    assert MIN_FIB_RANGE_ATR == pytest.approx(0.5)
+    assert MIDPOINT_HYSTERESIS_PCT == pytest.approx(2.0)
+    assert any(abs(r - 0.618) < 1e-9 for r in FIB_RATIOS)
+    assert any(abs(r - 1.618) < 1e-9 for r in FIB_EXTENSIONS)

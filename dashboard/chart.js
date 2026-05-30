@@ -291,5 +291,5 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Expose data API for WebSocket handler (Phase 1.5)
-window.pushBar = pushBar;
-window.loadBars = loadBars;
+globalThis.pushBar = pushBar;
+globalThis.loadBars = loadBars;

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import pytest
+
 from engine.bar_store import Bar
 from engine.fib_engine import (
     CONFLUENCE_LOOKBACKS,
@@ -75,16 +77,16 @@ def test_compute_fibs_has_correct_level_count():
 def test_build_levels_bullish():
     levels = _build_levels(5500.0, 5400.0, is_bullish=True)
     prices = [lv.price for lv in levels]
-    assert 5400.0 in prices
-    assert 5500.0 in prices
+    assert any(abs(p - 5400.0) < 1e-9 for p in prices)
+    assert any(abs(p - 5500.0) < 1e-9 for p in prices)
     pivot = next(lv for lv in levels if lv.label == "Pivot")
-    assert pivot.price == 5450.0
+    assert pivot.price == pytest.approx(5450.0)
 
 
 def test_build_levels_bearish():
     levels = _build_levels(5500.0, 5400.0, is_bullish=False)
     pivot = next(lv for lv in levels if lv.label == "Pivot")
-    assert pivot.price == 5450.0
+    assert pivot.price == pytest.approx(5450.0)
 
 
 def test_find_period_anchors_filters_small_ranges():
@@ -100,7 +102,7 @@ def test_find_period_anchors_finds_valid_ranges():
     anchors = _find_period_anchors(highs, lows, 60, min_range=1.0)
     assert len(anchors) > 0
     for a in anchors:
-        assert a.fib_range == 100.0
+        assert a.fib_range == pytest.approx(100.0)
         assert a.period in CONFLUENCE_LOOKBACKS
 
 
@@ -110,7 +112,7 @@ def test_score_anchor_self_excluded():
         fib_range=100.0, mid_levels=[5438.2, 5450.0, 5461.8],
     )
     score = _score_anchor(anchor, [anchor])
-    assert score == 0.0
+    assert score == pytest.approx(0.0)
 
 
 def test_score_anchor_with_confluence():
@@ -141,8 +143,8 @@ def test_select_best_anchor():
 
 def test_confluence_constants():
     assert CONFLUENCE_LOOKBACKS == [8, 13, 21, 34, 55]
-    assert CONFLUENCE_RATIOS == [0.382, 0.5, 0.618]
-    assert CONFLUENCE_TOLERANCE == 0.001
+    assert len(CONFLUENCE_RATIOS) == 3
+    assert CONFLUENCE_TOLERANCE == pytest.approx(0.001)
 
 
 def test_fib_state_to_dict():

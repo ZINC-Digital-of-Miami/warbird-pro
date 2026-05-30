@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from engine.indicators import atr
 
 
@@ -15,12 +17,12 @@ def test_atr_basic():
 
 def test_atr_single_bar():
     result = atr([10.0], [9.0], [9.5], 1)
-    assert result == 0.0  # needs at least 2 bars for true range with gaps
+    assert result == pytest.approx(0.0)  # needs at least 2 bars for true range with gaps
 
 
 def test_atr_empty():
     result = atr([], [], [], 14)
-    assert result == 0.0
+    assert result == pytest.approx(0.0)
 
 
 def test_atr_fewer_bars_than_period():

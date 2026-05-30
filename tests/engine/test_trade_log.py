@@ -43,7 +43,7 @@ def test_close_trade_long_positive_pnl(tmp_trade_db):
     conn = duckdb.connect(tmp_trade_db)
     row = conn.execute("SELECT pnl_pts, result FROM trades WHERE id=?", [tid]).fetchone()
     conn.close()
-    assert row[0] == 10.0
+    assert row[0] == pytest.approx(10.0)
     assert row[1] == "WIN"
 
 
@@ -56,7 +56,7 @@ def test_close_trade_short_positive_pnl(tmp_trade_db):
     conn = duckdb.connect(tmp_trade_db)
     row = conn.execute("SELECT pnl_pts FROM trades WHERE id=?", [tid]).fetchone()
     conn.close()
-    assert row[0] == 10.0
+    assert row[0] == pytest.approx(10.0)
 
 
 def test_close_trade_short_negative_pnl(tmp_trade_db):
@@ -68,7 +68,7 @@ def test_close_trade_short_negative_pnl(tmp_trade_db):
     conn = duckdb.connect(tmp_trade_db)
     row = conn.execute("SELECT pnl_pts FROM trades WHERE id=?", [tid]).fetchone()
     conn.close()
-    assert row[0] == -10.0
+    assert row[0] == pytest.approx(-10.0)
 
 
 def test_get_recent_trades(tmp_trade_db):
@@ -88,7 +88,7 @@ def test_get_win_rate_empty(tmp_trade_db):
 
     stats = get_win_rate()
     assert stats["total"] == 0
-    assert stats["win_rate"] == 0.0
+    assert stats["win_rate"] == pytest.approx(0.0)
 
 
 def test_get_win_rate_with_trades(tmp_trade_db):
@@ -103,7 +103,7 @@ def test_get_win_rate_with_trades(tmp_trade_db):
     assert stats["total"] == 2
     assert stats["wins"] == 1
     assert stats["losses"] == 1
-    assert stats["win_rate"] == 50.0
+    assert stats["win_rate"] == pytest.approx(50.0)
 
 
 def test_trade_entry_defaults(tmp_trade_db):

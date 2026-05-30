@@ -407,6 +407,17 @@ The scanner must wait for the Sonar Quality Gate so a red gate fails the
 GitHub Actions job. GitHub ruleset `Warbird Repo Push Checks` requires both
 `SonarQube Cloud Scan` and `SonarCloud Code Analysis` on `main`.
 
+AI Code Assurance is enabled. SonarCloud applies stricter quality standards to
+AI-generated code portions. Since most commits originate from AI agents (Codex,
+Devin), this effectively raises the quality bar for all new code. The project
+uses the custom "AI Gate" quality gate (org default), qualified for AI Code
+Assurance. Conditions: A ratings for reliability / security / maintainability,
+80 % new-code coverage, 3 % duplication ceiling, 100 % hotspot review, 5 %
+technical-debt ratio on new code, and ≤ 20 new code smells per scan. These
+thresholds are stricter than the relaxed "Warbird Pro" custom gate (40 %
+coverage, 5 % duplication) — the stricter bar is accepted given agent
+governance concerns.
+
 ## Agent-Owned Local Quality Lane
 
 All commits and pushes must pass the Codex-owned local gate:

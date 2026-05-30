@@ -119,6 +119,9 @@ def _read_source(fpath: str) -> str:
     return f"read_parquet('{safe}')"
 
 
+_TABLES_WITH_UNIQUE = {"mes_1m", "cross_asset_1h"}
+
+
 def _ingest_file(
     conn: duckdb.DuckDBPyConnection, fname: str, fpath: str,
 ) -> int | None:
@@ -130,7 +133,8 @@ def _ingest_file(
     source = _read_source(fpath)
     try:
         count: int = conn.execute(f"SELECT count(*) FROM {source}").fetchone()[0]
-        conn.execute(f"INSERT INTO {table} SELECT * FROM {source} ON CONFLICT DO NOTHING")
+        conflict = " ON CONFLICT DO NOTHING" if table in _TABLES_WITH_UNIQUE else ""
+        conn.execute(f"INSERT INTO {table} SELECT * FROM {source}{conflict}")
         return count
     except Exception as e:
         print(f"WARNING: Could not read {fname}: {e}")

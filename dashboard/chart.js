@@ -283,13 +283,126 @@ function initChart() {
 }
 
 // ---------------------------------------------------------------------------
+// WebSocket connection — lifecycle-aware live data feed
+// ---------------------------------------------------------------------------
+
+const WS_URL = "ws://" + (location.hostname || "127.0.0.1") + ":3100/ws";
+const WS_RECONNECT_BASE_MS = 2000;
+const WS_RECONNECT_MAX_MS = 30000;
+
+let wsInstance = null;
+let wsReconnectDelay = WS_RECONNECT_BASE_MS;
+let currentTf = "5m";
+
+function connectWebSocket() {
+  if (wsInstance && wsInstance.readyState <= 1) return;
+
+  wsInstance = new WebSocket(WS_URL);
+
+  wsInstance.onopen = function () {
+    wsReconnectDelay = WS_RECONNECT_BASE_MS;
+    updateConnectionStatus(true);
+  };
+
+  wsInstance.onmessage = function (event) {
+    var msg;
+    try {
+      msg = JSON.parse(event.data);
+    } catch (_e) {
+      return;
+    }
+
+    if (msg.type === "snapshot") {
+      handleSnapshot(msg);
+    } else if (msg.type === "bar") {
+      handleLiveBar(msg);
+    } else if (msg.type === "pong") {
+      // keepalive response
+    }
+  };
+
+  wsInstance.onclose = function () {
+    updateConnectionStatus(false);
+    scheduleReconnect();
+  };
+
+  wsInstance.onerror = function () {
+    wsInstance.close();
+  };
+}
+
+function scheduleReconnect() {
+  setTimeout(function () {
+    connectWebSocket();
+    wsReconnectDelay = Math.min(wsReconnectDelay * 2, WS_RECONNECT_MAX_MS);
+  }, wsReconnectDelay);
+}
+
+function handleSnapshot(msg) {
+  var bars = msg.bars && msg.bars[currentTf];
+  if (bars && bars.length > 0) {
+    loadBars(bars);
+  }
+  // Update lifecycle status indicator
+  if (msg.lifecycle) {
+    updateLifecycleStatus(msg.lifecycle.state);
+  }
+}
+
+function handleLiveBar(msg) {
+  if (msg.tf === currentTf) {
+    pushBar(msg.bar);
+    // Update SMA incrementally
+    if (smaSeriesRef && candleSeriesRef) {
+      updateSmaIncremental(msg.bar);
+    }
+  }
+  // Update price display for 1m bars
+  if (msg.tf === "1m" && msg.bar) {
+    var priceEl = document.getElementById("chart-price");
+    if (priceEl) {
+      priceEl.textContent = msg.bar.close.toFixed(2);
+    }
+  }
+}
+
+function updateSmaIncremental(_bar) {
+  // SMA update handled via full data on snapshot; live bars append incrementally
+  if (!candleSeriesRef) return;
+}
+
+function updateConnectionStatus(connected) {
+  var dot = document.querySelector(".chart-status-dot");
+  if (dot) {
+    dot.style.backgroundColor = connected ? "#26C6DA" : "#FF0000";
+    dot.title = connected ? "Connected" : "Disconnected";
+  }
+}
+
+function updateLifecycleStatus(state) {
+  var desc = document.querySelector(".chart-desc");
+  if (desc) {
+    var tfLabel = currentTf.toUpperCase();
+    desc.textContent = "Micro E-mini S&P 500 \u2022 " + tfLabel + " \u2022 " + state;
+  }
+}
+
+// Keepalive ping every 30s
+setInterval(function () {
+  if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+    wsInstance.send(JSON.stringify({ type: "ping" }));
+  }
+}, 30000);
+
+// ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", function () {
   initChart();
+  connectWebSocket();
 });
 
-// Expose data API for WebSocket handler (Phase 1.5)
+// Expose data API on globalThis
 globalThis.pushBar = pushBar;
 globalThis.loadBars = loadBars;

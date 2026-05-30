@@ -3,7 +3,9 @@
 Connects to Databento Live API on WARMING state (first client connects),
 disconnects on COLD state (all clients gone + cooldown expired).
 Falls back to Historical API backfill on startup.
-Implements exponential backoff reconnect (3 attempts, 2s base).
+Implements exponential backoff reconnect: 3 total attempts with 2 waits
+(2 s before attempt 2, 4 s before attempt 3). No third wait — failure on
+attempt 3 exits immediately.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from engine.bar_store import Bar, BarStore
 from engine.config import (
     BACKOFF_BASE_S,
     DATABENTO_API_KEY,
+    DATABENTO_CONTINUOUS_RULE,
     DATABENTO_DATASET,
     DATABENTO_SYMBOL,
     DATABENTO_STYPE,
@@ -29,6 +32,8 @@ from engine.config import (
 logger = logging.getLogger("warbird.feed")
 
 BACKFILL_BARS = 2000  # ~33 hours of 1m bars
+QUARTERLY_MONTHS = (3, 6, 9, 12)
+MONTH_CODES = {3: "H", 6: "M", 9: "U", 12: "Z"}
 
 
 def _record_to_bar(record) -> Bar:
@@ -45,52 +50,70 @@ def _record_to_bar(record) -> Bar:
     )
 
 
-def active_mes_contract() -> str:
-    """Determine the active front-month MES contract.
+def _third_friday_day(year: int, month: int) -> int:
+    from calendar import monthcalendar
 
-    CME E-mini/Micro ES rolls quarterly on the 2nd Friday of Mar/Jun/Sep/Dec.
-    The continuous symbol MES.n.0 handles this automatically in Databento,
-    but this function provides the explicit contract month for reference.
+    fridays = [week[4] for week in monthcalendar(year, month) if week[4] != 0]
+    if len(fridays) < 3:
+        raise RuntimeError("Could not determine third Friday for quarter month")
+    return fridays[2]
+
+
+def _calendar_roll_date(year: int, quarter_month: int) -> datetime:
+    third_friday = _third_friday_day(year, quarter_month)
+    return datetime(year, quarter_month, third_friday, tzinfo=timezone.utc) - timedelta(days=4)
+
+
+def _next_quarter_contract(quarter_month: int, year: int) -> tuple[int, int]:
+    idx = QUARTERLY_MONTHS.index(quarter_month)
+    if idx + 1 < len(QUARTERLY_MONTHS):
+        return QUARTERLY_MONTHS[idx + 1], year
+    return 3, year + 1
+
+
+def _calendar_front_month(now: datetime) -> tuple[int, int]:
+    for quarter_month in QUARTERLY_MONTHS:
+        if now.month < quarter_month:
+            return quarter_month, now.year
+        if now.month == quarter_month:
+            if now >= _calendar_roll_date(now.year, quarter_month):
+                return _next_quarter_contract(quarter_month, now.year)
+            return quarter_month, now.year
+    return 3, now.year + 1
+
+
+def active_mes_contract() -> str:
+    """Estimate the active front-month MES contract for calendar diagnostics.
+
+    Databento continuous symbols handle actual contract switching according to the
+    configured rule (c/n/v). This helper is calendar-only and used for log context.
+    It follows the CME equity-index customary roll date: Monday prior to the
+    third Friday in Mar/Jun/Sep/Dec.
     """
     now = datetime.now(timezone.utc)
-    month = now.month
-    year = now.year
-
-    quarterly_months = [3, 6, 9, 12]
-    for qm in quarterly_months:
-        if month <= qm:
-            contract_month = qm
-            contract_year = year
-            break
-    else:
-        contract_month = 3
-        contract_year = year + 1
-
-    month_codes = {3: "H", 6: "M", 9: "U", 12: "Z"}
-    code = month_codes[contract_month]
+    contract_month, contract_year = _calendar_front_month(now)
+    code = MONTH_CODES[contract_month]
     return f"MES{code}{contract_year % 100:02d}"
 
 
 def detect_contract_roll() -> bool:
-    """Check if we are within the roll window (2nd Friday of roll month).
+    """Check whether we are in a calendar roll window.
 
-    Returns True if a roll is imminent (within 5 days of expiry).
+    For Databento n/v continuous rules, roll timing is market-data-driven and this
+    helper intentionally returns False to avoid pretending calendar certainty.
+    For c (calendar) rule, returns True when the customary roll week is active.
     """
+    if DATABENTO_STYPE != "continuous":
+        return False
+    if DATABENTO_CONTINUOUS_RULE != "c":
+        return False
+
     now = datetime.now(timezone.utc)
-    month = now.month
-    year = now.year
-
-    if month not in (3, 6, 9, 12):
+    if now.month not in QUARTERLY_MONTHS:
         return False
 
-    from calendar import monthcalendar
-    cal = monthcalendar(year, month)
-    fridays = [week[4] for week in cal if week[4] != 0]
-    if len(fridays) < 2:
-        return False
-    second_friday = fridays[1]
-    roll_date = datetime(year, month, second_friday, tzinfo=timezone.utc)
-    days_to_roll = (roll_date - now).days
+    roll_date = _calendar_roll_date(now.year, now.month)
+    days_to_roll = (roll_date.date() - now.date()).days
     return 0 <= days_to_roll <= 5
 
 
@@ -228,6 +251,13 @@ def stream_live(store: BarStore, stop_event: threading.Event) -> None:
 
     attempt = 0
     backoff = BACKOFF_BASE_S
+
+    logger.info(
+        "Databento live feed configured: symbol=%s stype=%s continuous_rule=%s",
+        DATABENTO_SYMBOL,
+        DATABENTO_STYPE,
+        DATABENTO_CONTINUOUS_RULE,
+    )
 
     while not stop_event.is_set():
         try:

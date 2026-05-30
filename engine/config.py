@@ -7,6 +7,29 @@ from __future__ import annotations
 
 import os
 
+
+def normalize_databento_continuous_rule(rule: str) -> str:
+    """Normalize Databento continuous rule aliases to canonical c/n/v tokens."""
+    normalized = str(rule).strip().lower()
+    aliases = {
+        "calendar": "c",
+        "c": "c",
+        "open_interest": "n",
+        "open-interest": "n",
+        "openinterest": "n",
+        "oi": "n",
+        "o": "n",
+        "n": "n",
+        "volume": "v",
+        "v": "v",
+    }
+    canonical = aliases.get(normalized, normalized)
+    if canonical not in {"c", "n", "v"}:
+        raise ValueError(
+            "Invalid DATABENTO_CONTINUOUS_RULE. Use one of c/n/v (or aliases calendar/open_interest/volume)."
+        )
+    return canonical
+
 # ---------------------------------------------------------------------------
 # Database paths
 # ---------------------------------------------------------------------------
@@ -28,16 +51,31 @@ NEWSFILTER_API_KEY = os.environ.get("NEWSFILTER_API_KEY", "")
 # Databento allowlists — approved symbols and schemas
 # ---------------------------------------------------------------------------
 DATABENTO_DATASET = "GLBX.MDP3"
-DATABENTO_SYMBOL: str = "MES.n.0"
+DATABENTO_CONTINUOUS_ROOT: str = os.environ.get("DATABENTO_CONTINUOUS_ROOT", "MES").strip().upper()
+DATABENTO_CONTINUOUS_RULE: str = normalize_databento_continuous_rule(
+    os.environ.get("DATABENTO_CONTINUOUS_RULE", "n")
+)
+DATABENTO_CONTINUOUS_RANK: int = int(os.environ.get("DATABENTO_CONTINUOUS_RANK", "0"))
+if DATABENTO_CONTINUOUS_RANK < 0:
+    raise ValueError("DATABENTO_CONTINUOUS_RANK must be >= 0")
+
+DATABENTO_SYMBOL: str = (
+    f"{DATABENTO_CONTINUOUS_ROOT}.{DATABENTO_CONTINUOUS_RULE}.{DATABENTO_CONTINUOUS_RANK}"
+)
 DATABENTO_STYPE: str = "continuous"
 
 DATABENTO_APPROVED_SYMBOLS: list[str] = [
-    "MES.v.0", "ES.c.0", "NQ.c.0", "YM.c.0", "RTY.c.0",
+    "MES.c.0", "MES.n.0", "MES.v.0",
+    "ES.c.0", "NQ.c.0", "YM.c.0", "RTY.c.0",
     "CL.c.0", "GC.c.0", "SI.c.0", "NG.c.0",
     "ZN.c.0", "ZB.c.0", "ZF.c.0",
     "SOX.c.0", "SR3.c.0",
     "6E.c.0", "6J.c.0", "HG.c.0",
 ]
+if DATABENTO_SYMBOL not in DATABENTO_APPROVED_SYMBOLS:
+    raise ValueError(
+        f"DATABENTO_SYMBOL {DATABENTO_SYMBOL!r} is not in DATABENTO_APPROVED_SYMBOLS"
+    )
 
 DATABENTO_APPROVED_SCHEMAS: list[str] = [
     "ohlcv-1m",

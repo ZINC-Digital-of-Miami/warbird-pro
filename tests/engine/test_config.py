@@ -24,10 +24,38 @@ def test_trade_log_db_equals_duckdb_path():
 
 
 def test_databento_approved_symbols():
-    from engine.config import DATABENTO_APPROVED_SYMBOLS
+    from engine.config import DATABENTO_APPROVED_SYMBOLS, DATABENTO_SYMBOL
     assert isinstance(DATABENTO_APPROVED_SYMBOLS, list)
-    assert len(DATABENTO_APPROVED_SYMBOLS) == 17
+    assert len(DATABENTO_APPROVED_SYMBOLS) >= 19
+    assert "MES.n.0" in DATABENTO_APPROVED_SYMBOLS
     assert "MES.v.0" in DATABENTO_APPROVED_SYMBOLS
+    assert DATABENTO_SYMBOL in DATABENTO_APPROVED_SYMBOLS
+
+
+def test_databento_continuous_symbol_shape():
+    from engine.config import (
+        DATABENTO_CONTINUOUS_RANK,
+        DATABENTO_CONTINUOUS_ROOT,
+        DATABENTO_CONTINUOUS_RULE,
+        DATABENTO_SYMBOL,
+    )
+    root, rule, rank = DATABENTO_SYMBOL.split(".")
+    assert root == DATABENTO_CONTINUOUS_ROOT
+    assert rule == DATABENTO_CONTINUOUS_RULE
+    assert int(rank) == DATABENTO_CONTINUOUS_RANK
+    assert DATABENTO_CONTINUOUS_RULE in {"c", "n", "v"}
+
+
+def test_normalize_databento_continuous_rule_aliases():
+    from engine.config import normalize_databento_continuous_rule
+
+    assert normalize_databento_continuous_rule("o") == "n"
+    assert normalize_databento_continuous_rule("open_interest") == "n"
+    assert normalize_databento_continuous_rule("volume") == "v"
+    assert normalize_databento_continuous_rule("calendar") == "c"
+
+    with pytest.raises(ValueError):
+        normalize_databento_continuous_rule("invalid-rule")
 
 
 def test_databento_approved_schemas():

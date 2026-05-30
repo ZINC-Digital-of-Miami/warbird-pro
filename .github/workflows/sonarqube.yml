@@ -65,19 +65,20 @@ jobs:
 
       - name: Install Python test dependencies
         run: |
-          python -m pip install \
-            setuptools==80.10.2 \
-            numpy==2.3.5 \
-            pandas==2.3.3 \
-            pytest==9.0.3 \
-            pytest-cov==7.1.0 \
-            pytest-asyncio==1.4.0 \
-            websockets==16.0 \
-            duckdb==1.5.2 \
-            pandera==0.31.1 \
-            fg-data-profiling==4.19.1 \
-            fastapi==0.136.3 \
-            httpx==0.28.1
+            python -m pip install \
+              setuptools==80.10.2 \
+              numpy==2.3.5 \
+              pandas==2.3.3 \
+              pytest==9.0.3 \
+              pytest-cov==7.1.0 \
+              pytest-asyncio==1.4.0 \
+              websockets==16.0 \
+              duckdb==1.5.2 \
+              pandera==0.31.1 \
+              fg-data-profiling==4.19.1 \
+              fastapi==0.136.3 \
+              httpx==0.28.1 \
+              httpx-ws==0.9.0
 
       - name: Run Python contract tests with coverage
         run: |

@@ -1,10 +1,10 @@
-"""Seed DuckDB from local batch files and supabase/seed.sql symbols.
+"""Seed DuckDB from local batch files and the local repo SQL file at supabase/seed.sql.
 
 Reads local .zip/.parquet files from data/ and populates:
 - Bar tables (mes_1m, etc.)
 - trades_raw
 - cross_asset_1h
-- symbols (from supabase/seed.sql active records)
+- symbols (from supabase/seed.sql active records — a local repo SQL file, not the Supabase cloud service)
 
 This is for initial seeding from local Databento batch downloads — zero API cost.
 
@@ -24,12 +24,13 @@ from engine.config import DATA_DIR, DUCKDB_PATH
 from engine.init_db import init_all_tables
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SEED_SQL_PATH = os.path.join(REPO_ROOT, "supabase", "seed.sql")
+LOCAL_SEED_SQL_PATH = os.path.join(REPO_ROOT, "supabase", "seed.sql")
 
 
 def _parse_active_symbols(seed_path: str) -> list[dict]:
-    """Parse supabase/seed.sql to extract active symbols (is_active = true).
+    """Parse the local repo file supabase/seed.sql to extract active symbols (is_active = true).
 
+    This reads a plain SQL file from the repo; it does not use the Supabase client or cloud API.
     Returns list of dicts with keys matching the symbols table schema.
     """
     if not os.path.isfile(seed_path):
@@ -77,8 +78,8 @@ def _parse_active_symbols(seed_path: str) -> list[dict]:
 
 
 def seed_symbols(conn: duckdb.DuckDBPyConnection) -> int:
-    """Seed the symbols table from supabase/seed.sql active records."""
-    symbols = _parse_active_symbols(SEED_SQL_PATH)
+    """Seed the symbols table from the local repo file supabase/seed.sql."""
+    symbols = _parse_active_symbols(LOCAL_SEED_SQL_PATH)
     if not symbols:
         print("WARNING: No active symbols parsed from seed.sql")
         return 0

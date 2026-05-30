@@ -70,6 +70,47 @@ def test_detect_contract_roll_returns_bool():
     assert isinstance(result, bool)
 
 
+@pytest.mark.parametrize("fake_now,expected", [
+    # Pre-roll: June 8 2026 (before customary roll week) → MESM26
+    (datetime(2026, 6, 8, 12, 0, tzinfo=timezone.utc), "MESM26"),
+    # Pre-roll: June 12 2026 (Friday before customary roll Monday) → MESM26
+    (datetime(2026, 6, 12, 12, 0, tzinfo=timezone.utc), "MESM26"),
+    # On customary roll date: June 15 2026 (Monday) → MESU26
+    (datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc), "MESU26"),
+    # Post-roll: June 16 2026 (Tuesday after roll date) → MESU26
+    (datetime(2026, 6, 16, 12, 0, tzinfo=timezone.utc), "MESU26"),
+    # Dec post-roll: Dec 14 2026 (Monday before 3rd Friday) → advances to MESH27
+    (datetime(2026, 12, 14, 12, 0, tzinfo=timezone.utc), "MESH27"),
+    # Non-roll month mid-quarter: Apr 15 2026 → MESM26
+    (datetime(2026, 4, 15, 12, 0, tzinfo=timezone.utc), "MESM26"),
+])
+def test_active_mes_contract_date_parametrized(fake_now, expected):
+    """active_mes_contract() follows customary roll week for calendar diagnostics."""
+    with patch("engine.databento_feed.datetime") as mock_dt:
+        mock_dt.now.return_value = fake_now
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        result = active_mes_contract()
+    assert result == expected, f"For {fake_now.date()}: expected {expected}, got {result}"
+
+
+def test_detect_contract_roll_non_calendar_rule_returns_false():
+    fake_now = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    with patch("engine.databento_feed.datetime") as mock_dt, \
+         patch("engine.databento_feed.DATABENTO_CONTINUOUS_RULE", "n"):
+        mock_dt.now.return_value = fake_now
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert detect_contract_roll() is False
+
+
+def test_detect_contract_roll_calendar_rule_returns_true_in_roll_week():
+    fake_now = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    with patch("engine.databento_feed.datetime") as mock_dt, \
+         patch("engine.databento_feed.DATABENTO_CONTINUOUS_RULE", "c"):
+        mock_dt.now.return_value = fake_now
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        assert detect_contract_roll() is True
+
+
 # ── _record_to_bar conversion ─────────────────────────────────────────────────
 
 
@@ -102,11 +143,18 @@ def test_connect_and_subscribe():
     mock_client = MagicMock()
     mock_db.Live.return_value = mock_client
 
-    with patch("engine.databento_feed.DATABENTO_API_KEY", "test-key"):
+    with patch("engine.databento_feed.DATABENTO_API_KEY", "test-key"), \
+         patch("engine.databento_feed.DATABENTO_SYMBOL", "MES.n.0"), \
+         patch("engine.databento_feed.DATABENTO_STYPE", "continuous"):
         result = _connect_and_subscribe(mock_db)
 
     mock_db.Live.assert_called_once_with(key="test-key")
-    mock_client.subscribe.assert_called_once()
+    mock_client.subscribe.assert_called_once_with(
+        dataset="GLBX.MDP3",
+        schema="ohlcv-1m",
+        stype_in="continuous",
+        symbols=["MES.n.0"],
+    )
     assert result is mock_client
 
 

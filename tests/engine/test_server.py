@@ -8,7 +8,9 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
+from httpx_ws import aconnect_ws
+from httpx_ws.transport import ASGIWebSocketTransport
 
 from engine.bar_store import Bar, BarStore
 from engine.server import (
@@ -40,7 +42,7 @@ def sample_bar():
 
 @pytest.fixture
 def async_client():
-    transport = ASGITransport(app=app)
+    transport = ASGIWebSocketTransport(app=app)
     return AsyncClient(transport=transport, base_url="https://test")
 
 
@@ -156,30 +158,22 @@ def test_on_bar_with_persist_calls_both(sample_bar):
 @pytest.mark.asyncio
 async def test_websocket_connect_and_snapshot():
     """WebSocket connection receives a snapshot message."""
-    try:
-        from httpx_ws import aconnect_ws
-
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="https://test") as client:
-            async with aconnect_ws("/ws", client) as ws:
-                msg = await ws.receive_json()
-                assert msg["type"] == "snapshot"
-    except ImportError:
-        pytest.skip("httpx_ws not installed")
+    async with AsyncClient(
+        transport=ASGIWebSocketTransport(app=app), base_url="https://test"
+    ) as client:
+        async with aconnect_ws("/ws", client) as ws:
+            msg = await ws.receive_json()
+            assert msg["type"] == "snapshot"
 
 
 @pytest.mark.asyncio
 async def test_websocket_ping_pong():
     """WebSocket responds to ping with pong."""
-    try:
-        from httpx_ws import aconnect_ws
-
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="https://test") as client:
-            async with aconnect_ws("/ws", client) as ws:
-                await ws.receive_json()
-                await ws.send_json({"type": "ping"})
-                msg = await ws.receive_json()
-                assert msg["type"] == "pong"
-    except ImportError:
-        pytest.skip("httpx_ws not installed")
+    async with AsyncClient(
+        transport=ASGIWebSocketTransport(app=app), base_url="https://test"
+    ) as client:
+        async with aconnect_ws("/ws", client) as ws:
+            await ws.receive_json()
+            await ws.send_json({"type": "ping"})
+            msg = await ws.receive_json()
+            assert msg["type"] == "pong"

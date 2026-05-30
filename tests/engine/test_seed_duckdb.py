@@ -21,12 +21,12 @@ def tmp_db_with_tables(monkeypatch, tmp_path):
 
 
 def test_parse_active_symbols():
-    from engine.seed_duckdb import _parse_active_symbols, SEED_SQL_PATH
+    from engine.seed_duckdb import _parse_active_symbols, LOCAL_SEED_SQL_PATH
 
-    if not os.path.isfile(SEED_SQL_PATH):
+    if not os.path.isfile(LOCAL_SEED_SQL_PATH):
         pytest.skip("seed.sql not found")
 
-    symbols = _parse_active_symbols(SEED_SQL_PATH)
+    symbols = _parse_active_symbols(LOCAL_SEED_SQL_PATH)
     assert len(symbols) == 20
 
     codes = [s["code"] for s in symbols]
@@ -46,9 +46,9 @@ def test_parse_active_symbols_missing_file():
 
 
 def test_seed_symbols(tmp_db_with_tables):
-    from engine.seed_duckdb import SEED_SQL_PATH, seed_symbols
+    from engine.seed_duckdb import LOCAL_SEED_SQL_PATH, seed_symbols
 
-    if not os.path.isfile(SEED_SQL_PATH):
+    if not os.path.isfile(LOCAL_SEED_SQL_PATH):
         pytest.skip("seed.sql not found")
 
     conn = duckdb.connect(tmp_db_with_tables)
@@ -58,9 +58,9 @@ def test_seed_symbols(tmp_db_with_tables):
 
 
 def test_seed_symbols_idempotent(tmp_db_with_tables):
-    from engine.seed_duckdb import SEED_SQL_PATH, seed_symbols
+    from engine.seed_duckdb import LOCAL_SEED_SQL_PATH, seed_symbols
 
-    if not os.path.isfile(SEED_SQL_PATH):
+    if not os.path.isfile(LOCAL_SEED_SQL_PATH):
         pytest.skip("seed.sql not found")
 
     conn = duckdb.connect(tmp_db_with_tables)

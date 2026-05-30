@@ -36,8 +36,7 @@ training, run the first sequential Nexus target:
 
 ```bash
 python scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/train_nexus_15m_heavy.py \
-  --manifest scripts/duckdb_local/workspaces/warbird_nexus_ml_rsi_15m/exports/nexus_15m_dataset.manifest.json \
-  --target label_volume_expansion_next_12b \
+  --section signal_tier_composite \
   --time-limit 14400 \
   --hpo-trials 80 \
   --num-bag-folds 5 \
@@ -52,6 +51,9 @@ first footprint-quality target before any secondary family. Model artifacts are
 written under `models/warbird_nexus_ml_rsi_15m/`; latest summary copies are
 written to `reports/heavy_training_latest.json` and
 `reports/heavy_training_latest.md`.
+
+Path and target overrides are intentionally disabled for hardening.
+Do not pass `--manifest`, `--output-root`, `--reports-dir`, or `--target`.
 
 
 This is the research-heavy path, not the quick proof run. It uses AutoGluon

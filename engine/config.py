@@ -28,6 +28,8 @@ NEWSFILTER_API_KEY = os.environ.get("NEWSFILTER_API_KEY", "")
 # Databento allowlists — approved symbols and schemas
 # ---------------------------------------------------------------------------
 DATABENTO_DATASET = "GLBX.MDP3"
+DATABENTO_SYMBOL: str = "MES.n.0"
+DATABENTO_STYPE: str = "continuous"
 
 DATABENTO_APPROVED_SYMBOLS: list[str] = [
     "MES.v.0", "ES.c.0", "NQ.c.0", "YM.c.0", "RTY.c.0",
@@ -64,6 +66,26 @@ GAP_FILL_WARN_HOURS = 24      # > 6h and <= 24h: warn before filling
 # > 24h: refuse and require manual approval
 
 # ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
+HOST: str = os.environ.get("WARBIRD_HOST", "127.0.0.1")
+PORT: int = int(os.environ.get("WARBIRD_PORT", "3100"))
+
+# ---------------------------------------------------------------------------
+# Timeframe aggregation
+# ---------------------------------------------------------------------------
+AGGREGATION_PERIODS: dict[str, int] = {
+    "1m": 1,
+    "3m": 3,
+    "5m": 5,
+    "15m": 15,
+    "1h": 60,
+    "4h": 240,
+    "1d": 1440,
+}
+MAX_BARS_IN_MEMORY: int = 5000
+
+# ---------------------------------------------------------------------------
 # Canonical timeframes
 # ---------------------------------------------------------------------------
 CANONICAL_TIMEFRAMES: list[str] = ["1m", "3m", "5m", "15m", "1h", "4h", "1d"]
@@ -87,3 +109,8 @@ MIDPOINT_HYSTERESIS_PCT = 2.0
 
 FIB_RATIOS: list[float] = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
 FIB_EXTENSIONS: list[float] = [1.236, 1.382, 1.5, 1.618, 2.0, 2.236]
+
+# ---------------------------------------------------------------------------
+# Bar validation
+# ---------------------------------------------------------------------------
+BAR_VALIDATION_ENABLED: bool = True

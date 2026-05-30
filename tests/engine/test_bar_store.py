@@ -38,10 +38,10 @@ def test_bar_to_dict():
     bar = Bar(ts=ts, open=5400.0, high=5410.0, low=5390.0, close=5405.0, volume=100)
     d = bar.to_dict()
     assert d["time"] == int(ts.timestamp())
-    assert d["open"] == 5400.0
-    assert d["high"] == 5410.0
-    assert d["low"] == 5390.0
-    assert d["close"] == 5405.0
+    assert d["open"] == pytest.approx(5400.0)
+    assert d["high"] == pytest.approx(5410.0)
+    assert d["low"] == pytest.approx(5390.0)
+    assert d["close"] == pytest.approx(5405.0)
     assert d["volume"] == 100
 
 

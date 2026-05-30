@@ -11,7 +11,7 @@ import logging
 import threading
 from collections import deque
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Callable
 
 from engine.config import AGGREGATION_PERIODS, BAR_VALIDATION_ENABLED, MAX_BARS_IN_MEMORY
@@ -76,8 +76,8 @@ class BarStore:
         self._bars: dict[str, deque[Bar]] = {
             tf: deque(maxlen=max_bars) for tf in AGGREGATION_PERIODS
         }
-        self._partials: dict[str, Bar | None] = {tf: None for tf in AGGREGATION_PERIODS}
-        self._1m_count_in_partial: dict[str, int] = {tf: 0 for tf in AGGREGATION_PERIODS}
+        self._partials: dict[str, Bar | None] = dict.fromkeys(AGGREGATION_PERIODS, None)
+        self._1m_count_in_partial: dict[str, int] = dict.fromkeys(AGGREGATION_PERIODS, 0)
         self._callbacks: list[BarCallback] = []
         self._total_bars_ingested: int = 0
 

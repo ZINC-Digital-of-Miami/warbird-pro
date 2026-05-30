@@ -188,6 +188,28 @@ def backfill(store: BarStore, bars: int = BACKFILL_BARS) -> int:
     return loaded
 
 
+def _connect_and_subscribe(db_module):
+    """Create a Live client and subscribe to the MES 1m feed."""
+    client = db_module.Live(key=DATABENTO_API_KEY)
+    client.subscribe(
+        dataset=DATABENTO_DATASET,
+        schema="ohlcv-1m",
+        stype_in=DATABENTO_STYPE,
+        symbols=[DATABENTO_SYMBOL],
+    )
+    return client
+
+
+def _consume_records(client, store: BarStore, stop_event: threading.Event) -> None:
+    """Consume records from a live client until stop is signaled."""
+    for record in client:
+        if stop_event.is_set():
+            break
+        if hasattr(record, "ts_event"):
+            bar = _record_to_bar(record)
+            store.add_1m_bar(bar)
+
+
 def stream_live(store: BarStore, stop_event: threading.Event) -> None:
     """Connect to Databento Live API and stream 1m bars into the store.
 
@@ -213,23 +235,10 @@ def stream_live(store: BarStore, stop_event: threading.Event) -> None:
                 logger.info("Contract roll window detected for %s", active_mes_contract())
 
             logger.info("Connecting to Databento Live (attempt %d)...", attempt + 1)
-            client = db.Live(key=DATABENTO_API_KEY)
-            client.subscribe(
-                dataset=DATABENTO_DATASET,
-                schema="ohlcv-1m",
-                stype_in=DATABENTO_STYPE,
-                symbols=[DATABENTO_SYMBOL],
-            )
-
+            client = _connect_and_subscribe(db)
             attempt = 0
             backoff = BACKOFF_BASE_S
-
-            for record in client:
-                if stop_event.is_set():
-                    break
-                if hasattr(record, "ts_event"):
-                    bar = _record_to_bar(record)
-                    store.add_1m_bar(bar)
+            _consume_records(client, store, stop_event)
 
         except Exception:
             attempt += 1

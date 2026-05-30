@@ -305,10 +305,11 @@ function connectWebSocket() {
   };
 
   wsInstance.onmessage = function (event) {
-    var msg;
+    let msg;
     try {
       msg = JSON.parse(event.data);
     } catch (_e) {
+      // Malformed JSON from server — ignore silently
       return;
     }
 
@@ -339,7 +340,7 @@ function scheduleReconnect() {
 }
 
 function handleSnapshot(msg) {
-  var bars = msg.bars && msg.bars[currentTf];
+  const bars = msg.bars?.[currentTf];
   if (bars && bars.length > 0) {
     loadBars(bars);
   }
@@ -359,7 +360,7 @@ function handleLiveBar(msg) {
   }
   // Update price display for 1m bars
   if (msg.tf === "1m" && msg.bar) {
-    var priceEl = document.getElementById("chart-price");
+    const priceEl = document.getElementById("chart-price");
     if (priceEl) {
       priceEl.textContent = msg.bar.close.toFixed(2);
     }
@@ -372,7 +373,7 @@ function updateSmaIncremental(_bar) {
 }
 
 function updateConnectionStatus(connected) {
-  var dot = document.querySelector(".chart-status-dot");
+  const dot = document.querySelector(".chart-status-dot");
   if (dot) {
     dot.style.backgroundColor = connected ? "#26C6DA" : "#FF0000";
     dot.title = connected ? "Connected" : "Disconnected";
@@ -380,16 +381,16 @@ function updateConnectionStatus(connected) {
 }
 
 function updateLifecycleStatus(state) {
-  var desc = document.querySelector(".chart-desc");
+  const desc = document.querySelector(".chart-desc");
   if (desc) {
-    var tfLabel = currentTf.toUpperCase();
+    const tfLabel = currentTf.toUpperCase();
     desc.textContent = "Micro E-mini S&P 500 \u2022 " + tfLabel + " \u2022 " + state;
   }
 }
 
 // Keepalive ping every 30s
 setInterval(function () {
-  if (wsInstance && wsInstance.readyState === WebSocket.OPEN) {
+  if (wsInstance?.readyState === WebSocket.OPEN) {
     wsInstance.send(JSON.stringify({ type: "ping" }));
   }
 }, 30000);

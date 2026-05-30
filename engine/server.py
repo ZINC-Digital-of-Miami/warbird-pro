@@ -22,7 +22,15 @@ from starlette.middleware.cors import CORSMiddleware
 
 from engine.bar_store import Bar, BarStore
 from engine.config import HOST, PORT
+from engine.fib_engine import FibState, compute_fibs
+from engine.indicators import ema_series, sma_series
 from engine.lifecycle import LifecycleManager
+
+# MA settings — exact match to AGENTS.md Live Pine Settings table
+EMA_PRIMARY_LENGTH = 21
+EMA_SMOOTHING_LENGTH = 9
+SMA_PERIOD = 200
+EMA_PRIMARY_OFFSET = 1  # Pine offset=1: display shifted 1 bar right
 
 logger = logging.getLogger("warbird.server")
 
@@ -36,12 +44,56 @@ _loop: asyncio.AbstractEventLoop | None = None
 
 # ── Bar callback — push to all connected WebSocket clients ────────────────────
 
+def _compute_fibs_for_tf(tf: str) -> dict | None:
+    """Compute fibs for a given TF using the current bar store."""
+    bars = store.get_bars(tf)
+    result = compute_fibs(bars)
+    return result.to_dict() if result else None
+
+
+def _compute_indicators_for_tf(tf: str) -> dict:
+    """Compute EMA21, EMA9 smoothing, SMA200 for a given TF."""
+    bars = store.get_bars(tf)
+    if not bars:
+        return {"ema21": [], "ema9": [], "sma200": []}
+
+    closes = [b.close for b in bars]
+    times = [int(b.ts.timestamp()) for b in bars]
+
+    ema21_vals = ema_series(closes, EMA_PRIMARY_LENGTH)
+    ema9_vals: list[float | None] = []
+    if ema21_vals:
+        ema21_numeric = [v if v is not None else 0.0 for v in ema21_vals]
+        ema9_vals = ema_series(ema21_numeric, EMA_SMOOTHING_LENGTH)
+
+    sma200_vals = sma_series(closes, SMA_PERIOD)
+
+    def _pack(vals: list[float | None], offset: int = 0) -> list[dict]:
+        out: list[dict] = []
+        for i, v in enumerate(vals):
+            if v is None:
+                continue
+            t_idx = i + offset
+            if t_idx < 0 or t_idx >= len(times):
+                continue
+            out.append({"time": times[t_idx], "value": round(v, 2)})
+        return out
+
+    return {
+        "ema21": _pack(ema21_vals, EMA_PRIMARY_OFFSET),
+        "ema9": _pack(ema9_vals),
+        "sma200": _pack(sma200_vals),
+    }
+
+
 def _on_bar(tf: str, bar: Bar) -> None:
     """Called from the Databento feed thread whenever a bar closes."""
+    fibs = _compute_fibs_for_tf(tf)
     msg: dict[str, Any] = {
         "type": "bar",
         "tf": tf,
         "bar": bar.to_dict(),
+        "fibs": fibs,
     }
     payload = json.dumps(msg)
     _broadcast(payload)
@@ -148,6 +200,21 @@ async def get_lifecycle():
     return lifecycle.status()
 
 
+@app.get("/api/fibs/{tf}")
+async def get_fibs(tf: str):
+    """Return computed fib levels for a given timeframe."""
+    result = _compute_fibs_for_tf(tf)
+    if result is None:
+        return {"error": "insufficient bars", "fibs": None}
+    return result
+
+
+@app.get("/api/indicators/{tf}")
+async def get_indicators(tf: str):
+    """Return EMA21, EMA9 smoothing, SMA200 for a given timeframe."""
+    return _compute_indicators_for_tf(tf)
+
+
 # ── WebSocket ─────────────────────────────────────────────────────────────────
 
 @app.websocket("/ws")
@@ -165,11 +232,16 @@ async def websocket_endpoint(ws: WebSocket):
         snapshot: dict[str, Any] = {
             "type": "snapshot",
             "bars": {},
+            "fibs": {},
+            "indicators": {},
             "lifecycle": lifecycle.status(),
         }
         for tf in ["1m", "3m", "5m", "15m", "1h", "4h", "1d"]:
             bars = store.get_bars(tf)
             snapshot["bars"][tf] = [b.to_dict() for b in bars[-500:]]
+        for tf in ["1m", "3m", "5m", "15m"]:
+            snapshot["fibs"][tf] = _compute_fibs_for_tf(tf)
+            snapshot["indicators"][tf] = _compute_indicators_for_tf(tf)
 
         await ws.send_text(json.dumps(snapshot))
 

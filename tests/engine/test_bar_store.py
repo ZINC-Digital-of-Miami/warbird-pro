@@ -84,7 +84,7 @@ def test_validate_bar_sunday_before_open():
 
 
 def test_validate_bar_sunday_after_open():
-    ts = datetime(2026, 5, 31, 18, 0, tzinfo=timezone.utc)  # Sunday 18:00 UTC (after CME open)
+    ts = datetime(2026, 5, 31, 23, 0, tzinfo=timezone.utc)  # Sunday 23:00 UTC = 18:00 CT (after CME open)
     bar = Bar(ts=ts, open=5400.0, high=5410.0, low=5390.0, close=5405.0)
     assert validate_bar(bar) is True
 

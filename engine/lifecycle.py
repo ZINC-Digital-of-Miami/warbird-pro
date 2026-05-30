@@ -63,15 +63,15 @@ class LifecycleManager:
             count = self._client_count
             current = self._state
 
-        logger.info("Client connected (total: %d, state: %s)", count, current)
+            logger.info("Client connected (total: %d, state: %s)", count, current)
 
-        if current == "COLD":
-            self._transition("WARMING")
-            self._start_engine()
-            self._transition("WARM")
-        elif current == "COOLDOWN":
-            self._cancel_cooldown()
-            self._transition("WARM")
+            if current == "COLD":
+                self._transition("WARMING")
+                self._start_engine()
+                self._transition("WARM")
+            elif current == "COOLDOWN":
+                self._cancel_cooldown()
+                self._transition("WARM")
 
     def client_disconnected(self) -> None:
         """Signal that a WebSocket client has disconnected."""
@@ -80,11 +80,11 @@ class LifecycleManager:
             count = self._client_count
             current = self._state
 
-        logger.info("Client disconnected (total: %d, state: %s)", count, current)
+            logger.info("Client disconnected (total: %d, state: %s)", count, current)
 
-        if count == 0 and current == "WARM":
-            self._transition("COOLDOWN")
-            self._start_cooldown()
+            if count == 0 and current == "WARM":
+                self._transition("COOLDOWN")
+                self._start_cooldown()
 
     def force_cold(self) -> None:
         """Force the engine to COLD state (e.g., on server shutdown)."""
@@ -155,13 +155,13 @@ class LifecycleManager:
             count = self._client_count
             current = self._state
 
-        if count == 0 and current == "COOLDOWN":
-            logger.info("Cooldown expired - transitioning to COLD")
-            self._stop_engine()
-            self._transition("COLD")
-        else:
-            logger.info("Cooldown expired but clients present - staying WARM")
-            self._transition("WARM")
+            if count == 0 and current == "COOLDOWN":
+                logger.info("Cooldown expired - transitioning to COLD")
+                self._stop_engine()
+                self._transition("COLD")
+            else:
+                logger.info("Cooldown expired but clients present - staying WARM")
+                self._transition("WARM")
 
     def status(self) -> dict:
         """Return current lifecycle status."""

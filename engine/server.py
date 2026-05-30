@@ -157,7 +157,8 @@ async def websocket_endpoint(ws: WebSocket):
     """
     await ws.accept()
     ws_clients.add(ws)
-    lifecycle.client_connected()
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lifecycle.client_connected)
 
     try:
         snapshot: dict[str, Any] = {

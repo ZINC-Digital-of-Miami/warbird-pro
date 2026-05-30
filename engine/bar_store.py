@@ -55,9 +55,12 @@ def validate_bar(bar: Bar) -> bool:
         logger.warning("Bar validation failed: high < low at %s", bar.ts)
         return False
     if bar.ts.weekday() >= 5:
-        day_name = bar.ts.strftime("%A")
-        hour = bar.ts.hour
-        if bar.ts.weekday() == 5 or (bar.ts.weekday() == 6 and hour < 17):
+        from zoneinfo import ZoneInfo
+
+        ct = bar.ts.astimezone(ZoneInfo("America/Chicago"))
+        day_name = ct.strftime("%A")
+        ct_hour = ct.hour
+        if ct.weekday() == 5 or (ct.weekday() == 6 and ct_hour < 17):
             logger.warning("Bar validation failed: weekend bar (%s) at %s", day_name, bar.ts)
             return False
     return True

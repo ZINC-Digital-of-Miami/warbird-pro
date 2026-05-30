@@ -125,10 +125,56 @@ SECTION_SEQUENCE = (
     "signal_tier_composite",
 )
 
+CANONICAL_MANIFEST_ROOT = WORKSPACE / "exports"
+CANONICAL_DATASET_ROOT = WORKSPACE / "exports"
+CANONICAL_DATASET_PATH = CANONICAL_DATASET_ROOT / "nexus_15m_dataset.parquet"
+CANONICAL_MODEL_ROOT = DEFAULT_OUTPUT_ROOT
+CANONICAL_REPORT_ROOT = DEFAULT_REPORTS_DIR
+
+
+def _resolve_path(path: Path, *, must_exist: bool) -> Path:
+    expanded = path.expanduser()
+    try:
+        return expanded.resolve(strict=must_exist)
+    except FileNotFoundError:
+        if must_exist:
+            raise
+        return expanded.resolve(strict=False)
+
+
+def _is_within_root(path: Path, root: Path) -> bool:
+    return path == root or root in path.parents
+
+
+def _restrict_path(
+    path: Path,
+    *,
+    roots: tuple[Path, ...],
+    purpose: str,
+    must_exist: bool,
+    required_suffix: str | None = None,
+) -> Path:
+    resolved = _resolve_path(path, must_exist=must_exist)
+    resolved_roots = tuple(_resolve_path(root, must_exist=False) for root in roots)
+    if not any(_is_within_root(resolved, root) for root in resolved_roots):
+        allowed = ", ".join(str(root) for root in resolved_roots)
+        raise RuntimeError(f"{purpose} must remain under approved roots: {allowed}. Got: {resolved}")
+    if required_suffix and not resolved.name.endswith(required_suffix):
+        raise RuntimeError(f"{purpose} must end with {required_suffix}: {resolved.name}")
+    return resolved
+
 
 def sha256_file(path: Path) -> str:
+    safe_path = _restrict_path(
+        path,
+        roots=(REPO_ROOT,),
+        purpose="Checksum path",
+        must_exist=True,
+    )
+    if not safe_path.is_file():
+        raise FileNotFoundError(f"Checksum path is not a file: {safe_path}")
     h = hashlib.sha256()
-    with path.open("rb") as fh:
+    with safe_path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
@@ -148,9 +194,16 @@ def repo_commit() -> str:
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        raise FileNotFoundError(f"Missing Nexus dataset manifest: {path}")
-    manifest = json.loads(path.read_text())
+    manifest_path = _restrict_path(
+        path,
+        roots=(CANONICAL_MANIFEST_ROOT,),
+        purpose="Manifest path",
+        must_exist=True,
+        required_suffix=".manifest.json",
+    )
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing Nexus dataset manifest: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text())
     if manifest.get("trigger_family") != TRIGGER_FAMILY:
         raise RuntimeError(f"Manifest trigger_family must be {TRIGGER_FAMILY}, got {manifest.get('trigger_family')!r}")
     if manifest.get("capture_method") != CAPTURE_METHOD:
@@ -166,7 +219,20 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 
 def load_dataset(manifest: dict[str, Any]) -> pd.DataFrame:
-    dataset_path = Path(str(manifest.get("dataset_parquet", "")))
+    declared_dataset_path = _resolve_path(Path(str(manifest.get("dataset_parquet", ""))), must_exist=False)
+    expected_dataset_path = _resolve_path(CANONICAL_DATASET_PATH, must_exist=False)
+    if declared_dataset_path != expected_dataset_path:
+        raise RuntimeError(
+            "Manifest dataset_parquet must match the canonical Nexus export path: "
+            f"{expected_dataset_path}; got {declared_dataset_path}"
+        )
+    dataset_path = _restrict_path(
+        CANONICAL_DATASET_PATH,
+        roots=(CANONICAL_DATASET_ROOT,),
+        purpose="Dataset parquet path",
+        must_exist=True,
+        required_suffix=".parquet",
+    )
     if not dataset_path.exists():
         raise FileNotFoundError(f"Missing Nexus dataset parquet: {dataset_path}")
     actual_sha = sha256_file(dataset_path)
@@ -470,6 +536,13 @@ def model_profile_contract(profile: str) -> dict[str, Any]:
 
 
 def _write_markdown(summary: dict[str, Any], path: Path) -> None:
+    safe_path = _restrict_path(
+        path,
+        roots=(CANONICAL_MODEL_ROOT, CANONICAL_REPORT_ROOT),
+        purpose="Markdown summary path",
+        must_exist=False,
+        required_suffix=".md",
+    )
     lines = [
         "# Nexus 15m Heavy Training Run\n",
         "\n## Scope\n",
@@ -525,7 +598,8 @@ def _write_markdown(summary: dict[str, Any], path: Path) -> None:
     for feature, payload in list(summary["feature_importance_top10"].items())[:10]:
         importance = payload.get("importance") if isinstance(payload, dict) else payload
         lines.append(f"- `{feature}`: `{importance}`\n")
-    path.write_text("".join(lines))
+    safe_path.parent.mkdir(parents=True, exist_ok=True)
+    safe_path.write_text("".join(lines))
 
 
 def fit_heavy_model(
@@ -629,8 +703,30 @@ def main() -> int:
         print(json.dumps({name: {"target": SECTION_TARGETS[name], "features": list(resolve_section_features(name, list(SECTION_FEATURES[name]) if name != "all_features" else [])) if name != "all_features" else "manifest_all"} for name in SECTION_FEATURES}, indent=2))
         return 0
 
-    manifest = load_manifest(args.manifest)
-    target = resolve_section_target(args.section, args.target)
+    if args.manifest != DEFAULT_MANIFEST:
+        raise RuntimeError(
+            f"--manifest override is disabled for security hardening; use the canonical manifest: {DEFAULT_MANIFEST}"
+        )
+    if args.output_root != DEFAULT_OUTPUT_ROOT:
+        raise RuntimeError(
+            f"--output-root override is disabled for security hardening; use the canonical output root: {DEFAULT_OUTPUT_ROOT}"
+        )
+    if args.reports_dir != DEFAULT_REPORTS_DIR:
+        raise RuntimeError(
+            f"--reports-dir override is disabled for security hardening; use the canonical reports dir: {DEFAULT_REPORTS_DIR}"
+        )
+    if args.target is not None:
+        raise RuntimeError("--target override is disabled for security hardening; section target mapping is enforced")
+
+    manifest_path = _restrict_path(
+        DEFAULT_MANIFEST,
+        roots=(CANONICAL_MANIFEST_ROOT,),
+        purpose="CLI manifest path",
+        must_exist=True,
+        required_suffix=".manifest.json",
+    )
+    manifest = load_manifest(manifest_path)
+    target = resolve_section_target(args.section, None)
     df = load_dataset(manifest)
     train_df, val_df, test_df, feature_cols = prepare_training_frames(df, manifest, target, args.section)
 
@@ -664,9 +760,21 @@ def main() -> int:
         print("validate-only PASS", flush=True)
         return 0
 
+    safe_output_root = _restrict_path(
+        DEFAULT_OUTPUT_ROOT,
+        roots=(CANONICAL_MODEL_ROOT,),
+        purpose="CLI output root",
+        must_exist=False,
+    )
+    safe_reports_dir = _restrict_path(
+        DEFAULT_REPORTS_DIR,
+        roots=(CANONICAL_REPORT_ROOT,),
+        purpose="CLI reports dir",
+        must_exist=False,
+    )
     ts_tag = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    out_dir = args.output_root / f"heavy_{ts_tag}" / args.section / target
-    args.reports_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = safe_output_root / f"heavy_{ts_tag}" / args.section / target
+    safe_reports_dir.mkdir(parents=True, exist_ok=True)
     print("\nNEXUS HEAVY AG run", flush=True)
     print(f"  output dir: {out_dir}", flush=True)
     print(f"  time-limit: {args.time_limit}s", flush=True)
@@ -712,8 +820,8 @@ def main() -> int:
         "eval_metric": EVAL_METRIC,
         "dataset_path": manifest["dataset_parquet"],
         "dataset_sha256": manifest.get("dataset_sha256"),
-        "manifest_path": str(args.manifest),
-        "manifest_sha256": sha256_file(args.manifest),
+        "manifest_path": str(manifest_path),
+        "manifest_sha256": sha256_file(manifest_path),
         "source_csv": manifest.get("source_csv"),
         "source_sha256": manifest.get("source_sha256"),
         "output_dir": str(run_dir),
@@ -756,12 +864,38 @@ def main() -> int:
         "scope_lock": "Nexus-only; No V9 Pine/trainer/export/model/fib surface used.",
         **model_summary,
     }
-    summary_path = run_dir / "nexus_15m_heavy_training_summary.json"
-    summary_md_path = run_dir / "nexus_15m_heavy_training_summary.md"
+    summary_path = _restrict_path(
+        run_dir / "nexus_15m_heavy_training_summary.json",
+        roots=(CANONICAL_MODEL_ROOT,),
+        purpose="JSON summary path",
+        must_exist=False,
+        required_suffix=".json",
+    )
+    summary_md_path = _restrict_path(
+        run_dir / "nexus_15m_heavy_training_summary.md",
+        roots=(CANONICAL_MODEL_ROOT,),
+        purpose="Markdown summary path",
+        must_exist=False,
+        required_suffix=".md",
+    )
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
     _write_markdown(summary, summary_md_path)
-    latest_json = args.reports_dir / "heavy_training_latest.json"
-    latest_md = args.reports_dir / "heavy_training_latest.md"
+    latest_json = _restrict_path(
+        safe_reports_dir / "heavy_training_latest.json",
+        roots=(CANONICAL_REPORT_ROOT,),
+        purpose="Latest JSON report path",
+        must_exist=False,
+        required_suffix=".json",
+    )
+    latest_md = _restrict_path(
+        safe_reports_dir / "heavy_training_latest.md",
+        roots=(CANONICAL_REPORT_ROOT,),
+        purpose="Latest Markdown report path",
+        must_exist=False,
+        required_suffix=".md",
+    )
+    latest_json.parent.mkdir(parents=True, exist_ok=True)
     latest_json.write_text(json.dumps(summary, indent=2, default=str))
     _write_markdown(summary, latest_md)
     print(f"\nwrote {summary_path}", flush=True)

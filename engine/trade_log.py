@@ -87,13 +87,14 @@ def record_trade(entry: TradeEntry) -> int:
     """Record a new trade entry. Returns the trade ID."""
     conn = _get_conn()
     now = datetime.now(timezone.utc)
-    conn.execute(
+    trade_id = conn.execute(
         """INSERT INTO trades (
             opened_at, symbol, timeframe, direction, entry_price,
             stop_price, tp_price, score, conviction, fib_level,
             ema21, ema9, rsi, pressure_pct, squeeze_on,
             pattern_tags, result, ai_commentary
-        ) VALUES (?, 'MES', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)""",
+        ) VALUES (?, 'MES', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?)
+        RETURNING id""",
         [
             now, entry.timeframe, entry.direction, entry.entry_price,
             entry.stop_price, entry.tp_price, entry.score,
@@ -102,8 +103,7 @@ def record_trade(entry: TradeEntry) -> int:
             entry.pressure_pct, entry.squeeze_on,
             entry.pattern_tags, entry.ai_commentary,
         ],
-    )
-    trade_id = conn.execute("SELECT max(id) FROM trades").fetchone()[0]
+    ).fetchone()[0]
     conn.close()
     return trade_id
 

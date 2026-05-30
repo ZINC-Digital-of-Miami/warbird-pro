@@ -76,6 +76,17 @@ CONFLUENCE_RATIOS = [0.382, 0.5, 0.618]
 CONFLUENCE_TOLERANCE = 0.001
 
 
+@dataclass
+class _PeriodAnchor:
+    period: int
+    high: float
+    low: float
+    high_idx: int
+    low_idx: int
+    fib_range: float
+    mid_levels: list[float]
+
+
 def _build_levels(anchor_high: float, anchor_low: float, is_bullish: bool) -> list[FibLevel]:
     fib_range = anchor_high - anchor_low
     levels: list[FibLevel] = []
@@ -98,38 +109,11 @@ def _build_levels(anchor_high: float, anchor_low: float, is_bullish: bool) -> li
     return levels
 
 
-def compute_fibs(bars: list[Bar]) -> FibState | None:
-    """Compute fibonacci levels using multi-period confluence scoring.
-
-    Examines multiple lookback windows, finds high/low anchors in each,
-    then selects the anchor pair with the best confluence score (how many
-    key fib ratios from different periods agree).
-    """
-    n = len(bars)
-    min_lookback = CONFLUENCE_LOOKBACKS[0]  # 8
-    if n < min_lookback:
-        return None
-
-    highs = [b.high for b in bars]
-    lows = [b.low for b in bars]
-    closes = [b.close for b in bars]
-
-    # Check minimum fib range.
-    atr_val = compute_atr(highs, lows, closes, 14)
-    min_range = atr_val * MIN_FIB_RANGE_ATR
-
-    @dataclass
-    class PeriodAnchor:
-        period: int
-        high: float
-        low: float
-        high_idx: int
-        low_idx: int
-        fib_range: float
-        mid_levels: list[float]
-
-    anchors: list[PeriodAnchor] = []
-
+def _find_period_anchors(
+    highs: list[float], lows: list[float], n: int, min_range: float,
+) -> list[_PeriodAnchor]:
+    """Scan each lookback window and return anchors that meet the min range."""
+    anchors: list[_PeriodAnchor] = []
     for period in CONFLUENCE_LOOKBACKS:
         start_idx = n - period
         if start_idx < 0:
@@ -152,55 +136,79 @@ def compute_fibs(bars: list[Bar]) -> FibState | None:
             continue
 
         mid_levels = [low + fib_range * r for r in CONFLUENCE_RATIOS]
-        anchors.append(PeriodAnchor(
+        anchors.append(_PeriodAnchor(
             period=period, high=high, low=low,
             high_idx=high_idx, low_idx=low_idx,
             fib_range=fib_range, mid_levels=mid_levels,
         ))
+    return anchors
 
+
+def _score_anchor(anchor: _PeriodAnchor, all_anchors: list[_PeriodAnchor]) -> float:
+    """Score an anchor by how many fib levels agree with other periods."""
+    tolerance = anchor.fib_range * CONFLUENCE_TOLERANCE
+    confluence_count = 0
+    for other in all_anchors:
+        if other is anchor:
+            continue
+        for level_a in anchor.mid_levels:
+            for level_b in other.mid_levels:
+                if abs(level_a - level_b) <= tolerance:
+                    confluence_count += 1
+    return confluence_count * anchor.fib_range
+
+
+def _select_best_anchor(anchors: list[_PeriodAnchor]) -> _PeriodAnchor:
+    """Select the anchor with the highest confluence score, breaking ties by range."""
+    best = anchors[-1]
+    best_score = -1.0
+    for anchor in anchors:
+        score = _score_anchor(anchor, anchors)
+        if score > best_score or (
+            math.isclose(score, best_score, abs_tol=1e-9)
+            and anchor.fib_range > best.fib_range
+        ):
+            best_score = score
+            best = anchor
+    return best
+
+
+def compute_fibs(bars: list[Bar]) -> FibState | None:
+    """Compute fibonacci levels using multi-period confluence scoring.
+
+    Examines multiple lookback windows, finds high/low anchors in each,
+    then selects the anchor pair with the best confluence score (how many
+    key fib ratios from different periods agree).
+    """
+    n = len(bars)
+    if n < CONFLUENCE_LOOKBACKS[0]:
+        return None
+
+    highs = [b.high for b in bars]
+    lows = [b.low for b in bars]
+    closes = [b.close for b in bars]
+
+    atr_val = compute_atr(highs, lows, closes, 14)
+    min_range = atr_val * MIN_FIB_RANGE_ATR
+
+    anchors = _find_period_anchors(highs, lows, n, min_range)
     if not anchors:
         return None
 
-    # Score each anchor by confluence with other periods.
-    best_anchor = anchors[-1]
-    best_score = -1.0
+    best_anchor = _select_best_anchor(anchors)
 
-    for i, anchor in enumerate(anchors):
-        tolerance = anchor.fib_range * CONFLUENCE_TOLERANCE
-        confluence_count = 0
-        for j, other in enumerate(anchors):
-            if i == j:
-                continue
-            for level_a in anchor.mid_levels:
-                for level_b in other.mid_levels:
-                    if abs(level_a - level_b) <= tolerance:
-                        confluence_count += 1
-
-        score = confluence_count * anchor.fib_range
-        if score > best_score or (
-            math.isclose(score, best_score, abs_tol=1e-9)
-            and anchor.fib_range > best_anchor.fib_range
-        ):
-            best_score = score
-            best_anchor = anchor
-
-    # Direction via midpoint with hysteresis.
-    last_close = closes[-1]
     midpoint = best_anchor.low + best_anchor.fib_range * 0.5
     hysteresis = best_anchor.fib_range * (MIDPOINT_HYSTERESIS_PCT / 100.0)
-    is_bullish = last_close >= (midpoint - hysteresis)
+    is_bullish = closes[-1] >= (midpoint - hysteresis)
 
     levels = _build_levels(best_anchor.high, best_anchor.low, is_bullish)
-
-    high_time = int(bars[best_anchor.high_idx].ts.timestamp())
-    low_time = int(bars[best_anchor.low_idx].ts.timestamp())
 
     return FibState(
         levels=levels,
         anchor_high=best_anchor.high,
         anchor_low=best_anchor.low,
-        anchor_high_time=high_time,
-        anchor_low_time=low_time,
+        anchor_high_time=int(bars[best_anchor.high_idx].ts.timestamp()),
+        anchor_low_time=int(bars[best_anchor.low_idx].ts.timestamp()),
         is_bullish=is_bullish,
         fib_range=best_anchor.fib_range,
     )

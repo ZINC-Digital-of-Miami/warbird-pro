@@ -77,9 +77,10 @@ venv/
 .remember/
 data/local-db-backups/
 
-# local warehouse data (parquets, Databento archives — training/research only, not repo)
+# local warehouse data (parquets, Databento archives, DuckDB — training/research only, not repo)
 data/*.parquet
 data/*.zip
+data/*.duckdb
 data/MES*/
 data/Intermarket*/
 data/cross_asset*/

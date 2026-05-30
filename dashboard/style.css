@@ -1,0 +1,295 @@
+/* Warbird Pro — Dashboard Layout Skeleton
+ *
+ * Layout Contract (from Knowledge note + SKILL.md):
+ *   Correlations row: full width, above everything
+ *   Chart + Cards panel: 2-column grid, cards sidebar 320px within chart row only
+ *   Pressure bar: full width below chart and cards, thin slim
+ *   Nexus: full width below pressure bar
+ *   Cards panel does NOT extend past chart canvas
+ *
+ * Dark theme matching chart background (#131722 → #0d1117).
+ * CSS Grid for layout.
+ */
+
+/* ---------------------------------------------------------------------------
+   Reset & base
+   --------------------------------------------------------------------------- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: linear-gradient(180deg, #131722 0%, #0d1117 100%);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Dashboard root — vertical stack
+   --------------------------------------------------------------------------- */
+
+.dashboard-root {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  height: 100vh;
+  width: 100vw;
+  gap: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Row 1: Correlations — full width, above everything
+   --------------------------------------------------------------------------- */
+
+.correlations-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.correlation-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.corr-symbol {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.corr-value {
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---------------------------------------------------------------------------
+   Row 2: Chart + Cards — 2-column grid
+   --------------------------------------------------------------------------- */
+
+.chart-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Chart panel */
+
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.chart-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #26C6DA;
+  box-shadow: 0 0 6px rgba(38, 198, 218, 0.5);
+}
+
+.chart-symbol {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.chart-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.chart-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+#chart-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.chart-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chart-watermark img {
+  opacity: 0.10;
+  filter: grayscale(100%);
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 4px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.legend-sma-line {
+  width: 16px;
+  height: 2px;
+  background: #FFFFFF;
+}
+
+.legend-bull-box {
+  width: 10px;
+  height: 12px;
+  border-radius: 2px;
+  background: #26C6DA;
+}
+
+.legend-bear-box {
+  width: 10px;
+  height: 12px;
+  border-radius: 2px;
+  background: #FF0000;
+}
+
+/* Cards panel — 320px, within chart row only */
+
+.cards-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.card h3 {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 6px;
+}
+
+.card-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-value.card-text {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+/* ---------------------------------------------------------------------------
+   Row 3: Pressure bar — thin slim, full width
+   --------------------------------------------------------------------------- */
+
+.pressure-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0;
+  overflow: hidden;
+}
+
+.pressure-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2196F3 0%, #FF0000 100%);
+  transition: width 0.3s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   Row 4: Nexus — full width, below pressure bar
+   --------------------------------------------------------------------------- */
+
+.nexus-row {
+  width: 100%;
+  min-height: 120px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nexus-placeholder {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

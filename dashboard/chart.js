@@ -308,8 +308,8 @@ function connectWebSocket() {
     let msg;
     try {
       msg = JSON.parse(event.data);
-    } catch (_e) {
-      // Malformed JSON from server — ignore silently
+    } catch (parseError) {
+      console.debug("WebSocket: malformed JSON received", parseError.message);
       return;
     }
 

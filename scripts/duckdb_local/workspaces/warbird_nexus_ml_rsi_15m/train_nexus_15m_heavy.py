@@ -130,6 +130,8 @@ CANONICAL_DATASET_ROOT = WORKSPACE / "exports"
 CANONICAL_DATASET_PATH = CANONICAL_DATASET_ROOT / "nexus_15m_dataset.parquet"
 CANONICAL_MODEL_ROOT = DEFAULT_OUTPUT_ROOT
 CANONICAL_REPORT_ROOT = DEFAULT_REPORTS_DIR
+CANONICAL_LATEST_JSON_PATH = CANONICAL_REPORT_ROOT / "heavy_training_latest.json"
+CANONICAL_LATEST_MD_PATH = CANONICAL_REPORT_ROOT / "heavy_training_latest.md"
 
 
 def _resolve_path(path: Path, *, must_exist: bool) -> Path:
@@ -535,14 +537,7 @@ def model_profile_contract(profile: str) -> dict[str, Any]:
     }
 
 
-def _write_markdown(summary: dict[str, Any], path: Path) -> None:
-    safe_path = _restrict_path(
-        path,
-        roots=(CANONICAL_MODEL_ROOT, CANONICAL_REPORT_ROOT),
-        purpose="Markdown summary path",
-        must_exist=False,
-        required_suffix=".md",
-    )
+def _render_markdown(summary: dict[str, Any]) -> str:
     lines = [
         "# Nexus 15m Heavy Training Run\n",
         "\n## Scope\n",
@@ -598,8 +593,18 @@ def _write_markdown(summary: dict[str, Any], path: Path) -> None:
     for feature, payload in list(summary["feature_importance_top10"].items())[:10]:
         importance = payload.get("importance") if isinstance(payload, dict) else payload
         lines.append(f"- `{feature}`: `{importance}`\n")
-    safe_path.parent.mkdir(parents=True, exist_ok=True)
-    safe_path.write_text("".join(lines))
+    return "".join(lines)
+
+
+def _write_text_file(path: Path, content: str) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(content)
+
+
+def _write_json_file(path: Path, payload: dict[str, Any]) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(payload, handle, indent=2, default=str)
+        handle.write("\n")
 
 
 def fit_heavy_model(
@@ -773,7 +778,7 @@ def main() -> int:
         must_exist=False,
     )
     ts_tag = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    out_dir = safe_output_root / f"heavy_{ts_tag}" / args.section / target
+    out_dir = safe_output_root / f"heavy_{ts_tag}" / "model"
     safe_reports_dir.mkdir(parents=True, exist_ok=True)
     print("\nNEXUS HEAVY AG run", flush=True)
     print(f"  output dir: {out_dir}", flush=True)
@@ -879,25 +884,26 @@ def main() -> int:
         required_suffix=".md",
     )
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(json.dumps(summary, indent=2, default=str))
-    _write_markdown(summary, summary_md_path)
+    markdown_text = _render_markdown(summary)
+    _write_json_file(summary_path, summary)
+    _write_text_file(summary_md_path, markdown_text)
     latest_json = _restrict_path(
-        safe_reports_dir / "heavy_training_latest.json",
+        CANONICAL_LATEST_JSON_PATH,
         roots=(CANONICAL_REPORT_ROOT,),
         purpose="Latest JSON report path",
         must_exist=False,
         required_suffix=".json",
     )
     latest_md = _restrict_path(
-        safe_reports_dir / "heavy_training_latest.md",
+        CANONICAL_LATEST_MD_PATH,
         roots=(CANONICAL_REPORT_ROOT,),
         purpose="Latest Markdown report path",
         must_exist=False,
         required_suffix=".md",
     )
     latest_json.parent.mkdir(parents=True, exist_ok=True)
-    latest_json.write_text(json.dumps(summary, indent=2, default=str))
-    _write_markdown(summary, latest_md)
+    _write_json_file(latest_json, summary)
+    _write_text_file(latest_md, markdown_text)
     print(f"\nwrote {summary_path}", flush=True)
     print(f"wrote {summary_md_path}", flush=True)
     print(f"latest report: {latest_md}", flush=True)

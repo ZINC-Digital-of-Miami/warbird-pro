@@ -115,6 +115,7 @@ collect_changed_files() {
         done < <(git diff --name-only --diff-filter=D 2>/dev/null)
       fi
       ;;
+    *) return 0 ;;
   esac
 }
 
@@ -137,6 +138,7 @@ get_file_diff() {
         git diff -- "$file" 2>/dev/null
       fi
       ;;
+    *) return 0 ;;
   esac
 }
 
@@ -160,6 +162,7 @@ check_no_force_push_in_changes() {
           scripts/guards/warbird-knowledge-enforcement.sh) continue ;;
           scripts/guards/warbird-file-protection.sh) continue ;;
           scripts/guards/enforcement-manifest.json) continue ;;
+          *) ;;
         esac
         if grep -E 'git\s+push\s+.*--force' "$f" 2>/dev/null | grep -qvE '\-\-force-with-lease'; then
           add_violation "Main Only And Push Approval" "note-07165b17" \
@@ -170,6 +173,7 @@ check_no_force_push_in_changes() {
             "Forbidden '--no-verify' found in $f"
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -189,6 +193,7 @@ check_no_legacy_training() {
             "Legacy/full-zoo training reference found in $f — use train_v9_locked.py"
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -208,6 +213,7 @@ check_no_fake_data_labels() {
             "Fake/mock footprint data detected in $f — label adapter gaps honestly"
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -224,6 +230,7 @@ check_no_vercel_demotion() {
         add_violation "Proof Before Vercel Demotion" "note-86b6ce3e" \
           "Vercel infrastructure file deleted: $f — requires proven local replacement first"
         ;;
+      *) ;;
     esac
   done
 }
@@ -282,6 +289,7 @@ check_no_unauthorized_automation() {
             "Write automation detected in $f — manual-first: run playbook manually once first"
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -320,6 +328,7 @@ check_governance_file_changes() {
           fi
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -337,6 +346,7 @@ check_no_v7_v8_references() {
         # Skip retired files themselves and docs
         case "$f" in
           indicators/v7-*|indicators/v8-*|indicators/Warbird_Pro_v7*|docs/*) continue ;;
+          *) ;;
         esac
         # Check for imports/references to retired V7/V8 surfaces
         if grep -qE '(v7.warbird|v8.warbird|Warbird_Pro_v7|warbird-pro-indicator)' "$f" 2>/dev/null; then
@@ -344,6 +354,7 @@ check_no_v7_v8_references() {
             "V7/V8 retired surface reference found in $f — only V9 is active"
         fi
         ;;
+      *) ;;
     esac
   done
 }
@@ -363,6 +374,7 @@ check_pine_edit_protection() {
         echo "  → Requires explicit Kirk approval in the current session"
         echo "  → Run all 6 Pine verification gates before pushing"
         ;;
+      *) ;;
     esac
   done
 }

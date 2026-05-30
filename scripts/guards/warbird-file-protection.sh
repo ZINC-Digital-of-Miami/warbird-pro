@@ -24,9 +24,13 @@
 
 set -euo pipefail
 
+DEFAULT_UPSTREAM_REF="origin/main"
+UPSTREAM_REF_SPEC='@{upstream}'
+
 MODE="${1:-manual}"
 case "$MODE" in
   --mode) MODE="${2:-manual}" ;;
+  *) ;;
 esac
 # Strip leading --mode if passed as first arg
 case "$MODE" in
@@ -64,7 +68,8 @@ NEVER_GITIGNORE_PATHS=(
 # ─── Helpers ───
 
 add_violation() {
-  VIOLATIONS+=("$1")
+  local detail="$1"
+  VIOLATIONS+=("$detail")
 }
 
 report_and_exit() {
@@ -110,7 +115,7 @@ check_deleted_files() {
       ;;
     pre-push)
       local upstream_ref
-      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
+      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "$UPSTREAM_REF_SPEC" 2>/dev/null || echo "$DEFAULT_UPSTREAM_REF")"
       while IFS= read -r f; do
         [[ -n "$f" ]] && deleted_files+=("$f")
       done < <(git diff --name-only --diff-filter=D "$upstream_ref"...HEAD 2>/dev/null)
@@ -123,6 +128,7 @@ check_deleted_files() {
         [[ -n "$f" ]] && deleted_files+=("$f")
       done < <(git diff --name-only --diff-filter=D 2>/dev/null)
       ;;
+    *) return 0 ;;
   esac
 
   [[ ${#deleted_files[@]} -gt 0 ]] || return 0
@@ -149,7 +155,7 @@ check_gitignore_additions() {
       ;;
     pre-push)
       local upstream_ref
-      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
+      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "$UPSTREAM_REF_SPEC" 2>/dev/null || echo "$DEFAULT_UPSTREAM_REF")"
       gitignore_diff="$(git diff "$upstream_ref"...HEAD -- .gitignore 2>/dev/null || true)"
       ;;
     manual)
@@ -158,6 +164,7 @@ check_gitignore_additions() {
         gitignore_diff="$(git diff -- .gitignore 2>/dev/null || true)"
       fi
       ;;
+    *) return 0 ;;
   esac
 
   [[ -n "$gitignore_diff" ]] || return 0
@@ -194,7 +201,7 @@ check_plan_overwrites() {
       ;;
     pre-push)
       local upstream_ref
-      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
+      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "$UPSTREAM_REF_SPEC" 2>/dev/null || echo "$DEFAULT_UPSTREAM_REF")"
       while IFS= read -r f; do
         [[ -n "$f" ]] && modified_files+=("$f")
       done < <(git diff --name-only --diff-filter=M "$upstream_ref"...HEAD 2>/dev/null)
@@ -207,6 +214,7 @@ check_plan_overwrites() {
         [[ -n "$f" ]] && modified_files+=("$f")
       done < <(git diff --name-only --diff-filter=M 2>/dev/null)
       ;;
+    *) return 0 ;;
   esac
 
   [[ ${#modified_files[@]} -gt 0 ]] || return 0
@@ -250,7 +258,7 @@ check_retired_surfaces() {
       ;;
     pre-push)
       local upstream_ref
-      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo 'origin/main')"
+      upstream_ref="$(git rev-parse --abbrev-ref --symbolic-full-name "$UPSTREAM_REF_SPEC" 2>/dev/null || echo "$DEFAULT_UPSTREAM_REF")"
       while IFS= read -r f; do
         [[ -n "$f" ]] && changed_files+=("$f")
       done < <(git diff --name-only --diff-filter=ACMR "$upstream_ref"...HEAD 2>/dev/null)
@@ -263,6 +271,7 @@ check_retired_surfaces() {
         [[ -n "$f" ]] && changed_files+=("$f")
       done < <(git diff --name-only --diff-filter=ACMR 2>/dev/null)
       ;;
+    *) return 0 ;;
   esac
 
   local retired=(
@@ -340,6 +349,7 @@ check_force_push_markers() {
           esac
         fi
         ;;
+      *) ;;
     esac
   done
 }

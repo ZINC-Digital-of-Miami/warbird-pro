@@ -200,6 +200,33 @@ html, body {
   background: #FFFFFF;
 }
 
+.legend-ema21-line {
+  width: 16px;
+  height: 2px;
+  background: #FFFFFF;
+  opacity: 0.7;
+}
+
+.legend-ema9-line {
+  width: 16px;
+  height: 2px;
+  background: #26A69A;
+}
+
+.legend-fib-red {
+  width: 10px;
+  height: 3px;
+  background: #cc0000;
+  border-radius: 1px;
+}
+
+.legend-fib-teal {
+  width: 10px;
+  height: 3px;
+  background: #0097A7;
+  border-radius: 1px;
+}
+
 .legend-bull-box {
   width: 10px;
   height: 12px;

@@ -88,9 +88,10 @@ class LifecycleManager:
 
     def force_cold(self) -> None:
         """Force the engine to COLD state (e.g., on server shutdown)."""
-        self._cancel_cooldown()
-        self._stop_engine()
-        self._transition("COLD")
+        with self._lock:
+            self._cancel_cooldown()
+            self._stop_engine()
+            self._transition("COLD")
 
     def _transition(self, new_state: str) -> None:
         """Perform a state transition."""

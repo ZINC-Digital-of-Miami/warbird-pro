@@ -71,11 +71,13 @@ def _persist_bar_to_duckdb(tf: str, bar: Bar) -> None:
 
         table_name = f"bars_{tf}"
         conn = duckdb.connect(DUCKDB_PATH)
-        conn.execute(f"""
-            INSERT OR IGNORE INTO {table_name} (ts, open, high, low, close, volume)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, [bar.ts, bar.open, bar.high, bar.low, bar.close, bar.volume])
-        conn.close()
+        try:
+            conn.execute(f"""
+                INSERT OR IGNORE INTO {table_name} (ts, open, high, low, close, volume)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, [bar.ts, bar.open, bar.high, bar.low, bar.close, bar.volume])
+        finally:
+            conn.close()
     except Exception:
         logger.debug("DuckDB persist skipped for %s (table may not exist)", tf)
 
@@ -156,7 +158,6 @@ async def websocket_endpoint(ws: WebSocket):
     On disconnect: triggers lifecycle COOLDOWN if last client.
     """
     await ws.accept()
-    ws_clients.add(ws)
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, lifecycle.client_connected)
 
@@ -171,6 +172,8 @@ async def websocket_endpoint(ws: WebSocket):
             snapshot["bars"][tf] = [b.to_dict() for b in bars[-500:]]
 
         await ws.send_text(json.dumps(snapshot))
+
+        ws_clients.add(ws)
 
         while True:
             data = await ws.receive_text()

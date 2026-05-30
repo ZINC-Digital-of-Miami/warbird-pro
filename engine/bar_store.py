@@ -185,6 +185,8 @@ class BarStore:
                 buf = self._bars[tf]
                 for b in agg:
                     buf.append(b)
+                self._partials[tf] = partial
+                self._1m_count_in_partial[tf] = count
 
     def _accumulate(self, tf: str, period: int, bar_1m: Bar) -> Bar | None:
         """Accumulate a 1m bar into the partial for *tf*.

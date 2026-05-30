@@ -225,3 +225,16 @@ def test_store_last_bar():
 def test_store_last_bar_empty():
     store = BarStore(max_bars=100)
     assert store.last_bar("1m") is None
+
+
+def test_backfill_preserves_partial_bars():
+    """Verify that backfill carries over leftover partial bars for live continuation."""
+    store = BarStore(max_bars=500)
+    bars = [_make_bar(i) for i in range(5)]
+    store.backfill("1m", bars)
+    assert store.bar_count("3m") == 1
+    assert store._partials["3m"] is not None
+    assert store._1m_count_in_partial["3m"] == 2
+    bar6 = _make_bar(5)
+    store.add_1m_bar(bar6)
+    assert store.bar_count("3m") == 2

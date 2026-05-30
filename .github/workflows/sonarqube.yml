@@ -83,7 +83,9 @@ jobs:
             tests/ag/test_v9_core_indicator_input_contract.py \
             tests/ag/test_v9_core_training_targets.py \
             tests/duckdb_local/test_warbird_pro_v9_contract.py \
+            tests/engine/ \
             --cov=scripts \
+            --cov=engine \
             --cov-report=xml:sonar-reports/coverage.xml \
             --junitxml=sonar-reports/pytest-contracts.xml
           python -m pytest \

@@ -112,33 +112,64 @@ function computeSmaData(candles, period) {
 }
 
 // ---------------------------------------------------------------------------
-// Sample data — static MES 5m bars for chart rendering verification
+// Data state — chart starts empty, populated by WebSocket feed (Phase 1.5)
 // ---------------------------------------------------------------------------
 
-function generateSampleData() {
-  const bars = [];
-  const startTime = Math.floor(Date.UTC(2026, 4, 28, 14, 30) / 1000);
-  let price = 5400;
+let chartInstance = null;
+let candleSeriesRef = null;
+let smaSeriesRef = null;
 
-  for (let i = 0; i < 300; i++) {
-    const ts = startTime + i * 300;
-    const change = (Math.random() - 0.48) * 8;
-    const open = price;
-    const close = price + change;
-    const high = Math.max(open, close) + Math.random() * 4;
-    const low = Math.min(open, close) - Math.random() * 4;
-    price = close;
+/**
+ * Push a new OHLCV bar into the chart. Called by the WebSocket handler
+ * once the live feed is connected (Phase 1.5).
+ *
+ * @param {{ time: number, open: number, high: number, low: number, close: number }} bar
+ */
+function pushBar(bar) {
+  if (!candleSeriesRef) return;
+  const mapped = {
+    time: timeToTz(bar.time, CHART_TIME_ZONE),
+    open: bar.open,
+    high: bar.high,
+    low: bar.low,
+    close: bar.close,
+  };
+  candleSeriesRef.update(mapped);
+}
 
-    bars.push({
-      time: timeToTz(ts, CHART_TIME_ZONE),
-      open: Number.parseFloat(open.toFixed(2)),
-      high: Number.parseFloat(high.toFixed(2)),
-      low: Number.parseFloat(low.toFixed(2)),
-      close: Number.parseFloat(close.toFixed(2)),
-    });
+/**
+ * Load a full array of OHLCV bars (e.g. from historical backfill).
+ *
+ * @param {Array<{ time: number, open: number, high: number, low: number, close: number }>} bars
+ */
+function loadBars(bars) {
+  if (!candleSeriesRef || !bars.length) return;
+  const mapped = bars.map(function (b) {
+    return {
+      time: timeToTz(b.time, CHART_TIME_ZONE),
+      open: b.open,
+      high: b.high,
+      low: b.low,
+      close: b.close,
+    };
+  });
+  candleSeriesRef.setData(mapped);
+
+  // Compute and set SMA after loading bars
+  const smaData = computeSmaData(mapped, SMA_PERIOD);
+  if (smaData.length > 0 && smaSeriesRef) {
+    smaSeriesRef.setData(smaData);
   }
 
-  return bars;
+  // Set visible range
+  const total = mapped.length;
+  const visible = Math.min(INITIAL_VISIBLE_BARS, total);
+  if (chartInstance) {
+    chartInstance.timeScale().setVisibleLogicalRange({
+      from: Math.max(0, total - visible),
+      to: total - 1 + RIGHT_PADDING_BARS,
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -225,30 +256,20 @@ function initChart() {
     priceLineVisible: true,
   });
 
-  const candleData = generateSampleData();
-  candleSeries.setData(candleData);
-
   // SMA 200 line
-  const smaData = computeSmaData(candleData, SMA_PERIOD);
-  if (smaData.length > 0) {
-    const smaSeries = chart.addSeries(LightweightCharts.LineSeries, {
-      color: SMA_COLOR,
-      lineWidth: SMA_WIDTH,
-      lineStyle: LightweightCharts.LineStyle.Solid,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      crosshairMarkerVisible: false,
-    });
-    smaSeries.setData(smaData);
-  }
-
-  // Set visible range
-  const total = candleData.length;
-  const visible = Math.min(INITIAL_VISIBLE_BARS, total);
-  chart.timeScale().setVisibleLogicalRange({
-    from: Math.max(0, total - visible),
-    to: total - 1 + RIGHT_PADDING_BARS,
+  const smaSeries = chart.addSeries(LightweightCharts.LineSeries, {
+    color: SMA_COLOR,
+    lineWidth: SMA_WIDTH,
+    lineStyle: LightweightCharts.LineStyle.Solid,
+    priceLineVisible: false,
+    lastValueVisible: false,
+    crosshairMarkerVisible: false,
   });
+
+  // Store refs for WebSocket data push (Phase 1.5)
+  chartInstance = chart;
+  candleSeriesRef = candleSeries;
+  smaSeriesRef = smaSeries;
 
   // Responsive resize
   const observer = new ResizeObserver(function (entries) {
@@ -258,7 +279,7 @@ function initChart() {
   });
   observer.observe(container);
 
-  return { chart, candleSeries };
+  return { chart, candleSeries, smaSeries };
 }
 
 // ---------------------------------------------------------------------------

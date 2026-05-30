@@ -75,3 +75,15 @@ DEFAULT_TIMEFRAME = "5m"
 CHART_TIMEFRAMES: list[str] = ["1m", "3m", "5m", "15m"]
 CORRELATIONS_TF = "1h"
 CORRELATIONS_UPDATE_INTERVAL_S = 3600
+
+# ---------------------------------------------------------------------------
+# Fib engine constants — match live TradingView indicator inputs exactly
+# ---------------------------------------------------------------------------
+ZIGZAG_DEVIATION = 3.0
+ZIGZAG_DEPTH = 10
+ZIGZAG_THRESHOLD_FLOOR_PCT = 0.25
+MIN_FIB_RANGE_ATR = 0.5
+MIDPOINT_HYSTERESIS_PCT = 2.0
+
+FIB_RATIOS: list[float] = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
+FIB_EXTENSIONS: list[float] = [1.236, 1.382, 1.5, 1.618, 2.0, 2.236]

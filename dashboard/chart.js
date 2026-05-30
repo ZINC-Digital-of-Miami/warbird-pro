@@ -289,3 +289,7 @@ function initChart() {
 document.addEventListener("DOMContentLoaded", function () {
   initChart();
 });
+
+// Expose data API for WebSocket handler (Phase 1.5)
+window.pushBar = pushBar;
+window.loadBars = loadBars;
